@@ -8,12 +8,13 @@ import (
 )
 
 var (
-	protocol  string
-	server    string
-	target    string
+	protocol   string
+	server     string
+	target     string
 	apiServer  string
 	verbose    bool
 	tunnelPort int
+	visible    string
 )
 
 var rootCmd = &cobra.Command{
@@ -29,6 +30,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&apiServer, "server", "H", "https://console.yishield.com/raas", "API server URL")
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose log output")
 	rootCmd.Flags().IntVarP(&tunnelPort, "tunnel-port", "p", 62888, "Chisel tunnel server port")
+	rootCmd.Flags().StringVar(&visible, "visible", "true", "Make the tunnel visible in the console (true/false)")
 
 	rootCmd.MarkFlagRequired("type")
 	rootCmd.MarkFlagRequired("source")

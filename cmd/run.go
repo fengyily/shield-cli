@@ -69,6 +69,7 @@ type QuickSetupRequest struct {
 	Port          int    `json:"port"`
 	ConnectorName string `json:"connector_name"`
 	Password      string `json:"password"`
+	Visible       string `json:"visible"`
 }
 
 type QuickSetupResponse struct {
@@ -229,6 +230,7 @@ func callQuickSetup(ip string, port int, creds *config.Credentials) (*QuickSetup
 		Port:          port,
 		ConnectorName: creds.ConnectorName,
 		Password:      creds.Password,
+		Visible:       visible,
 	}
 
 	jsonData, err := json.Marshal(reqBody)
