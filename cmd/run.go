@@ -69,7 +69,14 @@ type QuickSetupRequest struct {
 	Port          int    `json:"port"`
 	ConnectorName string `json:"connector_name"`
 	Password      string `json:"password"`
-	Visible       string `json:"visible"`
+	DisplayName   string `json:"display_name,omitempty"`
+	SiteName      string `json:"site_name,omitempty"`
+	Visable       string `json:"visable,omitempty"`
+	Username      string `json:"username,omitempty"`
+	AuthPass      string `json:"auth_pass,omitempty"`
+	PrivateKey    string `json:"private_key,omitempty"`
+	Passphrase    string `json:"passphrase,omitempty"`
+	EnableSftp    bool   `json:"enable_sftp,omitempty"`
 }
 
 type QuickSetupResponse struct {
@@ -182,7 +189,6 @@ func runShield(cmd *cobra.Command, args []string) error {
 	// === Phase 2: Print tunnel mapping & connection info ===
 	fmt.Println()
 	fmt.Printf("  \033[1;33m⚡ Tunnel Mapping\033[0m\n")
-	fmt.Printf("    \033[36mAPI Tunnel:\033[0m   remote:%d  ←→  local:%d\n", resp.Data.Connector.APIPort, localPort)
 	fmt.Printf("    \033[36mApp Tunnel:\033[0m   remote:%d  ←→  %s:%d\n", resource.Port, ip, port)
 	fmt.Printf("    \033[36mServer:\033[0m       %s:%d\n", resp.Data.Connector.ExternalIP, tunnelPort)
 	fmt.Println()
@@ -230,7 +236,14 @@ func callQuickSetup(ip string, port int, creds *config.Credentials) (*QuickSetup
 		Port:          port,
 		ConnectorName: creds.ConnectorName,
 		Password:      creds.Password,
-		Visible:       visible,
+		DisplayName:   displayName,
+		SiteName:      siteName,
+		Visable:       visable,
+		Username:      authUser,
+		AuthPass:      authPass,
+		PrivateKey:    privateKey,
+		Passphrase:    passphrase,
+		EnableSftp:    enableSftp,
 	}
 
 	jsonData, err := json.Marshal(reqBody)

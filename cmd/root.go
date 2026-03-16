@@ -8,13 +8,20 @@ import (
 )
 
 var (
-	protocol   string
-	server     string
-	target     string
-	apiServer  string
-	verbose    bool
-	tunnelPort int
-	visible    string
+	protocol    string
+	server      string
+	target      string
+	apiServer   string
+	verbose     bool
+	tunnelPort  int
+	visable     string
+	displayName string
+	siteName    string
+	authUser    string
+	authPass    string
+	privateKey  string
+	passphrase  string
+	enableSftp  bool
 )
 
 var rootCmd = &cobra.Command{
@@ -30,7 +37,15 @@ func init() {
 	rootCmd.Flags().StringVarP(&apiServer, "server", "H", "https://console.yishield.com/raas", "API server URL")
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose log output")
 	rootCmd.Flags().IntVarP(&tunnelPort, "tunnel-port", "p", 62888, "Chisel tunnel server port")
-	rootCmd.Flags().StringVar(&visible, "visible", "true", "Make the tunnel visible in the console (true/false)")
+	rootCmd.Flags().StringVar(&visable, "visable", "", "AC node filter for visibility mode (use without value for visible mode)")
+	rootCmd.Flags().Lookup("visable").NoOptDefVal = "visable"
+	rootCmd.Flags().StringVar(&displayName, "display-name", "", "Connector display name")
+	rootCmd.Flags().StringVar(&siteName, "site-name", "", "Application site name")
+	rootCmd.Flags().StringVar(&authUser, "username", "", "Target service username (SSH/RDP/VNC)")
+	rootCmd.Flags().StringVar(&authPass, "auth-pass", "", "Target service password (SSH/RDP/VNC)")
+	rootCmd.Flags().StringVar(&privateKey, "private-key", "", "SSH private key")
+	rootCmd.Flags().StringVar(&passphrase, "passphrase", "", "SSH private key passphrase")
+	rootCmd.Flags().BoolVar(&enableSftp, "enable-sftp", false, "Enable SFTP (SSH only)")
 
 	rootCmd.MarkFlagRequired("type")
 	rootCmd.MarkFlagRequired("source")

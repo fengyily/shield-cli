@@ -38,7 +38,7 @@ Traditional remote access requires installing dedicated clients (RDP client, VNC
 
 - **Browser-Based Access** — RDP, VNC, SSH all rendered in the browser via HTML5, no plugins or client software needed
 - **Zero Config** — Just specify protocol and target, everything else is automatic
-- **Visible & Invisible Modes** — Choose whether the tunnel is listed in the management console or hidden
+- **Visible & Invisible Modes** — Control whether unauthorized users can access the service via the Site URL alone
 - **Cross-Platform** — Linux, macOS, Windows native support
 - **Encrypted Tunnels** — Built on [chisel](https://github.com/jpillora/chisel) with WebSocket transport
 - **Auto Credentials** — Machine fingerprint-based identity, encrypted local storage
@@ -65,43 +65,53 @@ Once the tunnel is established, open the **Access URL** in any browser — that'
 
 ## Visibility Modes
 
-Shield CLI supports two visibility modes controlled by the `--visible` flag:
+Shield CLI supports two access modes controlled by the `--visable` flag.
 
-### Visible Mode (default)
+When a tunnel is established, two URLs are generated:
 
-The tunnel and its associated application are listed in the management console. Ideal for shared services that team members need to discover and access.
+- **Site URL** — The application address (e.g., `https://xxxx.hk01.apps.yishield.com`). This URL alone is **not accessible** without authorization.
+- **Access URL** — Contains an embedded authorization key. Anyone with this URL can access the service directly.
+
+### Visible Mode
+
+The service is **open to unauthorized users** — anyone who knows the Site URL can access it without an authorization key. Suitable for services that are intended to be publicly reachable.
 
 ```bash
-# Visible: appears in the console, team members can find and access it
-shield -t rdp -s 10.0.0.5:3389
+# Visible: the Site URL is accessible without authorization
+shield --visable -t rdp -s 10.0.0.5:3389
+
+# Filter a specific AC node by name
+shield --visable=HK -t ssh -s 10.0.0.2:22
 ```
 
 **Use cases:**
-- Shared development servers that the whole team needs
+
+- Public demo environments
+- Shared development servers for the whole team
 - Staging environments for QA testing
-- Internal tools and dashboards
 
-### Invisible Mode
+### Invisible Mode (default)
 
-The tunnel works identically but is **hidden from the management console**. Only users with the direct Access URL can connect. Ideal for temporary, sensitive, or personal access.
+The service **requires authorization** — the Site URL alone will not grant access. Users must use the Access URL (which contains the authorization key) to connect. This is the secure default for all services.
 
 ```bash
-# Invisible: works the same, but hidden from the console
-shield --visible=false -t rdp -s 10.0.0.5:3389
+# Invisible (default): only the Access URL (with key) grants access
+shield -t rdp -s 10.0.0.5:3389
 
-# Invisible SSH tunnel for a quick debugging session
-shield --visible=false -t ssh -s 10.0.0.2:22
+# Secure SSH tunnel — share the Access URL with specific people
+shield -t ssh -s 10.0.0.2:22
 
-# Invisible VNC access to a lab machine
-shield --visible=false -t vnc -s 192.168.1.50:5900
+# Secure VNC access to a lab machine
+shield -t vnc -s 192.168.1.50:5900
 ```
 
 **Use cases:**
-- Temporary access during incident response — share the URL, close when done
-- Personal development machines that don't need to be discoverable
-- Sensitive servers where access should be strictly URL-based
 
-> In both modes, the Access URL is printed to the terminal. The only difference is whether the tunnel appears in the management console.
+- Production servers that must not be publicly accessible
+- Temporary access during incident response — share the Access URL, revoke when done
+- Sensitive machines where access is restricted to authorized users only
+
+> Both modes print the Site URL and Access URL to the terminal. The difference is whether the Site URL alone is sufficient to access the service, or whether the authorization key in the Access URL is required.
 
 ## Installation
 
@@ -127,7 +137,7 @@ Flags:
   -s, --source string        Target address in ip:port format     [required]
   -H, --server string        API server URL (default: https://console.yishield.com/raas)
   -p, --tunnel-port int      Chisel tunnel server port (default: 62888)
-      --visible              Show tunnel in console (default: true)
+      --visable [filter]     Enable visible mode (optional: AC node name filter)
   -v, --verbose              Enable verbose log output
   -h, --help                 Help for shield
 ```
@@ -143,7 +153,6 @@ Flags:
   Shield CLI - Secure Tunnel Connector
 
   ⚡ Tunnel Mapping
-    API Tunnel:   remote:63203  ←→  local:4000
     App Tunnel:   remote:58845  ←→  172.16.3.137:22
     Server:       121.43.154.105:62888
 
@@ -212,7 +221,7 @@ Shield CLI 是一个安全内网穿透工具，支持通过浏览器直接访问
 
 - **浏览器直接访问** — RDP、VNC、SSH 均通过 HTML5 在浏览器中渲染，无需安装客户端
 - **零配置** — 只需指定协议和目标地址，其余自动完成
-- **可见/隐身模式** — 选择隧道是否在管理控制台中显示
+- **可见/隐身模式** — 控制未授权用户是否可以通过 Site URL 直接访问服务
 - **跨平台** — 原生支持 Linux、macOS、Windows
 - **加密隧道** — 基于 [chisel](https://github.com/jpillora/chisel) 的 WebSocket 传输
 - **自动凭证** — 基于机器指纹的身份标识，本地加密存储
@@ -239,43 +248,53 @@ shield -t http -s 192.168.1.100:8080
 
 ### 可见与隐身模式
 
-通过 `--visible` 参数控制隧道在管理控制台中的可见性：
+隧道建立后会生成两个 URL：
 
-#### 可见模式（默认）
+- **Site URL** — 应用地址（如 `https://xxxx.hk01.apps.yishield.com`）。单独使用此 URL **无法访问**，需要授权。
+- **Access URL** — 包含内嵌授权密钥的链接。拥有此 URL 的人可以直接访问服务。
 
-隧道及关联应用在管理控制台中可见，适合团队共享的服务。
+通过 `--visable` 参数控制服务的访问权限：
+
+#### 可见模式
+
+服务**对未授权用户开放** — 任何知道 Site URL 的人都可以直接访问，无需授权密钥。适合需要公开访问的服务。
 
 ```bash
-# 可见模式：出现在控制台，团队成员可以发现并访问
-shield -t rdp -s 10.0.0.5:3389
+# 可见模式：Site URL 无需授权即可访问
+shield --visable -t rdp -s 10.0.0.5:3389
+
+# 指定特定 AC 节点
+shield --visable=HK -t ssh -s 10.0.0.2:22
 ```
 
 **适用场景：**
+
+- 公开演示环境
 - 团队共享的开发服务器
 - QA 测试的预发布环境
-- 内部工具和仪表盘
 
-#### 隐身模式
+#### 隐身模式（默认）
 
-隧道功能完全相同，但在管理控制台中**不可见**。只有知道 Access URL 的用户才能连接。适合临时、敏感或个人使用的场景。
+服务**需要授权** — 仅凭 Site URL 无法访问。用户必须使用 Access URL（包含授权密钥）才能连接。这是所有服务的安全默认值。
 
 ```bash
-# 隐身模式：功能不变，但在控制台中隐藏
-shield --visible=false -t rdp -s 10.0.0.5:3389
+# 隐身模式（默认）：只有 Access URL（带密钥）才能访问
+shield -t rdp -s 10.0.0.5:3389
 
-# 隐身 SSH 隧道，用于临时调试
-shield --visible=false -t ssh -s 10.0.0.2:22
+# 安全的 SSH 隧道 — 将 Access URL 分享给指定人员
+shield -t ssh -s 10.0.0.2:22
 
-# 隐身 VNC 访问实验室机器
-shield --visible=false -t vnc -s 192.168.1.50:5900
+# 安全的 VNC 访问实验室机器
+shield -t vnc -s 192.168.1.50:5900
 ```
 
 **适用场景：**
-- 故障处理期间的临时访问 — 分享 URL，用完即关
-- 不需要被发现的个人开发机器
-- 敏感服务器，访问严格限定在知道 URL 的人
 
-> 两种模式下 Access URL 都会打印在终端中，唯一区别是隧道是否出现在管理控制台。
+- 不能公开访问的生产服务器
+- 故障处理期间的临时访问 — 分享 Access URL，处理完毕即撤销
+- 敏感机器，访问仅限授权用户
+
+> 两种模式下终端都会打印 Site URL 和 Access URL。区别在于：可见模式下 Site URL 即可访问；隐身模式下必须使用包含授权密钥的 Access URL。
 
 ### 安装
 
@@ -301,7 +320,7 @@ shield [flags]
   -s, --source string        目标地址，格式 ip:port                       [必填]
   -H, --server string        API 服务器地址 (默认: https://console.yishield.com/raas)
   -p, --tunnel-port int      隧道服务器端口 (默认: 62888)
-      --visible              在控制台中显示隧道 (默认: true)
+      --visable [过滤词]     启用可见模式 (可选: AC 节点名称过滤)
   -v, --verbose              启用详细日志输出
   -h, --help                 显示帮助信息
 ```
