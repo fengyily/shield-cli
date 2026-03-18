@@ -55,14 +55,18 @@ func NewManager(info ConnectionInfo) *Manager {
 	}
 }
 
-// CreateMainTunnel creates the main reverse tunnel for the API port
-func (m *Manager) CreateMainTunnel(remotePort, localPort int) error {
+// CreateMainTunnel creates the main reverse tunnel with multiple remotes.
+// The first remote maps the API port, additional remotes map resource ports.
+func (m *Manager) CreateMainTunnel(remotePort, localPort int, extraRemotes ...string) error {
+	remotes := []string{fmt.Sprintf("R:%d:localhost:%d", remotePort, localPort)}
+	remotes = append(remotes, extraRemotes...)
+
 	cfg := chclient.Config{
 		Headers:          http.Header{},
 		MaxRetryCount:    -1,
 		MaxRetryInterval: 10 * time.Second,
 		Server:           fmt.Sprintf("http://%s:%d", m.connInfo.ExternalIP, m.connInfo.TunnelPort),
-		Remotes:          []string{fmt.Sprintf("R:%d:localhost:%d", remotePort, localPort)},
+		Remotes:          remotes,
 		Auth:             fmt.Sprintf("%s:%s", m.connInfo.Username, m.connInfo.Password),
 	}
 
@@ -104,7 +108,7 @@ func (m *Manager) CreateMainTunnel(remotePort, localPort int) error {
 		m.mu.Lock()
 		if e, ok := m.tunnels["main"]; ok && e == entry {
 			e.Status = StatusConnected
-			slog.Info("Main tunnel connected", "remote", cfg.Remotes[0])
+			slog.Info("Main tunnel connected", "remotes", cfg.Remotes)
 		}
 		m.mu.Unlock()
 
@@ -114,7 +118,7 @@ func (m *Manager) CreateMainTunnel(remotePort, localPort int) error {
 	}()
 
 	slog.Info("Main tunnel established",
-		"remote", fmt.Sprintf("R:%d:localhost:%d", remotePort, localPort),
+		"remotes", remotes,
 		"server", cfg.Server,
 	)
 	return nil
@@ -236,6 +240,16 @@ func (m *Manager) CloseAll() {
 		delete(m.tunnels, key)
 		slog.Info("Tunnel closed", "rport", key)
 	}
+}
+
+// IsMainConnected returns true if the main tunnel is in connected state.
+func (m *Manager) IsMainConnected() bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if e, ok := m.tunnels["main"]; ok {
+		return e.Status == StatusConnected
+	}
+	return false
 }
 
 // List returns info about all active tunnels including status

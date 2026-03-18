@@ -37,7 +37,7 @@ brews:
   - repository:
       owner: fengyily
       name: homebrew-tap
-    homepage: "https://github.com/fengyily/sheild-cli"
+    homepage: "https://github.com/fengyily/shield-cli"
     description: "Shield CLI - Secure Tunnel Connector"
     license: "MIT"
     install: |

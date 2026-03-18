@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"shield-cli/config"
+
 	"github.com/spf13/cobra"
 )
 
@@ -15,6 +17,7 @@ var (
 	verbose     bool
 	tunnelPort  int
 	visable     string
+	invisible   bool
 	displayName string
 	siteName    string
 	authUser    string
@@ -25,10 +28,11 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "shield",
-	Short: "Shield CLI - Secure Tunnel Connector",
-	Long:  "Shield CLI exposes internal network resources to the public server via secure tunnels.",
-	RunE:  runShield,
+	Use:          "shield",
+	Short:        "Shield CLI - Secure Tunnel Connector",
+	Long:         "Shield CLI exposes internal network resources to the public server via secure tunnels.",
+	SilenceUsage: true,
+	RunE:         runShield,
 }
 
 func init() {
@@ -37,8 +41,8 @@ func init() {
 	rootCmd.Flags().StringVarP(&apiServer, "server", "H", "https://console.yishield.com/raas", "API server URL")
 	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose log output")
 	rootCmd.Flags().IntVarP(&tunnelPort, "tunnel-port", "p", 62888, "Chisel tunnel server port")
-	rootCmd.Flags().StringVar(&visable, "visable", "", "AC node filter for visibility mode (use without value for visible mode)")
-	rootCmd.Flags().Lookup("visable").NoOptDefVal = "visable"
+	rootCmd.Flags().StringVar(&visable, "visable", "visable", "AC node name filter (default: visable)")
+	rootCmd.Flags().BoolVar(&invisible, "invisible", false, "Invisible mode: require Access URL with authorization key")
 	rootCmd.Flags().StringVar(&displayName, "display-name", "", "Connector display name")
 	rootCmd.Flags().StringVar(&siteName, "site-name", "", "Application site name")
 	rootCmd.Flags().StringVar(&authUser, "username", "", "Target service username (SSH/RDP/VNC)")
@@ -49,6 +53,24 @@ func init() {
 
 	rootCmd.MarkFlagRequired("type")
 	rootCmd.MarkFlagRequired("source")
+
+	// Subcommand: clear cached credentials
+	rootCmd.AddCommand(&cobra.Command{
+		Use:   "clean",
+		Short: "Clear cached credentials",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			path := config.GetCredentialFilePath()
+			if err := os.Remove(path); err != nil {
+				if os.IsNotExist(err) {
+					fmt.Println("No cached credentials found.")
+					return nil
+				}
+				return fmt.Errorf("failed to remove credentials: %w", err)
+			}
+			fmt.Printf("Credentials cleared: %s\n", path)
+			return nil
+		},
+	})
 }
 
 func Execute() {

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -98,6 +99,8 @@ func GetOrCreateCredentials() (*Credentials, error) {
 	// Try to load existing credentials
 	if creds, err := LoadCredentials(path); err == nil {
 		return creds, nil
+	} else if !os.IsNotExist(err) {
+		slog.Warn("Failed to load credentials, regenerating", "path", path, "error", err)
 	}
 
 	// Generate new credentials using machine fingerprint as connector_name
@@ -111,7 +114,7 @@ func GetOrCreateCredentials() (*Credentials, error) {
 	if len(name) > 12 {
 		name = name[:12]
 	}
-	name = "shield-" + name
+	name = "shield_" + name
 
 	return &Credentials{
 		ConnectorName: name,

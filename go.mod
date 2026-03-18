@@ -1,6 +1,6 @@
 module shield-cli
 
-go 1.21
+go 1.25.0
 
 require (
 	github.com/jpillora/chisel v1.10.1
@@ -18,5 +18,6 @@ require (
 	golang.org/x/crypto v0.16.0 // indirect
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/term v0.41.0 // indirect
 )
