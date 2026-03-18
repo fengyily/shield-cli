@@ -20,7 +20,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/go-%3E%3D1.21-blue?logo=go" alt="Go Version">
   <img src="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-brightgreen" alt="Platform">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+  <img src="https://img.shields.io/badge/license-Apache%202.0-green" alt="License">
 </p>
 
 ---
@@ -100,6 +100,18 @@ shield vnc 10.0.0.10:5901
 
 隧道建立后，在任意浏览器中打开 **Access URL** 即可访问。
 
+**第一步：** 运行 `shield ssh` 创建隧道
+
+![Shield CLI 终端](docs/images/shieldcli-ssh-001.jpg)
+
+**第二步：** 打开 Access URL — 自动授权跳转
+
+![浏览器授权页面](docs/images/shieldcli-ssh-web-001.jpg)
+
+**第三步：** 浏览器中的 SSH 终端 — 无需安装客户端
+
+![浏览器 SSH 终端](docs/images/shieldcli-ssh-web-002.jpg)
+
 ### 智能默认值
 
 | 命令 | 解析为 |
@@ -117,34 +129,22 @@ shield vnc 10.0.0.10:5901
 
 支持的协议：`ssh`、`http`、`https`、`rdp`、`vnc`、`telnet`
 
-## 可见与隐身模式
+## 可见模式（默认）
 
-隧道建立后会生成两个 URL：
-
-- **Site URL** — 应用地址（如 `https://xxxx.hk01.apps.yishield.com`）。单独使用此 URL **无法访问**，需要授权。
-- **Access URL** — 包含内嵌授权密钥的链接。拥有此 URL 的人可以直接访问服务。
-
-### 隐身模式（默认）
-
-服务**需要授权** — 仅凭 Site URL 无法访问，必须使用 Access URL。
+默认情况下，隧道处于**可见模式** — 拥有 Access URL 的人可以直接连接。隧道建立后 Access URL 会打印在终端中。
 
 ```bash
-shield rdp 10.0.0.5
 shield ssh 10.0.0.2
+shield rdp 10.0.0.5
 ```
 
-**适用场景：** 生产服务器、故障处理期间的临时访问、敏感机器。
-
-### 可见模式
-
-服务**对未授权用户开放** — 任何知道 Site URL 的人都可以直接访问。
+可以通过名称过滤指定 AC 节点：
 
 ```bash
-shield --visable ssh 10.0.0.2
-shield --visable=HK rdp 10.0.0.5
+shield --visable=HK ssh 10.0.0.2
 ```
 
-**适用场景：** 公开演示环境、团队共享开发服务器、QA 预发布环境。
+**适用场景：** 开发服务器、演示环境、预发布环境、团队协作。
 
 ## 命令参数
 
@@ -154,8 +154,7 @@ shield <protocol> [ip:port] [flags]
 参数:
   -H, --server string         API 服务器地址 (默认: https://console.yishield.com/raas)
   -p, --tunnel-port int       隧道服务器端口 (默认: 62888)
-      --visable [过滤词]      启用可见模式 (可选: AC 节点名称过滤)
-      --invisible             隐身模式，需要授权密钥
+      --visable [过滤词]      AC 节点名称过滤 (默认: 可见模式)
       --display-name string   连接器显示名称
       --site-name string      应用站点名称
       --username string       目标服务用户名 (SSH/RDP/VNC)
@@ -169,10 +168,6 @@ shield <protocol> [ip:port] [flags]
 子命令:
   clean                       清除缓存的凭证
 ```
-
-### 运行截图
-
-![Shield CLI SSH](docs/images/shieldcli-ssh-001.jpg)
 
 ### 本地 API
 
@@ -205,6 +200,54 @@ Shield CLI 运行后会在 `127.0.0.1:<port>` 上提供本地管理接口：
 - 隧道连接使用带认证的 WebSocket 传输
 - 凭证文件权限为 `0600`
 
+## 路线图
+
+### 核心功能
+
+- [x] 加密隧道 — 基于 chisel 的安全 WebSocket 传输
+- [x] 多协议支持 — SSH、HTTP、HTTPS、RDP、VNC、Telnet
+- [x] 智能默认值 — 自动识别 IP 和端口，最少输入即可启动
+- [x] 跨平台 — 原生支持 Linux、macOS、Windows（amd64/arm64）
+- [x] 包管理器分发 — Homebrew、Scoop、deb、rpm、curl/PowerShell 一键安装
+- [x] 自动凭证 — 基于机器指纹的身份标识，AES-256-GCM 加密存储
+- [x] 可见模式 — 按隧道控制访问授权策略
+- [ ] 隐身模式 — 需要通过带授权密钥的 Access URL 才能访问
+- [x] 动态隧道 — 运行时通过本地 REST API 管理隧道
+- [x] 断线自动重连 — 连接失败时指数退避重试
+- [ ] 服务端开源 — 支持私有化部署，数据和基础设施完全自主可控
+- [ ] 持久化配置 — 保存隧道配置文件，通过 `shield up` 一键重连
+- [ ] 本地 Web UI — 在 `localhost` 提供浏览器管理面板，管理隧道、查看日志和状态
+- [ ] 多隧道模式 — 单进程运行多条隧道，通过配置文件统一管理（`shield up`）
+
+### 用户体验
+
+- [x] 零配置快速启动 — `shield ssh` 即可使用，无需任何参数
+- [x] 智能地址解析 — 支持 `shield ssh`、`shield ssh 2222`、`shield ssh 10.0.0.2`、`shield ssh 10.0.0.2:2222`
+- [x] 简洁终端界面 — Banner、隧道映射、Access URL 清晰展示
+- [x] 安装后使用提示 — Homebrew 安装完成后自动显示使用示例
+- [ ] 交互式初始化向导 — 首次使用时通过 `shield init` 引导配置
+- [ ] 二维码输出 — 终端直接显示 Access URL 二维码，手机扫码即可访问
+- [ ] 连接健康监控 — 终端实时显示延迟、带宽、在线时长等指标
+- [ ] 断线自动重连并恢复会话 — 无缝恢复连接，无需重新生成 URL
+- [ ] 通知回调 — 隧道连接/断开时通过 Webhook / 企业微信 / 钉钉 / 邮件通知
+
+### 团队与企业
+
+- [ ] 团队工作空间 — 共享隧道面板、邀请成员、基于角色的访问控制
+- [ ] 审计日志 — 记录谁在什么时间访问了什么服务，支持完整会话录制
+- [ ] SSO 集成 — 通过 SAML / OIDC 登录授权 Access URL
+- [ ] 自定义域名 — 使用自有域名替代 `*.apps.yishield.com`
+- [ ] IP 白名单 — 限制 Access URL 仅允许特定 IP 或 CIDR 范围访问
+- [ ] 隧道过期策略 — 自动关闭（N 小时后）、定时访问窗口
+
+### 增值服务
+
+- [ ] 文件传输 — 通过浏览器上传/下载文件（SFTP、SCP）
+- [ ] 会话录制与回放 — 录制 RDP/VNC/SSH 会话，用于培训和审计
+- [ ] 多区域中继 — 选择不同地区的出口节点，降低延迟
+- [ ] API 网关模式 — 暴露 REST/gRPC 接口，支持限流、认证和监控
+- [ ] 移动端 App — iOS/Android 管理隧道和快速访问
+
 ## 许可证
 
-MIT
+Apache 2.0

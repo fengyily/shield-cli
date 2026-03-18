@@ -20,7 +20,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/go-%3E%3D1.21-blue?logo=go" alt="Go Version">
   <img src="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-brightgreen" alt="Platform">
-  <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
+  <img src="https://img.shields.io/badge/license-Apache%202.0-green" alt="License">
 </p>
 
 ---
@@ -100,6 +100,18 @@ shield vnc 10.0.0.10:5901
 
 Once the tunnel is established, open the **Access URL** in any browser — that's it.
 
+**Step 1:** Run `shield ssh` to create the tunnel
+
+![Shield CLI Terminal](docs/images/shieldcli-ssh-001.jpg)
+
+**Step 2:** Open the Access URL — automatic authorization redirect
+
+![Browser Authorization](docs/images/shieldcli-ssh-web-001.jpg)
+
+**Step 3:** SSH terminal in your browser — no client needed
+
+![Browser SSH Terminal](docs/images/shieldcli-ssh-web-002.jpg)
+
 ### Smart Defaults
 
 | Command | Resolves To |
@@ -117,34 +129,22 @@ Once the tunnel is established, open the **Access URL** in any browser — that'
 
 Supported protocols: `ssh`, `http`, `https`, `rdp`, `vnc`, `telnet`
 
-## Visibility Modes
+## Visible Mode (default)
 
-Shield CLI supports two access modes. When a tunnel is established, two URLs are generated:
-
-- **Site URL** — The application address (e.g., `https://xxxx.hk01.apps.yishield.com`). This URL alone is **not accessible** without authorization.
-- **Access URL** — Contains an embedded authorization key. Anyone with this URL can access the service directly.
-
-### Invisible Mode (default)
-
-The service **requires authorization** — the Site URL alone will not grant access. Users must use the Access URL.
+By default, the tunnel is in **visible mode** — anyone with the Access URL can connect directly. The Access URL is printed to the terminal after the tunnel is established.
 
 ```bash
-shield rdp 10.0.0.5
 shield ssh 10.0.0.2
+shield rdp 10.0.0.5
 ```
 
-**Use cases:** Production servers, incident response, sensitive machines.
-
-### Visible Mode
-
-The service is **open to unauthorized users** — anyone who knows the Site URL can access it.
+You can filter a specific AC node by name:
 
 ```bash
-shield --visable ssh 10.0.0.2
-shield --visable=HK rdp 10.0.0.5
+shield --visable=HK ssh 10.0.0.2
 ```
 
-**Use cases:** Public demos, shared dev servers, QA staging environments.
+**Use cases:** Development servers, demos, staging environments, team collaboration.
 
 ## Usage
 
@@ -154,8 +154,7 @@ shield <protocol> [ip:port] [flags]
 Flags:
   -H, --server string         API server URL (default: https://console.yishield.com/raas)
   -p, --tunnel-port int       Chisel tunnel server port (default: 62888)
-      --visable [filter]      Enable visible mode (optional: AC node name filter)
-      --invisible             Invisible mode with authorization key
+      --visable [filter]      AC node name filter (default: visible mode)
       --display-name string   Connector display name
       --site-name string      Application site name
       --username string       Target service username (SSH/RDP/VNC)
@@ -169,12 +168,6 @@ Flags:
 Commands:
   clean                       Clear cached credentials
 ```
-
-### Example Output
-
-<p align="center">
-  <img src="docs/images/shieldcli-ssh-001.jpg" alt="Shield CLI SSH" width="600">
-</p>
 
 ### Local API
 
@@ -208,6 +201,54 @@ Once running, Shield CLI exposes a local API on `127.0.0.1:<port>`:
 - Tunnel connections use authenticated WebSocket transport
 - Credential files are stored with `0600` permissions
 
+## Roadmap
+
+### Core
+
+- [x] Encrypted tunnel — secure WebSocket transport based on chisel
+- [x] Multi-protocol support — SSH, HTTP, HTTPS, RDP, VNC, Telnet
+- [x] Smart defaults — auto-detect IP and port per protocol, minimal input required
+- [x] Cross-platform — native binaries for Linux, macOS, Windows (amd64/arm64)
+- [x] Package manager distribution — Homebrew, Scoop, deb, rpm, curl/PowerShell one-liner
+- [x] Auto credentials — machine fingerprint-based identity with AES-256-GCM encryption
+- [x] Visible mode — control access authorization per tunnel
+- [ ] Invisible mode — require Access URL with authorization key for secure access
+- [x] Dynamic tunnels — runtime tunnel management via local REST API
+- [x] Auto-reconnect — exponential backoff retry on connection failure
+- [ ] Open-source server — self-hosted deployment, full control over data and infrastructure
+- [ ] Persistent configuration — save tunnel profiles, reconnect with `shield up`
+- [ ] Local Web UI — browser-based dashboard at `localhost` for managing tunnels, logs, and status
+- [ ] Multi-tunnel mode — run multiple tunnels in a single process (`shield up` from config file)
+
+### User Experience
+
+- [x] Zero-config quick start — `shield ssh` just works, no flags required
+- [x] Smart address parsing — supports `shield ssh`, `shield ssh 2222`, `shield ssh 10.0.0.2`, `shield ssh 10.0.0.2:2222`
+- [x] Clean terminal UI — banner, tunnel mapping, and Access URL displayed clearly
+- [x] Post-install usage hints — Homebrew caveats show examples after install
+- [ ] Interactive setup wizard — guided first-run with `shield init`
+- [ ] QR code output — scan to open Access URL on mobile devices
+- [ ] Connection health monitor — real-time latency, bandwidth, and uptime stats in terminal
+- [ ] Auto-reconnect with session resume — seamless recovery without generating new URLs
+- [ ] Notification hooks — webhook / Slack / email alerts on tunnel connect/disconnect events
+
+### Team & Enterprise
+
+- [ ] Team workspace — shared tunnel dashboard, invite members, role-based access control
+- [ ] Audit logs — who accessed what, when, with full session recording for compliance
+- [ ] SSO integration — SAML / OIDC login for Access URL authorization
+- [ ] Custom domains — use your own domain instead of `*.apps.yishield.com`
+- [ ] IP allowlist — restrict Access URL to specific source IPs or CIDR ranges
+- [ ] Tunnel expiration policies — auto-shutdown after N hours, scheduled access windows
+
+### Value-Added Services
+
+- [ ] File transfer — browser-based upload/download via tunneled services (SFTP, SCP)
+- [ ] Session recording & playback — record RDP/VNC/SSH sessions for training and audit
+- [ ] Multi-region relay — choose exit nodes in different regions for lower latency
+- [ ] API gateway mode — expose REST/gRPC APIs with rate limiting, auth, and monitoring
+- [ ] Mobile app — iOS/Android companion app for tunnel management and quick access
+
 ## License
 
-MIT
+Apache 2.0
