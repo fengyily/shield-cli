@@ -60,6 +60,25 @@ brews:
 
       Run 'shield --help' for more options.
 
+scoops:
+  - repository:
+      owner: fengyily
+      name: scoop-bucket
+    homepage: "https://github.com/fengyily/shield-cli"
+    description: "Shield CLI - Secure Tunnel Connector"
+    license: MIT
+
+nfpms:
+  - package_name: shield-cli
+    homepage: "https://github.com/fengyily/shield-cli"
+    maintainer: "fengyily <fengyily@users.noreply.github.com>"
+    description: "Shield CLI - Secure Tunnel Connector"
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+
 checksum:
   name_template: "checksums.txt"
 
