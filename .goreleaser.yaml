@@ -1,0 +1,56 @@
+project_name: shield-cli
+
+builds:
+  - main: .
+    binary: shield
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - "386"
+    goarm:
+      - "7"
+    ignore:
+      - goos: darwin
+        goarch: "386"
+      - goos: windows
+        goarch: arm
+    ldflags:
+      - -s -w
+      - -X shield-cli/cmd.Version={{.Version}}
+      - -X shield-cli/cmd.GitCommit={{.Commit}}
+      - -X shield-cli/cmd.BuildTime={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: "shield-{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+brews:
+  - repository:
+      owner: fengyily
+      name: homebrew-tap
+    homepage: "https://github.com/fengyily/sheild-cli"
+    description: "Shield CLI - Secure Tunnel Connector"
+    license: "MIT"
+    install: |
+      bin.install "shield"
+    test: |
+      system "#{bin}/shield", "--help"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"

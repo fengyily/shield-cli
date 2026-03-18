@@ -1,4 +1,4 @@
-name: Build & Release
+name: Release
 
 on:
   push:
@@ -15,103 +15,28 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build ${{ matrix.os }}/${{ matrix.arch }}
+  release:
+    name: GoReleaser
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          # Linux
-          - { goos: linux,   goarch: amd64,   os: linux,   arch: amd64,   ext: "" }
-          - { goos: linux,   goarch: arm64,   os: linux,   arch: arm64,   ext: "" }
-          - { goos: linux,   goarch: "386",   os: linux,   arch: "386",   ext: "" }
-          - { goos: linux,   goarch: arm,     os: linux,   arch: armv7,   ext: "", goarm: "7" }
-          # macOS
-          - { goos: darwin,  goarch: amd64,   os: darwin,  arch: amd64,   ext: "" }
-          - { goos: darwin,  goarch: arm64,   os: darwin,  arch: arm64,   ext: "" }
-          # Windows
-          - { goos: windows, goarch: amd64,   os: windows, arch: amd64,   ext: ".exe" }
-          - { goos: windows, goarch: arm64,   os: windows, arch: arm64,   ext: ".exe" }
-          - { goos: windows, goarch: "386",   os: windows, arch: "386",   ext: ".exe" }
-
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.25"
 
-      - name: Resolve version tag
-        id: version
+      - name: Create tag for workflow_dispatch
+        if: github.event_name == 'workflow_dispatch'
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          fi
+          git tag ${{ inputs.tag }}
 
-      - name: Build binary
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          args: release --clean
         env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-          GOARM: ${{ matrix.goarm }}
-          CGO_ENABLED: "0"
-        run: |
-          VERSION="${{ steps.version.outputs.tag }}"
-          COMMIT="${{ github.sha }}"
-          BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          LDFLAGS="-s -w -X shield-cli/cmd.Version=${VERSION} -X shield-cli/cmd.GitCommit=${COMMIT} -X shield-cli/cmd.BuildTime=${BUILD_TIME}"
-
-          BINARY_NAME="shield-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}"
-          go build -trimpath -ldflags "${LDFLAGS}" -o "${BINARY_NAME}" .
-
-          # Create archive
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            zip "${BINARY_NAME%.exe}.zip" "${BINARY_NAME}"
-          else
-            tar czf "${BINARY_NAME}.tar.gz" "${BINARY_NAME}"
-          fi
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: shield-${{ matrix.os }}-${{ matrix.arch }}
-          path: |
-            shield-*.tar.gz
-            shield-*.zip
-
-  release:
-    name: Create Release
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-          merge-multiple: true
-
-      - name: Resolve version tag
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Generate checksums
-        working-directory: dist
-        run: sha256sum shield-* > checksums.txt
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: Shield CLI ${{ steps.version.outputs.tag }}
-          generate_release_notes: true
-          files: |
-            dist/shield-*.tar.gz
-            dist/shield-*.zip
-            dist/checksums.txt
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
