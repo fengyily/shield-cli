@@ -136,6 +136,40 @@ func muteStderr() func() {
 }
 
 func runShield(cmd *cobra.Command, args []string) error {
+	// Resolve protocol and target from positional args or flags
+	// Usage: shield <protocol> [ip:port]  OR  shield -t <protocol> -s <ip:port>
+	if len(args) >= 2 {
+		protocol = strings.ToLower(args[0])
+		target = args[1]
+	} else if len(args) == 1 {
+		if isValidProtocol(args[0]) {
+			protocol = strings.ToLower(args[0])
+		} else {
+			target = args[0]
+		}
+	}
+
+	if protocol == "" {
+		return fmt.Errorf("protocol is required\n\nUsage: shield <protocol> [ip:port]\n\nSupported protocols: %s", strings.Join(validProtocols, ", "))
+	}
+	protocol = strings.ToLower(protocol)
+	if !isValidProtocol(protocol) {
+		return fmt.Errorf("unsupported protocol %q\n\nSupported protocols: %s", protocol, strings.Join(validProtocols, ", "))
+	}
+
+	// Apply defaults: ip defaults to 127.0.0.1, port defaults to protocol standard port
+	defaultPort := defaultPorts[protocol]
+	if target == "" {
+		// No target at all: shield ssh => 127.0.0.1:22
+		target = fmt.Sprintf("127.0.0.1:%d", defaultPort)
+	} else if !strings.Contains(target, ":") && !strings.Contains(target, ".") {
+		// Pure number: shield ssh 2222 => 127.0.0.1:2222
+		target = fmt.Sprintf("127.0.0.1:%s", target)
+	} else if !strings.Contains(target, ":") {
+		// Only IP: shield ssh 10.0.0.2 => 10.0.0.2:22
+		target = fmt.Sprintf("%s:%d", target, defaultPort)
+	}
+
 	// === Phase 1: Silent setup — suppress ALL output including chisel ===
 	restoreStderr := muteStderr()
 	log.SetOutput(io.Discard)

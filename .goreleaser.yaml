@@ -44,6 +44,21 @@ brews:
       bin.install "shield"
     test: |
       system "#{bin}/shield", "--help"
+    caveats: |
+      Usage:
+        shield <protocol> [ip:port]
+
+      Examples:
+        shield ssh                  # 127.0.0.1:22
+        shield ssh 2222             # 127.0.0.1:2222
+        shield ssh 10.0.0.2        # 10.0.0.2:22
+        shield ssh 10.0.0.2:2222   # 10.0.0.2:2222
+        shield http 3000            # 127.0.0.1:3000
+        shield rdp 192.168.1.100   # 192.168.1.100:3389
+
+      Supported protocols: ssh, http, https, rdp, vnc, telnet
+
+      Run 'shield --help' for more options.
 
 checksum:
   name_template: "checksums.txt"
