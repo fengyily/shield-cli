@@ -5,14 +5,14 @@
 <h1 align="center">Shield CLI</h1>
 
 <p align="center">
-  <strong>Browser-Based Secure Tunnel for RDP, VNC, SSH & More</strong><br>
-  Access internal RDP desktops, VNC sessions, SSH terminals, and web services directly from a browser — no client software required.
+  <strong>One command. One URL. Access anything from a browser.</strong><br>
+  Shield CLI creates encrypted tunnels to your internal services — RDP desktops, VNC sessions, SSH terminals, web apps — and makes them accessible through any browser. No VPN. No client software. No port forwarding.
 </p>
 
 <p align="center">
   <a href="#installation">Installation</a> &bull;
   <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#visibility-modes">Visibility Modes</a> &bull;
+  <a href="#how-it-works">How It Works</a> &bull;
   <a href="#usage">Usage</a> &bull;
   <a href="README_CN.md">中文文档</a>
 </p>
@@ -25,13 +25,24 @@
 
 ---
 
-## Why Shield CLI?
+## The Problem
 
-Traditional remote access requires installing dedicated clients (RDP client, VNC viewer, SSH terminal) on every device. Shield CLI eliminates this by tunneling internal services through a secure gateway that renders everything **in the browser**.
+Remote access today is painful. Want to reach an internal RDP desktop? Install a client. SSH into a server? Find a terminal app. Show a colleague your local web app? Set up port forwarding. Every protocol needs its own tool, every device needs its own setup.
 
-- **No client installation** — Open a URL in any browser to access RDP desktops, VNC screens, or SSH terminals
-- **Works anywhere** — Access from phones, tablets, locked-down corporate machines, or any device with a browser
-- **One binary** — A single `shield` command exposes any internal service to the web
+## The Solution
+
+Shield CLI replaces all of that with a single command:
+
+```bash
+shield ssh 10.0.0.2
+```
+
+That's it. You get a URL. Open it in any browser — phone, tablet, laptop, locked-down corporate machine — and you're connected. A full SSH terminal, RDP desktop, or VNC session, rendered in HTML5, right in the browser.
+
+- **Zero client install** — if it has a browser, it works
+- **Zero config** — protocol and address is all you need, everything else is automatic
+- **One binary, all protocols** — SSH, RDP, VNC, HTTP, HTTPS, Telnet
+- **Encrypted by default** — WebSocket tunnels with AES-256-GCM credential encryption
 
 ## Installation
 

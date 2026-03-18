@@ -1,40 +1,68 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#6366f1;stop-opacity:1" />
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0ea5e9" />
+      <stop offset="100%" style="stop-color:#6366f1" />
     </linearGradient>
-    <linearGradient id="lockGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.95" />
-      <stop offset="100%" style="stop-color:#e0e7ff;stop-opacity:0.9" />
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e0e7ff;stop-opacity:0.95" />
     </linearGradient>
   </defs>
-  <!-- Shadow -->
-  <path d="M256 490c-8 0-15-3-20-8C152 410 68 330 68 222V108c0-12 8-23 20-26l160-48c5-2 11-2 16 0l160 48c12 3 20 14 20 26v114c0 108-84 188-168 260-5 5-12 8-20 8z" fill="#000" opacity="0.1" transform="translate(4,4)"/>
-  <!-- Shield body -->
-  <path d="M256 486c-8 0-15-3-20-8C152 406 68 326 68 218V104c0-12 8-23 20-26l160-48c5-2 11-2 16 0l160 48c12 3 20 14 20 26v114c0 108-84 188-168 260-5 5-12 8-20 8z" fill="url(#shieldGrad)"/>
-  <!-- Shield highlight -->
-  <path d="M256 50l160 48v120c0 100-80 180-160 250V50z" fill="#ffffff" opacity="0.08"/>
-  <!-- Tunnel icon (two connected circles with line) -->
-  <g transform="translate(256,240)">
-    <!-- Lock body -->
-    <rect x="-45" y="-10" width="90" height="70" rx="12" fill="url(#lockGrad)"/>
-    <!-- Lock shackle -->
-    <path d="M-25-10 v-25 a25,25 0 0,1 50,0 v25" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
-    <!-- Keyhole -->
-    <circle cx="0" cy="25" r="12" fill="url(#shieldGrad)"/>
-    <rect x="-4" y="25" width="8" height="18" rx="3" fill="url(#shieldGrad)"/>
+
+  <!-- Rounded square background -->
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#bg)"/>
+  <path d="M128 32h256a96 96 0 0 1 96 96v40C400 120 300 100 200 110S60 140 32 160v-32A96 96 0 0 1 128 32z" fill="#fff" opacity="0.08"/>
+
+  <!-- Tunnel path flowing through the text area -->
+  <!-- Entry node on the left -->
+  <circle cx="80" cy="256" r="10" fill="#fff" opacity="0.7"/>
+  <!-- Connection line left -->
+  <line x1="90" y1="256" x2="120" y2="256" stroke="#fff" stroke-width="3" opacity="0.5" stroke-dasharray="6,4"/>
+
+  <!-- SHIELD text - the core design element -->
+  <text x="256" y="275" text-anchor="middle"
+        font-family="'SF Pro Display', -apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="96" font-weight="800" letter-spacing="8"
+        fill="url(#textGrad)">
+    SHIELD
+  </text>
+
+  <!-- Subtle tunnel glow behind text -->
+  <rect x="110" y="220" width="292" height="72" rx="36" fill="#fff" opacity="0.08"/>
+
+  <!-- Connection line right -->
+  <line x1="392" y1="256" x2="418" y2="256" stroke="#fff" stroke-width="3" opacity="0.5" stroke-dasharray="6,4"/>
+  <!-- Exit node with arrow on the right -->
+  <circle cx="432" cy="256" r="10" fill="#fff" opacity="0.7"/>
+  <polygon points="446,256 436,248 436,264" fill="#fff" opacity="0.7"/>
+
+  <!-- Decorative: five protocol dots below -->
+  <g opacity="0.6">
+    <circle cx="163" cy="340" r="6" fill="#fff"/>
+    <circle cx="210" cy="340" r="6" fill="#fff"/>
+    <circle cx="256" cy="340" r="6" fill="#fff"/>
+    <circle cx="302" cy="340" r="6" fill="#fff"/>
+    <circle cx="349" cy="340" r="6" fill="#fff"/>
+    <!-- Tiny labels -->
+    <text x="163" y="368" text-anchor="middle" font-family="monospace" font-size="11" fill="#fff" opacity="0.8">SSH</text>
+    <text x="210" y="368" text-anchor="middle" font-family="monospace" font-size="11" fill="#fff" opacity="0.8">RDP</text>
+    <text x="256" y="368" text-anchor="middle" font-family="monospace" font-size="11" fill="#fff" opacity="0.8">VNC</text>
+    <text x="302" y="368" text-anchor="middle" font-family="monospace" font-size="11" fill="#fff" opacity="0.8">HTTP</text>
+    <text x="349" y="368" text-anchor="middle" font-family="monospace" font-size="10" fill="#fff" opacity="0.8">HTTPS</text>
+    <!-- Lines connecting to main text -->
+    <line x1="163" y1="334" x2="163" y2="300" stroke="#fff" stroke-width="1.5" opacity="0.3"/>
+    <line x1="210" y1="334" x2="210" y2="300" stroke="#fff" stroke-width="1.5" opacity="0.3"/>
+    <line x1="256" y1="334" x2="256" y2="300" stroke="#fff" stroke-width="1.5" opacity="0.3"/>
+    <line x1="302" y1="334" x2="302" y2="300" stroke="#fff" stroke-width="1.5" opacity="0.3"/>
+    <line x1="349" y1="334" x2="349" y2="300" stroke="#fff" stroke-width="1.5" opacity="0.3"/>
   </g>
-  <!-- Connection arrows -->
-  <g opacity="0.85">
-    <!-- Left arrow -->
-    <line x1="120" y1="350" x2="180" y2="320" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
-    <polygon points="180,320 168,330 172,316" fill="#fff"/>
-    <!-- Right arrow -->
-    <line x1="392" y1="350" x2="332" y2="320" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
-    <polygon points="332,320 344,330 340,316" fill="#fff"/>
-    <!-- Bottom dots -->
-    <circle cx="110" cy="358" r="6" fill="#fff" opacity="0.7"/>
-    <circle cx="402" cy="358" r="6" fill="#fff" opacity="0.7"/>
-  </g>
+
+  <!-- Top tagline -->
+  <text x="256" y="190" text-anchor="middle"
+        font-family="'SF Pro Display', -apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="16" font-weight="500" letter-spacing="4"
+        fill="#fff" opacity="0.5">
+    BROWSER ACCESS
+  </text>
 </svg>
