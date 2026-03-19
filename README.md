@@ -72,6 +72,20 @@ irm https://raw.githubusercontent.com/fengyily/shield-cli/main/install.ps1 | iex
 curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh | sh
 ```
 
+### China Mirror
+
+If `raw.githubusercontent.com` is slow or blocked, use jsDelivr CDN:
+
+```powershell
+# Windows
+irm https://cdn.jsdelivr.net/gh/fengyily/shield-cli@main/install.ps1 | iex
+```
+
+```bash
+# Linux / macOS
+curl -fsSL https://cdn.jsdelivr.net/gh/fengyily/shield-cli@main/install.sh | sh
+```
+
 ### Debian / Ubuntu (.deb)
 
 ```bash
