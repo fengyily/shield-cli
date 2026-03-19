@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -10,7 +11,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -135,6 +138,55 @@ func muteStderr() func() {
 	}
 }
 
+// openBrowser opens the given URL in the default browser.
+func openBrowser(url string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "darwin":
+		cmd = exec.Command("open", url)
+	case "windows":
+		cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+	default: // linux, freebsd, etc.
+		cmd = exec.Command("xdg-open", url)
+	}
+	cmd.Start()
+}
+
+// promptCredentials interactively asks the user for username and password.
+// User can press Enter to skip. Password input is hidden.
+func promptCredentials() {
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Println()
+	fmt.Println("  \033[1;36m🔐 Set login credentials (press Enter to skip)\033[0m")
+	fmt.Println()
+
+	fmt.Print("  Username: ")
+	username, _ := reader.ReadString('\n')
+	username = strings.TrimSpace(username)
+
+	if username != "" {
+		authUser = username
+
+		fmt.Print("  Password: ")
+		// Read password with hidden input
+		pwBytes, err := term.ReadPassword(int(syscall.Stdin))
+		fmt.Println() // newline after hidden input
+		if err == nil {
+			pw := strings.TrimSpace(string(pwBytes))
+			if pw != "" {
+				authPass = pw
+			}
+		}
+
+		fmt.Println()
+		fmt.Printf("  \033[32m✓ Credentials set for user: %s\033[0m\n", authUser)
+	} else {
+		fmt.Println("  \033[90m⏭ Skipped — you can set credentials later via --username / --auth-pass\033[0m")
+	}
+	fmt.Println()
+}
+
 func runShield(cmd *cobra.Command, args []string) error {
 	// Resolve protocol and target from positional args or flags
 	// Usage: shield <protocol> [ip:port]  OR  shield -t <protocol> -s <ip:port>
@@ -170,6 +222,11 @@ func runShield(cmd *cobra.Command, args []string) error {
 		target = fmt.Sprintf("%s:%d", target, defaultPort)
 	}
 
+	// For ssh/rdp/vnc: prompt for credentials if not provided via flags
+	if (protocol == "ssh" || protocol == "rdp" || protocol == "vnc") && authUser == "" && authPass == "" {
+		promptCredentials()
+	}
+
 	// === Phase 1: Silent setup — suppress ALL output including chisel ===
 	restoreStderr := muteStderr()
 	log.SetOutput(io.Discard)
@@ -200,23 +257,31 @@ func runShield(cmd *cobra.Command, args []string) error {
 
 	// Call quick-setup API, auto-reset on auth failure, retry on transient errors
 	var resp *QuickSetupResponse
-	for attempt := 1; attempt <= 3; attempt++ {
+	maxAttempts := 5
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		resp, err = callQuickSetup(ip, port, creds)
 		if err == nil {
 			break
 		}
-		// Auth failure: reset credentials and retry once
-		if strings.Contains(err.Error(), "401") && creds.Password != "" {
+		errMsg := err.Error()
+		// Auth failure: reset credentials and retry
+		if strings.Contains(errMsg, "401") && creds.Password != "" {
 			os.Remove(config.GetCredentialFilePath())
 			creds, _ = config.GetOrCreateCredentials()
 			continue
 		}
+		// Rate limited: wait longer and retry
+		if strings.Contains(errMsg, "429") {
+			if attempt < maxAttempts {
+				time.Sleep(time.Duration(attempt*3) * time.Second)
+				continue
+			}
+		}
 		// Transient error (EOF, timeout, connection refused): retry
-		errMsg := err.Error()
 		if strings.Contains(errMsg, "EOF") ||
 			strings.Contains(errMsg, "timeout") ||
 			strings.Contains(errMsg, "connection refused") {
-			if attempt < 3 {
+			if attempt < maxAttempts {
 				time.Sleep(time.Duration(attempt) * time.Second)
 				continue
 			}
@@ -231,19 +296,37 @@ func runShield(cmd *cobra.Command, args []string) error {
 		os.Exit(1)
 	}
 
-	// Save credentials from response
+	// Save credentials from response (including connector info for shield start reuse)
 	newCreds := &config.Credentials{
 		ConnectorName: resp.Data.Connector.Username,
 		Password:      resp.Data.Connector.Password,
+		ExternalIP:    resp.Data.Connector.ExternalIP,
+		APIPort:       resp.Data.Connector.APIPort,
+		TunnelPort:    tunnelPort,
+		ConnUsername:   resp.Data.Connector.Username,
+		ConnPassword:   resp.Data.Connector.Password,
 	}
-	newCreds.EncryptAndSave(config.GetCredentialFilePath())
 
-	// Find available local port
-	localPort, err := findAvailablePort(4000, 5000)
-	if err != nil {
-		restoreStderr()
-		return fmt.Errorf("failed to find available port: %w", err)
+	// Reuse saved local port or find a new one
+	localPort := creds.LocalPort
+	if localPort > 0 {
+		if ln, lnErr := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", localPort)); lnErr != nil {
+			localPort = 0 // port occupied, find a new one
+		} else {
+			ln.Close()
+		}
 	}
+	if localPort == 0 {
+		localPort, err = findAvailablePort(4000, 5000)
+		if err != nil {
+			restoreStderr()
+			return fmt.Errorf("failed to find available port: %w", err)
+		}
+	}
+
+	// Persist local port in credentials
+	newCreds.LocalPort = localPort
+	newCreds.EncryptAndSave(config.GetCredentialFilePath())
 
 	// Create tunnel manager
 	connInfo := tunnel.ConnectionInfo{
@@ -275,7 +358,7 @@ func runShield(cmd *cobra.Command, args []string) error {
 
 	PrintBanner()
 	headerLines := 11 // banner takes ~11 lines
-	headerLines += printHeader(resp, resource.Port, ip, port)
+	headerLines += printHeader(resp, resource.Port, ip, port, localPort)
 
 	// === Phase 3: Set scroll region and enable logs ===
 	termHeight := getTermHeight()
@@ -292,6 +375,11 @@ func runShield(cmd *cobra.Command, args []string) error {
 
 	fmt.Println("  \033[1;32m✓ Tunnel established successfully!\033[0m")
 	fmt.Println()
+
+	// In visible mode, auto-open the access URL in the browser
+	if !invisible && siteURL != "" {
+		openBrowser(siteURL)
+	}
 
 	// Start local API server
 	go startLocalAPI(localPort, mgr, connInfo)
@@ -477,7 +565,7 @@ func getTermHeight() int {
 }
 
 // printHeader draws the fixed header area and returns the number of lines used.
-func printHeader(resp *QuickSetupResponse, resourcePort int, targetIP string, targetPort int) int {
+func printHeader(resp *QuickSetupResponse, resourcePort int, targetIP string, targetPort int, localPort int) int {
 	lines := 0
 
 	p := func(format string, a ...any) {
@@ -489,6 +577,7 @@ func printHeader(resp *QuickSetupResponse, resourcePort int, targetIP string, ta
 	p("  \033[1;32m✓ Tunnel established successfully!\033[0m")
 	p("")
 	p("  \033[1;33m⚡ Tunnel Mapping\033[0m")
+	p("    \033[36mAPI Tunnel:\033[0m   remote:%d  ←→  localhost:%d", resp.Data.Connector.APIPort, localPort)
 	p("    \033[36mApp Tunnel:\033[0m   remote:%d  ←→  %s:%d", resourcePort, targetIP, targetPort)
 	p("    \033[36mServer:\033[0m       %s:%d", resp.Data.Connector.ExternalIP, tunnelPort)
 	p("")

@@ -18,6 +18,18 @@ import (
 type Credentials struct {
 	ConnectorName string `json:"connector_name"`
 	Password      string `json:"password"`
+	LocalPort     int    `json:"local_port,omitempty"`
+	// Connector tunnel info (from last successful quick-setup response)
+	ExternalIP   string `json:"external_ip,omitempty"`
+	APIPort      int    `json:"api_port,omitempty"`
+	TunnelPort   int    `json:"tunnel_port,omitempty"`
+	ConnUsername string `json:"conn_username,omitempty"`
+	ConnPassword string `json:"conn_password,omitempty"`
+}
+
+// HasConnectorInfo returns true if connector tunnel info is available
+func (c *Credentials) HasConnectorInfo() bool {
+	return c.ExternalIP != "" && c.APIPort > 0 && c.TunnelPort > 0 && c.ConnUsername != "" && c.ConnPassword != ""
 }
 
 // GetCredentialFilePath returns the path to the credential file

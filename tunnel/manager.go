@@ -105,19 +105,12 @@ func (m *Manager) CreateMainTunnel(remotePort, localPort int, extraRemotes ...st
 			return
 		}
 
-		m.mu.Lock()
-		if e, ok := m.tunnels["main"]; ok && e == entry {
-			e.Status = StatusConnected
-			slog.Info("Main tunnel connected", "remotes", cfg.Remotes)
-		}
-		m.mu.Unlock()
-
 		if err := client.Wait(); err != nil {
 			slog.Error("Main tunnel wait error", "error", err)
 		}
 	}()
 
-	slog.Info("Main tunnel established",
+	slog.Info("Main tunnel establishing",
 		"remotes", remotes,
 		"server", cfg.Server,
 	)
@@ -181,22 +174,24 @@ func (m *Manager) CreateDynamicTunnel(rport, lip, lport string) error {
 			return
 		}
 
-		m.mu.Lock()
-		if e, ok := m.tunnels[rport]; ok && e == entry {
-			e.Status = StatusConnected
-			slog.Info("Dynamic tunnel connected", "rport", rport, "lip", lip, "lport", lport)
-		}
-		m.mu.Unlock()
-
 		if err := client.Wait(); err != nil {
 			slog.Error("Dynamic tunnel wait error", "rport", rport, "error", err)
 		}
 	}()
 
-	slog.Info("Dynamic tunnel established",
+	slog.Info("Dynamic tunnel establishing",
 		"remote", fmt.Sprintf("R:127.0.0.1:%s:%s:%s", rport, lip, lport),
 	)
 	return nil
+}
+
+// SetConnected marks a tunnel as connected by key
+func (m *Manager) SetConnected(key string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if e, ok := m.tunnels[key]; ok {
+		e.Status = StatusConnected
+	}
 }
 
 // closeEntryLocked closes an entry (must be called with lock held)

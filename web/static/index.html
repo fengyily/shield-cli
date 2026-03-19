@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shield CLI - Web Management</title>
+<style>
+/* ── Theme variables ── */
+:root, [data-theme="light"] {
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface2: #f0f1f5;
+  --border: #e2e4eb;
+  --text: #1a1d2e;
+  --text2: #6b7085;
+  --text3: #9da2b8;
+  --accent: #5b68db;
+  --accent-hover: #4a57cc;
+  --accent-bg: rgba(91,104,219,0.08);
+  --green: #22c55e;
+  --green-bg: rgba(34,197,94,0.1);
+  --green-border: rgba(34,197,94,0.25);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.08);
+  --red-border: rgba(239,68,68,0.2);
+  --orange: #f59e0b;
+  --radius: 12px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --overlay: rgba(0,0,0,0.3);
+}
+[data-theme="dark"] {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #242736;
+  --border: #2e3146;
+  --text: #e4e6f0;
+  --text2: #8b8fa3;
+  --text3: #5a5e72;
+  --accent: #6c7aed;
+  --accent-hover: #7b88f5;
+  --accent-bg: rgba(108,122,237,0.12);
+  --green: #4ade80;
+  --green-bg: rgba(74,222,128,0.12);
+  --green-border: rgba(74,222,128,0.3);
+  --red: #f87171;
+  --red-bg: rgba(248,113,113,0.1);
+  --red-border: rgba(248,113,113,0.3);
+  --orange: #fb923c;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+  --overlay: rgba(0,0,0,0.6);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden;
+}
+.header-logo {
+  width: 36px;
+  height: 36px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.header .subtitle {
+  color: var(--text2);
+  font-size: 12px;
+  margin-top: 1px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Icon buttons (theme, view toggle) ── */
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text2);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.icon-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+.icon-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+/* ── Buttons ── */
+.btn {
+  padding: 9px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(91,104,219,0.3);
+}
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 4px 14px rgba(91,104,219,0.4);
+}
+.btn-primary .btn-icon {
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 300;
+}
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+.btn-connect {
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid var(--green-border);
+}
+.btn-connect:hover { background: rgba(34,197,94,0.2); }
+.btn-disconnect {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid var(--red-border);
+}
+.btn-disconnect:hover { background: rgba(239,68,68,0.16); }
+.btn-edit {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid rgba(91,104,219,0.2);
+}
+.btn-edit:hover { background: rgba(91,104,219,0.16); }
+.btn-delete {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid var(--red-border);
+}
+.btn-delete:hover { background: rgba(239,68,68,0.16); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text2);
+  border: none;
+  padding: 9px 20px;
+}
+.btn-ghost:hover { color: var(--text); background: var(--surface2); }
+
+/* ── Container ── */
+.container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 24px;
+}
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.toolbar-info {
+  font-size: 13px;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.toolbar-info .count-badge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.toolbar-views {
+  display: flex;
+  gap: 4px;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 3px;
+}
+.view-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.view-btn:hover { color: var(--text); }
+.view-btn.active {
+  background: var(--surface);
+  color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+.view-btn svg { width: 16px; height: 16px; }
+
+/* ── App list (list view) ── */
+.app-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── App grid (card view) ── */
+.app-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+/* ── App card (shared) ── */
+.app-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+.app-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── List view card layout ── */
+.app-list .app-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.app-list .app-card-body {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 10px;
+}
+
+/* ── Grid view card layout ── */
+.app-grid .app-card { min-height: 180px; }
+.app-grid .app-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.app-grid .app-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.app-grid .app-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Protocol icon ── */
+.proto-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.proto-icon.ssh    { background: #ecfdf5; color: #059669; }
+.proto-icon.http   { background: #eff6ff; color: #2563eb; }
+.proto-icon.https  { background: #f0fdf4; color: #16a34a; }
+.proto-icon.rdp    { background: #fef3c7; color: #d97706; }
+.proto-icon.vnc    { background: #fce7f3; color: #db2777; }
+.proto-icon.telnet { background: #f3e8ff; color: #7c3aed; }
+[data-theme="dark"] .proto-icon.ssh    { background: rgba(5,150,105,0.15); }
+[data-theme="dark"] .proto-icon.http   { background: rgba(37,99,235,0.15); }
+[data-theme="dark"] .proto-icon.https  { background: rgba(22,163,106,0.15); }
+[data-theme="dark"] .proto-icon.rdp    { background: rgba(217,119,6,0.15); }
+[data-theme="dark"] .proto-icon.vnc    { background: rgba(219,39,119,0.15); }
+[data-theme="dark"] .proto-icon.telnet { background: rgba(124,58,237,0.15); }
+
+.proto-icon svg { width: 20px; height: 20px; }
+
+.app-name-group {
+  min-width: 0;
+  flex: 1;
+}
+.app-name {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.protocol-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text2);
+  letter-spacing: 0.5px;
+}
+
+/* ── Inline editable name ── */
+.app-name-text {
+  cursor: text;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+  min-width: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-name-text:hover {
+  border-color: var(--border);
+  background: var(--surface2);
+}
+.app-name-input {
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 2px 6px;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(91,104,219,0.12);
+  min-width: 80px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.status-badge.idle { background: var(--surface2); color: var(--text2); }
+.status-badge.connected { background: var(--green-bg); color: var(--green); }
+.status-badge.connecting { background: rgba(245,158,11,0.1); color: var(--orange); }
+.status-badge.failed { background: var(--red-bg); color: var(--red); }
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  background: currentColor;
+}
+.status-badge.connected .status-dot { box-shadow: 0 0 6px var(--green); }
+.status-badge.connecting .status-dot { animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.app-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text3);
+  flex-wrap: wrap;
+}
+.app-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.app-detail {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text2);
+  flex-wrap: wrap;
+}
+.app-detail span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.app-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text2);
+}
+.empty-state .empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+.empty-state p {
+  font-size: 15px;
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+/* ── Modal ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 520px;
+  max-height: 85vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+}
+.modal::-webkit-scrollbar { width: 4px; }
+.modal::-webkit-scrollbar-track { background: transparent; margin: 8px 0; }
+.modal::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.modal::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+[data-theme="dark"] .modal {
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+.modal h2 {
+  font-size: 18px;
+  margin-bottom: 22px;
+  font-weight: 700;
+}
+.form-group {
+  margin-bottom: 16px;
+}
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(91,104,219,0.12);
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.form-group .hint {
+  font-size: 11px;
+  color: var(--text2);
+  margin-top: 4px;
+}
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.form-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+.form-section {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 20px 0 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.advance-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 20px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.advance-toggle:hover { color: var(--text); }
+.advance-toggle .arrow {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-size: 11px;
+}
+.advance-toggle.open .arrow { transform: rotate(90deg); }
+.advance-body {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.35s ease;
+  padding-top: 0;
+}
+.advance-body.open {
+  max-height: 600px;
+  opacity: 1;
+  padding-top: 4px;
+}
+.advance-tag {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 6px;
+  background: var(--accent-bg);
+  padding: 1px 8px;
+  border-radius: 4px;
+}
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  z-index: 200;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s;
+  box-shadow: var(--shadow-md);
+  max-width: 400px;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { border-color: var(--red); color: var(--red); }
+.toast.success { border-color: var(--green); color: var(--green); }
+.toast.warning { border-color: var(--orange); color: var(--orange); }
+
+/* ── Connection status row (fixed height placeholder) ── */
+.conn-row {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  border-radius: 8px;
+  padding: 0 10px;
+  background: var(--surface2);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.conn-row.idle {
+  color: var(--text3);
+}
+.conn-row.connecting {
+  color: var(--orange);
+}
+.conn-row.connecting .conn-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--orange);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.conn-row.connected {
+  color: var(--green);
+  background: var(--green-bg);
+}
+.conn-row.failed {
+  color: var(--red);
+  background: var(--red-bg);
+}
+.conn-row a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.conn-row a:hover { text-decoration: underline; }
+.conn-row svg { width: 12px; height: 12px; flex-shrink: 0; }
+.conn-row .conn-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.conn-row .copy-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: all 0.15s;
+}
+.conn-row .copy-btn:hover { color: var(--accent); background: var(--accent-bg); }
+.conn-row .copy-btn.copied { color: var(--green); }
+
+/* ── Confirm dialog ── */
+.confirm-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: 150;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.confirm-overlay.active { display: flex; }
+.confirm-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  text-align: center;
+}
+[data-theme="dark"] .confirm-dialog { box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+.confirm-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--red-bg);
+  color: var(--red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 22px;
+}
+.confirm-dialog h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.confirm-dialog p {
+  font-size: 13px;
+  color: var(--text2);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.confirm-dialog p strong {
+  color: var(--text);
+}
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.confirm-actions .btn { min-width: 100px; }
+.btn-danger {
+  background: var(--red);
+  color: #fff;
+  border: none;
+}
+.btn-danger:hover { background: #dc2626; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .header { padding: 14px 16px; }
+  .container { padding: 20px 16px; }
+  .app-list .app-card-header { flex-direction: column; align-items: flex-start; }
+  .app-actions { width: 100%; justify-content: flex-start; margin-top: 8px; }
+  .form-row { grid-template-columns: 1fr; }
+  .modal { width: calc(100% - 32px); padding: 20px; }
+  .app-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-logo">S</div>
+    <div>
+      <h1>Shield CLI</h1>
+      <div class="subtitle">Web Management</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="icon-btn" onclick="toggleTheme()" id="themeBtn" title="Toggle theme">&#9788;</button>
+    <button class="btn btn-primary" onclick="openAddModal()">
+      <span class="btn-icon">+</span> Add Application
+    </button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="toolbar" id="toolbar" style="display:none">
+    <div class="toolbar-info">
+      <span id="appCount"></span>
+      <span id="connCount"></span>
+    </div>
+    <div class="toolbar-views">
+      <button class="view-btn" id="viewGrid" onclick="setView('grid')" title="Card view">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+      </button>
+      <button class="view-btn" id="viewList" onclick="setView('list')" title="List view">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="1" y1="3" x2="15" y2="3"/><line x1="1" y1="8" x2="15" y2="8"/><line x1="1" y1="13" x2="15" y2="13"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="appContainer"></div>
+
+  <div id="emptyState" class="empty-state" style="display:none">
+    <div class="empty-icon"><img src="/logo.svg" alt="Shield" width="48" height="48"></div>
+    <p>No applications yet.<br>Add one to get started.</p>
+    <button class="btn btn-primary" onclick="openAddModal()">
+      <span class="btn-icon">+</span> Add Application
+    </button>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Add App</h2>
+    <form id="appForm" onsubmit="return saveApp(event)">
+      <input type="hidden" id="editId">
+      <input type="hidden" id="fName">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Protocol *</label>
+          <select id="fProtocol" onchange="onProtocolChange()" required>
+            <option value="ssh">SSH</option>
+            <option value="http">HTTP</option>
+            <option value="https">HTTPS</option>
+            <option value="rdp">RDP</option>
+            <option value="vnc">VNC</option>
+            <option value="telnet">Telnet</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Target IP</label>
+          <input type="text" id="fIP" placeholder="127.0.0.1" value="127.0.0.1">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Port</label>
+        <input type="number" id="fPort" placeholder="22">
+        <div class="hint">Leave empty for protocol default</div>
+      </div>
+
+      <!-- Advanced section -->
+      <div class="advance-toggle" id="advanceToggle" onclick="toggleAdvance()">
+        <span class="arrow">&#9654;</span> Advanced<span class="advance-tag" id="advanceTag" style="display:none">configured</span>
+      </div>
+      <div class="advance-body" id="advanceBody">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tunnel Port</label>
+            <input type="number" id="fTunnelPort" placeholder="62888" value="62888">
+          </div>
+          <div class="form-group">
+            <label>API Server</label>
+            <input type="text" id="fServer" placeholder="https://console.yishield.com/raas">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Display Name</label>
+            <input type="text" id="fDisplayName" placeholder="Optional">
+          </div>
+          <div class="form-group">
+            <label>Site Name</label>
+            <input type="text" id="fSiteName" placeholder="Optional">
+          </div>
+        </div>
+
+        <div id="authSection">
+          <div class="form-section">Authentication</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="fUsername" placeholder="Optional">
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="fAuthPass" placeholder="Optional">
+            </div>
+          </div>
+        </div>
+
+        <div id="sshSection" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Private Key</label>
+              <input type="text" id="fPrivateKey" placeholder="Path to private key">
+            </div>
+            <div class="form-group">
+              <label>Passphrase</label>
+              <input type="password" id="fPassphrase" placeholder="Key passphrase">
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-check">
+              <input type="checkbox" id="fEnableSftp">
+              <label for="fEnableSftp" style="margin:0; color:var(--text)">Enable SFTP</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">Visibility</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>AC Node Filter</label>
+            <input type="text" id="fVisable" placeholder="visable" value="visable">
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:2px">
+            <div class="form-check">
+              <input type="checkbox" id="fInvisible">
+              <label for="fInvisible" style="margin:0; color:var(--text)">Invisible Mode</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn" style="padding:10px 24px;font-size:14px">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Confirm dialog -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-dialog">
+    <div class="confirm-icon">&#9888;</div>
+    <h3 id="confirmTitle">Delete Application</h3>
+    <p id="confirmMsg"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" id="confirmBtn" onclick="confirmAction()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const defaultPorts = { ssh: 22, http: 80, https: 443, rdp: 3389, vnc: 5900, telnet: 23 };
+const MAX_APPS = 10;
+const MAX_CONNECTIONS = 3;
+let pollingTimers = {};
+let cachedApps = [];
+
+// ── Protocol icons (SVG) ──
+const protoIcons = {
+  ssh: `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 4.5A1.5 1.5 0 014.5 3h11A1.5 1.5 0 0117 4.5v11a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 013 15.5v-11zM6 7a.75.75 0 01.53.22l2.25 2.25a.75.75 0 010 1.06l-2.25 2.25a.75.75 0 11-1.06-1.06L7.19 10 5.47 8.28A.75.75 0 016 7zm4 5.25a.75.75 0 000 1.5h3a.75.75 0 000-1.5h-3z"/></svg>`,
+  http: `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 7 7.632 8.027H4.332zM10 4c-.629 0-1.632 1.27-2.182 4.027h4.364C11.632 5.27 10.629 4 10 4zm2.368 4.027c.658-1.028 1.12-2.298 1.388-2.706a6.012 6.012 0 011.912 2.706h-3.3zM4.05 9.527a6.025 6.025 0 000 .946h3.24a18.4 18.4 0 010-.946H4.05zm4.74 0a17 17 0 000 .946h2.42a17 17 0 000-.946H8.79zm3.92 0a18.4 18.4 0 010 .946h3.24a6.025 6.025 0 000-.946h-3.24zm3.058 2.446h-3.3c-.268.408-.73 1.678-1.388 2.706a6.012 6.012 0 003.3-2.706h1.388zm-3.586 0H7.818c.55 2.757 1.553 4.027 2.182 4.027s1.632-1.27 2.182-4.027zm-4.55 0H4.332a6.012 6.012 0 003.3 2.706c-.658-1.028-1.12-2.298-1.388-2.706H7.632z" clip-rule="evenodd"/></svg>`,
+  https: `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6zm-3 4a1.5 1.5 0 100 3 1.5 1.5 0 000-3z" clip-rule="evenodd"/></svg>`,
+  rdp: `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.25A2.25 2.25 0 014.25 2h11.5A2.25 2.25 0 0118 4.25v8.5A2.25 2.25 0 0115.75 15H4.25A2.25 2.25 0 012 12.75v-8.5zm2.25-.75a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h11.5a.75.75 0 00.75-.75v-8.5a.75.75 0 00-.75-.75H4.25z" clip-rule="evenodd"/><path d="M5 17.25a.75.75 0 01.75-.75h8.5a.75.75 0 010 1.5h-8.5a.75.75 0 01-.75-.75z"/></svg>`,
+  vnc: `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>`,
+  telnet: `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 5A.75.75 0 012.75 9h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 9.75zm0 5a.75.75 0 01.75-.75h8.5a.75.75 0 010 1.5h-8.5a.75.75 0 01-.75-.75z" clip-rule="evenodd"/></svg>`,
+};
+
+// ── Theme ──
+function getTheme() {
+  return localStorage.getItem('shield-theme') || 'light';
+}
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeBtn').innerHTML = theme === 'dark' ? '&#9790;' : '&#9788;';
+}
+function toggleTheme() {
+  const next = getTheme() === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('shield-theme', next);
+  applyTheme(next);
+}
+applyTheme(getTheme());
+
+// ── View mode ──
+function getView() {
+  return localStorage.getItem('shield-view') || 'grid';
+}
+function setView(mode) {
+  localStorage.setItem('shield-view', mode);
+  document.getElementById('viewGrid').classList.toggle('active', mode === 'grid');
+  document.getElementById('viewList').classList.toggle('active', mode === 'list');
+  renderApps(cachedApps);
+}
+
+// ── Time helpers ──
+function timeAgo(dateStr) {
+  if (!dateStr) return 'Never';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'Never';
+  const now = Date.now();
+  const diff = now - d.getTime();
+  if (diff < 0) return 'Just now';
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return 'Just now';
+  const min = Math.floor(sec / 60);
+  if (min < 60) return min + 'm ago';
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return hr + 'h ago';
+  const day = Math.floor(hr / 24);
+  if (day < 30) return day + 'd ago';
+  return d.toLocaleDateString();
+}
+
+// ── API ──
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts,
+  });
+  return res.json();
+}
+
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + type;
+  setTimeout(() => el.className = 'toast', 3500);
+}
+
+function copyUrl(e, url) {
+  e.stopPropagation();
+  e.preventDefault();
+  const btn = e.currentTarget;
+  navigator.clipboard.writeText(url).then(() => {
+    btn.classList.add('copied');
+    btn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M3 8.5l3 3 7-7"/></svg>`;
+    toast('\u2705 Copied: ' + url, 'success');
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/></svg>`;
+    }, 2000);
+  }).catch(() => {
+    toast('Copy failed', 'error');
+  });
+}
+
+// ── Render apps ──
+function renderApps(apps) {
+  cachedApps = apps;
+  const container = document.getElementById('appContainer');
+  const empty = document.getElementById('emptyState');
+  const toolbar = document.getElementById('toolbar');
+
+  if (apps.length === 0) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+    toolbar.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  toolbar.style.display = 'flex';
+
+  // Update counts
+  const connectedCount = apps.filter(a => a.conn_status && (a.conn_status.status === 'connected' || a.conn_status.status === 'connecting')).length;
+  document.getElementById('appCount').innerHTML = `<span class="count-badge">${apps.length} / ${MAX_APPS} apps</span>`;
+  document.getElementById('connCount').innerHTML = `<span class="count-badge">${connectedCount} / ${MAX_CONNECTIONS} connected</span>`;
+
+  const view = getView();
+  const isGrid = view === 'grid';
+  document.getElementById('viewGrid').classList.toggle('active', isGrid);
+  document.getElementById('viewList').classList.toggle('active', !isGrid);
+
+  const cards = apps.map(app => {
+    const cs = app.conn_status;
+    const status = cs ? cs.status : 'idle';
+    const statusLabel = { idle: 'Idle', connecting: 'Connecting...', connected: 'Connected', failed: 'Failed', disconnected: 'Idle' }[status] || 'Idle';
+    const proto = (app.protocol || 'http').toLowerCase();
+    const icon = protoIcons[proto] || protoIcons.http;
+
+    // Fixed-height connection status row — always present, content changes per state
+    const extIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H3v10h10v-3M9 2h5v5M14 2L7 9"/></svg>`;
+    let connRow = '';
+    if (status === 'connected' && cs.site_url) {
+      const shortUrl = cs.site_url.replace(/^https?:\/\//, '');
+      const copyIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/></svg>`;
+      connRow = `<div class="conn-row connected">${extIcon} <a href="${cs.site_url}" target="_blank" title="${cs.site_url}">${shortUrl}</a>${cs.auth_url ? `<span style="color:var(--text3);margin:0 4px">&middot;</span><a href="${cs.auth_url}" target="_blank">Auth</a>` : ''}<button class="copy-btn" onclick="copyUrl(event,'${cs.site_url}')" title="Copy URL">${copyIcon}</button></div>`;
+    } else if (status === 'connecting') {
+      connRow = `<div class="conn-row connecting"><span class="conn-spinner"></span> <span class="conn-text">Establishing tunnel...</span></div>`;
+    } else if (status === 'failed' && cs.error) {
+      connRow = `<div class="conn-row failed"><span class="conn-text" title="${cs.error}">&#9888; ${cs.error.length > 50 ? cs.error.slice(0, 50) + '...' : cs.error}</span></div>`;
+    } else {
+      connRow = `<div class="conn-row idle"><span class="conn-text">Not connected</span></div>`;
+    }
+
+    let actionBtns = '';
+    if (status === 'connected') {
+      actionBtns = `<button class="btn btn-sm btn-disconnect" onclick="disconnectApp('${app.id}')">Disconnect</button>`;
+    } else if (status === 'connecting') {
+      actionBtns = `<button class="btn btn-sm btn-disconnect" onclick="disconnectApp('${app.id}')">Cancel</button>`;
+    } else {
+      actionBtns = `<button class="btn btn-sm btn-connect" onclick="connectApp('${app.id}')">Connect</button>`;
+    }
+
+    // Tunnel info: always occupy space, content changes per state
+    const localTarget = `${app.ip}:${app.port}`;
+    let tunnelInfo = '';
+    if (status === 'connected' && cs && cs.resource_port) {
+      tunnelInfo = `<span>Tunnel: remote:${cs.resource_port} \u2194 ${localTarget}</span>`;
+    } else if (status === 'connecting') {
+      tunnelInfo = `<span style="color:var(--text3)">Tunnel: remote: allocating... \u2194 ${localTarget}</span>`;
+    } else {
+      tunnelInfo = `<span style="color:var(--text3)">Tunnel: remote: - \u2194 ${localTarget}</span>`;
+    }
+
+    if (isGrid) {
+      return `<div class="app-card">
+        <div class="app-card-header">
+          <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1">
+            <div class="proto-icon ${proto}">${icon}</div>
+            <div class="app-name-group">
+              <div class="protocol-label">${proto.toUpperCase()}</div>
+              <div class="app-name">
+                <span class="app-name-text" title="Click to rename" onclick="startRename(event, '${app.id}', this)">${app.name}</span>
+              </div>
+            </div>
+          </div>
+          <span class="status-badge ${status}"><span class="status-dot"></span> ${statusLabel}</span>
+        </div>
+        <div class="app-card-body">
+          <div class="app-detail">
+            <span>Target: ${app.ip}:${app.port}</span>
+            ${tunnelInfo}
+            ${app.username ? `<span>User: ${app.username}</span>` : ''}
+            ${app.invisible ? '<span>Invisible</span>' : ''}
+          </div>
+          ${connRow}
+          <div class="app-meta">
+            <span>Created ${timeAgo(app.created_at)}</span>
+            <span>Last connected ${timeAgo(app.last_connected_at)}</span>
+          </div>
+        </div>
+        <div class="app-card-footer">
+          <div class="app-actions">
+            ${actionBtns}
+            <button class="btn btn-sm btn-edit" onclick="editApp('${app.id}')">Edit</button>
+          </div>
+          <button class="btn btn-sm btn-delete" onclick="deleteApp('${app.id}', '${app.name}')">Delete</button>
+        </div>
+      </div>`;
+    } else {
+      return `<div class="app-card">
+        <div class="app-card-header">
+          <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1">
+            <div class="proto-icon ${proto}">${icon}</div>
+            <div class="app-name-group">
+              <div class="app-name">
+                <span class="app-name-text" title="Click to rename" onclick="startRename(event, '${app.id}', this)">${app.name}</span>
+                <span class="status-badge ${status}"><span class="status-dot"></span> ${statusLabel}</span>
+              </div>
+              <div class="app-meta" style="margin-top:2px">
+                <span>${proto.toUpperCase()} &middot; ${app.ip}:${app.port}</span>
+                ${tunnelInfo}
+                <span>Created ${timeAgo(app.created_at)}</span>
+                <span>Last connected ${timeAgo(app.last_connected_at)}</span>
+              </div>
+              <div style="margin-top:6px">${connRow}</div>
+            </div>
+          </div>
+          <div class="app-actions">
+            ${actionBtns}
+            <button class="btn btn-sm btn-edit" onclick="editApp('${app.id}')">Edit</button>
+            <button class="btn btn-sm btn-delete" onclick="deleteApp('${app.id}', '${app.name}')">Delete</button>
+          </div>
+        </div>
+      </div>`;
+    }
+  }).join('');
+
+  container.className = isGrid ? 'app-grid' : 'app-list';
+  container.innerHTML = cards;
+}
+
+// ── Load apps ──
+async function loadApps() {
+  const res = await api('/api/apps');
+  const apps = res.data || [];
+  renderApps(apps);
+}
+
+// ── Connect ──
+async function connectApp(id) {
+  // Client-side check
+  const connectedCount = cachedApps.filter(a => a.conn_status && (a.conn_status.status === 'connected' || a.conn_status.status === 'connecting')).length;
+  if (connectedCount >= MAX_CONNECTIONS) {
+    toast(`Maximum ${MAX_CONNECTIONS} concurrent connections. Please disconnect an app first.`, 'warning');
+    return;
+  }
+
+  const res = await api(`/api/connect/${id}`, { method: 'POST' });
+  if (res.code !== 200) {
+    toast(res.message || 'Connection failed', 'error');
+    return;
+  }
+  toast('Connecting...', 'success');
+  loadApps();
+  startPolling(id);
+}
+
+function startPolling(id) {
+  if (pollingTimers[id]) clearInterval(pollingTimers[id]);
+  pollingTimers[id] = setInterval(async () => {
+    const res = await api(`/api/status/${id}`);
+    const status = res.data?.status;
+    if (status === 'connected') {
+      clearInterval(pollingTimers[id]);
+      delete pollingTimers[id];
+      loadApps();
+      if (res.data.site_url) {
+        toast('Connected! Opening access URL...', 'success');
+        setTimeout(() => window.open(res.data.site_url, '_blank'), 500);
+      }
+    } else if (status === 'failed') {
+      clearInterval(pollingTimers[id]);
+      delete pollingTimers[id];
+      loadApps();
+      toast(res.data.error || 'Connection failed', 'error');
+    } else {
+      loadApps();
+    }
+  }, 2000);
+}
+
+// ── Disconnect ──
+async function disconnectApp(id) {
+  if (pollingTimers[id]) {
+    clearInterval(pollingTimers[id]);
+    delete pollingTimers[id];
+  }
+  await api(`/api/disconnect/${id}`, { method: 'POST' });
+  toast('Disconnected', '');
+  loadApps();
+}
+
+// ── Delete (custom confirm) ──
+let pendingDeleteId = null;
+
+function deleteApp(id, name) {
+  pendingDeleteId = id;
+  document.getElementById('confirmMsg').innerHTML = `Are you sure you want to delete <strong>${name}</strong>? This action cannot be undone.`;
+  document.getElementById('confirmOverlay').classList.add('active');
+}
+
+function closeConfirm() {
+  pendingDeleteId = null;
+  document.getElementById('confirmOverlay').classList.remove('active');
+}
+
+async function confirmAction() {
+  if (!pendingDeleteId) return;
+  const id = pendingDeleteId;
+  closeConfirm();
+  const res = await api(`/api/apps/${id}`, { method: 'DELETE' });
+  if (res.code === 200) {
+    toast('Deleted', 'success');
+    loadApps();
+  } else {
+    toast(res.message || 'Delete failed', 'error');
+  }
+}
+
+// Close confirm on overlay click
+document.getElementById('confirmOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirm();
+});
+
+// ── Inline rename ──
+function startRename(event, id, el) {
+  event.stopPropagation();
+  const oldName = el.textContent;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = oldName;
+  input.className = 'app-name-input';
+  input.style.width = Math.max(80, el.offsetWidth + 20) + 'px';
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+
+  async function commitRename() {
+    const newName = input.value.trim();
+    if (newName && newName !== oldName) {
+      const res = await api(`/api/rename/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: newName }),
+      });
+      if (res.code === 200) {
+        toast('Renamed', 'success');
+      } else {
+        toast(res.message || 'Rename failed', 'error');
+      }
+    }
+    loadApps();
+  }
+
+  input.addEventListener('blur', commitRename);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = oldName; input.blur(); }
+  });
+}
+
+// ── Advanced toggle ──
+function toggleAdvance() {
+  const toggle = document.getElementById('advanceToggle');
+  const body = document.getElementById('advanceBody');
+  const isOpening = !toggle.classList.contains('open');
+  toggle.classList.toggle('open');
+  body.classList.toggle('open');
+  if (isOpening) {
+    setTimeout(() => {
+      toggle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  }
+}
+
+function setAdvanceOpen(open) {
+  const toggle = document.getElementById('advanceToggle');
+  const body = document.getElementById('advanceBody');
+  toggle.classList.toggle('open', open);
+  body.classList.toggle('open', open);
+}
+
+function hasAdvancedValues() {
+  const tunnelPort = document.getElementById('fTunnelPort').value;
+  const server = document.getElementById('fServer').value;
+  const displayName = document.getElementById('fDisplayName').value;
+  const siteName = document.getElementById('fSiteName').value;
+  const username = document.getElementById('fUsername').value;
+  const authPass = document.getElementById('fAuthPass').value;
+  const privateKey = document.getElementById('fPrivateKey').value;
+  const passphrase = document.getElementById('fPassphrase').value;
+  const enableSftp = document.getElementById('fEnableSftp').checked;
+  const visable = document.getElementById('fVisable').value;
+  const invisible = document.getElementById('fInvisible').checked;
+
+  return (
+    (tunnelPort && tunnelPort !== '62888') ||
+    server || displayName || siteName ||
+    username || authPass || privateKey || passphrase ||
+    enableSftp ||
+    (visable && visable !== 'visable') ||
+    invisible
+  );
+}
+
+function updateAdvanceTag() {
+  document.getElementById('advanceTag').style.display = hasAdvancedValues() ? '' : 'none';
+}
+
+// ── Modal ──
+function openAddModal() {
+  // Client-side check
+  if (cachedApps.length >= MAX_APPS) {
+    toast(`Maximum ${MAX_APPS} applications. Please delete an app first.`, 'warning');
+    return;
+  }
+  document.getElementById('modalTitle').textContent = 'Add App';
+  document.getElementById('editId').value = '';
+  document.getElementById('appForm').reset();
+  document.getElementById('fIP').value = '127.0.0.1';
+  document.getElementById('fTunnelPort').value = '62888';
+  document.getElementById('fVisable').value = 'visable';
+  onProtocolChange();
+  setAdvanceOpen(false);
+  updateAdvanceTag();
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+async function editApp(id) {
+  const res = await api(`/api/apps/${id}`);
+  if (res.code !== 200) return;
+  const app = res.data;
+  document.getElementById('modalTitle').textContent = 'Edit App';
+  document.getElementById('editId').value = id;
+  document.getElementById('fName').value = app.name || '';
+  document.getElementById('fProtocol').value = app.protocol || 'ssh';
+  document.getElementById('fIP').value = app.ip || '127.0.0.1';
+  document.getElementById('fPort').value = app.port || '';
+  document.getElementById('fTunnelPort').value = app.tunnel_port || 62888;
+  document.getElementById('fServer').value = app.server === 'https://console.yishield.com/raas' ? '' : (app.server || '');
+  document.getElementById('fDisplayName').value = app.display_name || '';
+  document.getElementById('fSiteName').value = app.site_name || '';
+  document.getElementById('fUsername').value = app.username || '';
+  document.getElementById('fAuthPass').value = app.auth_pass || '';
+  document.getElementById('fPrivateKey').value = app.private_key || '';
+  document.getElementById('fPassphrase').value = app.passphrase || '';
+  document.getElementById('fEnableSftp').checked = !!app.enable_sftp;
+  document.getElementById('fVisable').value = app.visable || 'visable';
+  document.getElementById('fInvisible').checked = !!app.invisible;
+  onProtocolChange();
+  const shouldOpen = hasAdvancedValues();
+  setAdvanceOpen(shouldOpen);
+  updateAdvanceTag();
+  document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+function onProtocolChange() {
+  const proto = document.getElementById('fProtocol').value;
+  const needsAuth = ['ssh', 'rdp', 'vnc'].includes(proto);
+  const isSSH = proto === 'ssh';
+  document.getElementById('authSection').style.display = needsAuth ? '' : 'none';
+  document.getElementById('sshSection').style.display = isSSH ? '' : 'none';
+  document.getElementById('fPort').placeholder = defaultPorts[proto] || '80';
+}
+
+async function saveApp(e) {
+  e.preventDefault();
+  const id = document.getElementById('editId').value;
+  const proto = document.getElementById('fProtocol').value;
+  const nameVal = document.getElementById('fName').value.trim();
+  const autoName = proto.toUpperCase() + ' ' + (document.getElementById('fIP').value || '127.0.0.1') + ':' + (parseInt(document.getElementById('fPort').value) || defaultPorts[proto] || 80);
+  const body = {
+    name: nameVal || autoName,
+    protocol: proto,
+    ip: document.getElementById('fIP').value || '127.0.0.1',
+    port: parseInt(document.getElementById('fPort').value) || defaultPorts[proto] || 80,
+    tunnel_port: parseInt(document.getElementById('fTunnelPort').value) || 62888,
+    server: document.getElementById('fServer').value || '',
+    display_name: document.getElementById('fDisplayName').value,
+    site_name: document.getElementById('fSiteName').value || (nameVal || autoName),
+    username: document.getElementById('fUsername').value,
+    auth_pass: document.getElementById('fAuthPass').value,
+    private_key: document.getElementById('fPrivateKey').value,
+    passphrase: document.getElementById('fPassphrase').value,
+    enable_sftp: document.getElementById('fEnableSftp').checked,
+    visable: document.getElementById('fVisable').value || 'visable',
+    invisible: document.getElementById('fInvisible').checked,
+  };
+
+  let res;
+  if (id) {
+    res = await api(`/api/apps/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+  } else {
+    res = await api('/api/apps', { method: 'POST', body: JSON.stringify(body) });
+  }
+
+  if (res.code === 200) {
+    toast(id ? 'Updated' : 'Created', 'success');
+    closeModal();
+    loadApps();
+  } else {
+    toast(res.message || 'Save failed', 'error');
+  }
+  return false;
+}
+
+// Close modal on overlay click
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// Close modal on Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') { closeConfirm(); closeModal(); }
+});
+
+// Initial load
+loadApps();
+setInterval(loadApps, 5000);
+</script>
+</body>
+</html>

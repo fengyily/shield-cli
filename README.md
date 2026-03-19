@@ -11,7 +11,7 @@
 
 <p align="center">
   <a href="#installation">Installation</a> &bull;
-  <a href="#quick-start">Quick Start</a> &bull;
+  <a href="#web-ui-recommended">Quick Start</a> &bull;
   <a href="#how-it-works">How It Works</a> &bull;
   <a href="#usage">Usage</a> &bull;
   <a href="README_CN.md">中文文档</a>
@@ -31,16 +31,16 @@ Remote access today is painful. Want to reach an internal RDP desktop? Install a
 
 ## The Solution
 
-Shield CLI replaces all of that with a single command:
+Shield CLI replaces all of that with one binary and two ways to use it:
 
-```bash
-shield ssh 10.0.0.2
-```
+**Web UI (recommended)** — run `shield start`, open the dashboard, add your services, and connect with one click. Best for desktops and day-to-day use.
 
-That's it. You get a URL. Open it in any browser — phone, tablet, laptop, locked-down corporate machine — and you're connected. A full SSH terminal, RDP desktop, or VNC session, rendered in HTML5, right in the browser.
+**Command line** — run `shield ssh 10.0.0.2` directly from the terminal. Ideal for headless Linux servers or scripting.
+
+Either way, you get a URL. Open it in any browser — phone, tablet, laptop, locked-down corporate machine — and you're connected. A full SSH terminal, RDP desktop, or VNC session, rendered in HTML5, right in the browser.
 
 - **Zero client install** — if it has a browser, it works
-- **Zero config** — protocol and address is all you need, everything else is automatic
+- **Web UI dashboard** — manage multiple services, save configurations, connect with one click
 - **One binary, all protocols** — SSH, RDP, VNC, HTTP, HTTPS, Telnet
 - **Encrypted by default** — WebSocket tunnels with AES-256-GCM credential encryption
 
@@ -94,6 +94,63 @@ go build -o shield .
 ```
 
 ## Quick Start
+
+### Web UI (Recommended)
+
+The easiest way to get started — launch the web dashboard and manage everything from your browser:
+
+```bash
+              
+
+   _____ __    _       __    __   ________    ____
+  / ___// /_  (_)__   / /___/ /  / ____/ /   /  _/
+  \__ \/ __ \/ // _ \/ // __  / / /   / /    / /
+ ___/ / / / / //  __/ // /_/ / / /___/ /____/ /
+/____/_/ /_/_/ \___/_/ \__,_/  \____/_____/___/
+  Shield CLI - Secure Tunnel Connector
+
+  ├─ Version:    dev
+  ├─ Go:         go1.25.0
+  └─ Platform:   darwin/arm64
+
+  ──────────────────────────────────────────────────
+
+time=2026-03-19T15:44:21.128+08:00 level=INFO msg="Main tunnel establishing" remotes=[R:63465:localhost:4000] server=http://121.43.154.105:62888
+2026/03/19 15:44:21 client: Connecting to ws://121.43.154.105:62888
+time=2026-03-19T15:44:21.129+08:00 level=INFO msg="Local API starting" addr=127.0.0.1:4000
+2026/03/19 15:44:21 client: Connected (Latency 11.586291ms)
+time=2026-03-19T15:44:26.160+08:00 level=INFO msg="Main tunnel ready" server=121.43.154.105:62888 api_tunnel="remote:63465 ←→ localhost:4000"
+time=2026-03-19T15:44:26.160+08:00 level=INFO msg="Web UI starting" url=http://127.0.0.1:8181
+
+  Shield Web UI is running at:
+
+    http://127.0.0.1:8181
+
+  Press Ctrl+C to stop
+```
+
+Open `http://localhost:8181`, add your services, and connect with one click.
+
+- **Save up to 10 applications** — configure protocol, IP, port, and display name for each service
+- **One-click connect/disconnect** — manage up to 3 concurrent tunnel connections
+- **Real-time status** — live connection state with auto-refresh (connecting, connected, failed)
+- **Dark/Light theme** — toggle between themes for comfortable viewing
+- **Auto-open** — successful connections automatically open the Access URL in a new tab
+
+![Web UI Dashboard](docs/images/shieldcli-webui-001.jpg)
+
+![RDP via Web UI](docs/images/shieldcli-rdp-web-001.jpg)
+
+```bash
+# Start on a custom port
+shield start 9090
+```
+
+The web platform saves your app configurations and credentials locally — no need to reconfigure or re-authenticate each time.
+
+### Command Line (for servers & scripting)
+
+On headless Linux servers or in automation scripts, use the CLI directly:
 
 ```bash
 # Expose local SSH — access a terminal in your browser
@@ -177,6 +234,7 @@ Flags:
   -h, --help                  Help for shield
 
 Commands:
+  start [port]                Start web management platform (default: 8181)
   clean                       Clear cached credentials
 ```
 
@@ -227,8 +285,8 @@ Once running, Shield CLI exposes a local API on `127.0.0.1:<port>`:
 - [x] Dynamic tunnels — runtime tunnel management via local REST API
 - [x] Auto-reconnect — exponential backoff retry on connection failure
 - [ ] Open-source server — self-hosted deployment, full control over data and infrastructure
-- [ ] Persistent configuration — save tunnel profiles, reconnect with `shield up`
-- [ ] Local Web UI — browser-based dashboard at `localhost` for managing tunnels, logs, and status
+- [x] Persistent configuration — save up to 10 application profiles with encrypted local storage
+- [x] Local Web UI — browser-based dashboard at `localhost:8181` for managing apps, connections, and status
 - [ ] Multi-tunnel mode — run multiple tunnels in a single process (`shield up` from config file)
 
 ### User Experience

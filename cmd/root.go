@@ -63,7 +63,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&protocol, "type", "t", "", "Protocol type (deprecated, use positional arg instead)")
 	rootCmd.Flags().StringVarP(&target, "source", "s", "", "Target address (deprecated, use positional arg instead)")
 	rootCmd.Flags().StringVarP(&apiServer, "server", "H", "https://console.yishield.com/raas", "API server URL")
-	rootCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose log output")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose log output")
 	rootCmd.Flags().IntVarP(&tunnelPort, "tunnel-port", "p", 62888, "Chisel tunnel server port")
 	rootCmd.Flags().StringVar(&visable, "visable", "visable", "AC node name filter (default: visable)")
 	rootCmd.Flags().BoolVar(&invisible, "invisible", false, "Invisible mode: require Access URL with authorization key")
@@ -74,6 +74,9 @@ func init() {
 	rootCmd.Flags().StringVar(&privateKey, "private-key", "", "SSH private key")
 	rootCmd.Flags().StringVar(&passphrase, "passphrase", "", "SSH private key passphrase")
 	rootCmd.Flags().BoolVar(&enableSftp, "enable-sftp", false, "Enable SFTP (SSH only)")
+
+	// Subcommand: start web management platform
+	rootCmd.AddCommand(startCmd)
 
 	// Subcommand: clear cached credentials
 	rootCmd.AddCommand(&cobra.Command{
