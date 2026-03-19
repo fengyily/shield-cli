@@ -238,9 +238,25 @@ Commands:
   clean                       Clear cached credentials
 ```
 
-### Local API
+### Web Platform API
 
-Once running, Shield CLI exposes a local API on `127.0.0.1:<port>`:
+When running `shield start`, the web platform exposes a REST API on `127.0.0.1:8181`:
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/apps` | GET | List all saved applications |
+| `/api/apps` | POST | Create a new application |
+| `/api/apps/{id}` | GET | Get application details |
+| `/api/apps/{id}` | PUT | Update an application |
+| `/api/apps/{id}` | DELETE | Delete an application |
+| `/api/rename/{id}` | PUT | Rename an application |
+| `/api/connect/{id}` | POST | Connect to an application |
+| `/api/disconnect/{id}` | POST | Disconnect from an application |
+| `/api/status/{id}` | GET | Get connection status |
+
+### Local API (CLI mode)
+
+When running `shield <protocol>`, a local API is available on `127.0.0.1:<port>`:
 
 | Endpoint | Method | Description |
 |---|---|---|

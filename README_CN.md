@@ -90,7 +90,33 @@ go build -o shield .
 最简单的方式 — 启动 Web 管理面板，在浏览器中完成所有操作：
 
 ```bash
-shield start
+
+
+   _____ __    _       __    __   ________    ____
+  / ___// /_  (_)__   / /___/ /  / ____/ /   /  _/
+  \__ \/ __ \/ // _ \/ // __  / / /   / /    / /
+ ___/ / / / / //  __/ // /_/ / / /___/ /____/ /
+/____/_/ /_/_/ \___/_/ \__,_/  \____/_____/___/
+  Shield CLI - Secure Tunnel Connector
+
+  ├─ Version:    dev
+  ├─ Go:         go1.25.0
+  └─ Platform:   darwin/arm64
+
+  ──────────────────────────────────────────────────
+
+time=2026-03-19T15:44:21.128+08:00 level=INFO msg="Main tunnel establishing" remotes=[R:63465:localhost:4000] server=http://121.43.154.105:62888
+2026/03/19 15:44:21 client: Connecting to ws://121.43.154.105:62888
+time=2026-03-19T15:44:21.129+08:00 level=INFO msg="Local API starting" addr=127.0.0.1:4000
+2026/03/19 15:44:21 client: Connected (Latency 11.586291ms)
+time=2026-03-19T15:44:26.160+08:00 level=INFO msg="Main tunnel ready" server=121.43.154.105:62888 api_tunnel="remote:63465 ←→ localhost:4000"
+time=2026-03-19T15:44:26.160+08:00 level=INFO msg="Web UI starting" url=http://127.0.0.1:8181
+
+  Shield Web UI is running at:
+
+    http://127.0.0.1:8181
+
+  Press Ctrl+C to stop
 ```
 
 打开 `http://localhost:8181`，添加服务，一键连接。
@@ -202,9 +228,25 @@ shield <protocol> [ip:port] [flags]
   clean                       清除缓存的凭证
 ```
 
-### 本地 API
+### Web 平台 API
 
-Shield CLI 运行后会在 `127.0.0.1:<port>` 上提供本地管理接口：
+运行 `shield start` 时，Web 平台在 `127.0.0.1:8181` 上提供 REST API：
+
+| 接口 | 方法 | 说明 |
+|---|---|---|
+| `/api/apps` | GET | 列出所有已保存的应用 |
+| `/api/apps` | POST | 创建新应用 |
+| `/api/apps/{id}` | GET | 获取应用详情 |
+| `/api/apps/{id}` | PUT | 更新应用配置 |
+| `/api/apps/{id}` | DELETE | 删除应用 |
+| `/api/rename/{id}` | PUT | 重命名应用 |
+| `/api/connect/{id}` | POST | 连接应用 |
+| `/api/disconnect/{id}` | POST | 断开应用连接 |
+| `/api/status/{id}` | GET | 获取连接状态 |
+
+### 本地 API（命令行模式）
+
+运行 `shield <protocol>` 时，在 `127.0.0.1:<port>` 上提供本地管理接口：
 
 | 接口 | 方法 | 说明 |
 |---|---|---|

@@ -45,16 +45,14 @@ brews:
     test: |
       system "#{bin}/shield", "--help"
     caveats: |
-      Usage:
-        shield <protocol> [ip:port]
+      Web UI (recommended):
+        shield start                # Open http://localhost:8181
 
-      Examples:
+      Command line (for servers):
         shield ssh                  # 127.0.0.1:22
-        shield ssh 2222             # 127.0.0.1:2222
         shield ssh 10.0.0.2        # 10.0.0.2:22
-        shield ssh 10.0.0.2:2222   # 10.0.0.2:2222
-        shield http 3000            # 127.0.0.1:3000
         shield rdp 192.168.1.100   # 192.168.1.100:3389
+        shield http 3000            # 127.0.0.1:3000
 
       Supported protocols: ssh, http, https, rdp, vnc, telnet
 
