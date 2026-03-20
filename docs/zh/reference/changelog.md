@@ -1,0 +1,122 @@
+---
+title: 更新日志 — Shield CLI 版本历史
+description: Shield CLI 完整版本发布记录。追踪每个版本的新功能、改进和修复。
+head:
+  - - meta
+    - name: keywords
+      content: Shield CLI 更新日志, 版本历史, 发布记录, 新功能, 变更记录
+---
+
+# 更新日志
+
+Shield CLI 所有版本的变更记录。
+
+## v0.2.1 <Badge type="tip" text="最新" />
+
+**发布日期：2026-03-20**
+
+### 新功能
+
+- **系统服务安装** — `shield install` 将 Shield 注册为系统服务，开机自动启动
+  - macOS：launchd 用户代理（无需 sudo）
+  - Linux：systemd 服务
+  - Windows：Windows 服务
+- **自定义端口** — `shield install --port 8182`，自动检测端口冲突并建议可用端口
+- **系统托盘图标**（macOS 和 Windows）— 点击打开 Dashboard，支持重启和退出操作
+- **异步隧道启动** — Web UI 即时可用，主隧道在后台连接
+- **隧道状态 API** — `GET /api/tunnel` 接口供前端轮询隧道就绪状态
+
+### 改进
+
+- GoReleaser 拆分为桌面版（CGO + 托盘）和 Linux 版（纯 Go）构建
+- 隧道连接中时，应用连接请求返回明确提示信息
+
+---
+
+## v0.2.0
+
+**发布日期：2026-03-19**
+
+### 新功能
+
+- **Web UI 管理平台** — 浏览器端管理面板 `localhost:8181`
+  - 添加、编辑、删除最多 10 个应用配置
+  - 一键连接/断开，实时状态显示
+  - AES-256-GCM 加密本地存储应用配置
+- **持久化配置** — 应用配置文件加密保存到本地
+- **多连接支持** — 最多 3 个并发活跃隧道连接
+- **连接管理器** — 共享主隧道 + 每个应用独立的动态资源隧道
+
+### 改进
+
+- 重新设计 Logo 和品牌形象
+- README 增加 Web UI 截图和示例
+
+---
+
+## v0.1.3
+
+**发布日期：2026-03-18**
+
+### 新功能
+
+- **Windows 安装脚本** — PowerShell 一键安装
+- **Linux 安装脚本** — curl 一键安装
+- **双语 README** — 拆分为英文（`README.md`）和中文（`README_CN.md`）
+
+### 改进
+
+- 默认使用可见访问模式
+
+---
+
+## v0.1.2
+
+**发布日期：2026-03-18**
+
+### 新功能
+
+- **Scoop 包管理** — Windows 上 `scoop install shield-cli`
+- **deb / rpm 包** — Linux 原生包格式（通过 nfpm）
+- **curl 安装器** — `curl -fsSL ... | sh` 一键安装
+- **国内 CDN 镜像** — 基于 jsDelivr 的安装脚本，国内用户友好
+
+---
+
+## v0.1.1
+
+**发布日期：2026-03-18**
+
+### 改进
+
+- **位置参数** — `shield ssh 10.0.0.5:2222` 代替 `--type ssh --source 10.0.0.5:2222`
+- **智能默认值** — 省略 IP 默认 localhost，省略端口使用协议默认值
+- 简化命令行用法，直觉化地址解析
+
+---
+
+## v0.1.0
+
+**发布日期：2026-03-18**
+
+### 新功能
+
+- **GoReleaser 集成** — 自动化跨平台构建（macOS、Linux、Windows × amd64、arm64）
+- **Homebrew tap** — `brew install shield-cli`
+- **自动发布** — GitHub Actions CI/CD 流水线
+
+---
+
+## v0.0.1
+
+**发布日期：2026-03-16**
+
+### 首次发布
+
+- 基于 Chisel 协议的核心隧道连接
+- 支持协议：SSH、RDP、VNC、HTTP、HTTPS、Telnet
+- AES-256-GCM 加密凭证存储，绑定机器指纹
+- 可见模式与隐身模式
+- 连接成功后自动打开浏览器
+- 日志中密码自动脱敏
+- GitHub Actions CI/CD 流水线

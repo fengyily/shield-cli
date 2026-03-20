@@ -124,6 +124,7 @@ export default defineConfig({
               text: '参考',
               items: [
                 { text: '命令参考', link: '/zh/reference/commands' },
+                { text: '更新日志', link: '/zh/reference/changelog' },
                 { text: '常见问题', link: '/zh/reference/faq' },
               ],
             },
@@ -210,6 +211,7 @@ export default defineConfig({
               text: 'Reference',
               items: [
                 { text: 'Commands', link: '/en/reference/commands' },
+                { text: 'Changelog', link: '/en/reference/changelog' },
                 { text: 'FAQ', link: '/en/reference/faq' },
               ],
             },

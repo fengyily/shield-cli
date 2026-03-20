@@ -2,11 +2,8 @@ package service
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
-
-	"golang.org/x/sys/windows/registry"
 )
 
 const windowsServiceName = "ShieldCLI"
@@ -86,29 +83,33 @@ func Status() (string, error) {
 	return "installed", nil
 }
 
-// GetInstalledPort reads the port from the Windows service registry
+// GetInstalledPort reads the port from the Windows service config
 func GetInstalledPort() int {
-	key, err := registry.OpenKey(registry.LOCAL_MACHINE,
-		`SYSTEM\CurrentControlSet\Services\`+windowsServiceName,
-		registry.QUERY_VALUE)
-	if err != nil {
-		return 0
-	}
-	defer key.Close()
-
-	imagePath, _, err := key.GetStringValue("ImagePath")
+	// Use "sc qc" to query service config and parse BINARY_PATH_NAME
+	cmd := exec.Command("sc", "qc", windowsServiceName)
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return 0
 	}
 
-	// Parse port from ImagePath: "path\to\shield.exe" start 8182
-	parts := strings.Fields(imagePath)
-	for i, p := range parts {
-		if p == "start" && i+1 < len(parts) {
-			var port int
-			fmt.Sscanf(parts[i+1], "%d", &port)
-			if port > 0 {
-				return port
+	// Parse BINARY_PATH_NAME line: e.g. "path\to\shield.exe" start 8182
+	for _, line := range strings.Split(string(output), "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "BINARY_PATH_NAME") {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) < 2 {
+				continue
+			}
+			binPath := strings.TrimSpace(parts[1])
+			fields := strings.Fields(binPath)
+			for i, f := range fields {
+				if f == "start" && i+1 < len(fields) {
+					var port int
+					fmt.Sscanf(fields[i+1], "%d", &port)
+					if port > 0 {
+						return port
+					}
+				}
 			}
 		}
 	}
