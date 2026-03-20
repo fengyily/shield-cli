@@ -47,7 +47,9 @@ export default defineConfig({
         'Smart address resolution with protocol-specific default ports',
         'Cross-platform: macOS, Linux, Windows (amd64, arm64)',
         'Up to 10 saved app profiles with encrypted local storage',
-        'Auto-reconnect with exponential backoff'
+        'Auto-reconnect with exponential backoff',
+        'System service installation with auto-start on boot (macOS launchd, Linux systemd, Windows Service)',
+        'System tray icon on macOS and Windows for quick Dashboard access'
       ],
     })],
   ],
@@ -89,6 +91,7 @@ export default defineConfig({
               items: [
                 { text: 'Web UI 模式', link: '/zh/guide/web-ui' },
                 { text: '命令行模式', link: '/zh/guide/cli-mode' },
+                { text: '系统服务安装', link: '/zh/guide/system-service' },
               ],
             },
             {
@@ -174,6 +177,7 @@ export default defineConfig({
               items: [
                 { text: 'Web UI Mode', link: '/en/guide/web-ui' },
                 { text: 'CLI Mode', link: '/en/guide/cli-mode' },
+                { text: 'System Service', link: '/en/guide/system-service' },
               ],
             },
             {

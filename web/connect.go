@@ -61,10 +61,12 @@ type ConnectionManager struct {
 	creds   *config.Credentials
 
 	// Shared main tunnel (established once at startup)
-	mainMu    sync.Mutex
-	mainMgr   *tunnel.Manager
-	mainReady bool
-	localPort int
+	mainMu       sync.Mutex
+	mainMgr      *tunnel.Manager
+	mainReady    bool
+	mainError    string // last error message from tunnel setup
+	mainStarting bool   // true while SetupMainTunnel is in progress
+	localPort    int
 }
 
 // NewConnectionManager creates a new ConnectionManager with pre-loaded credentials
@@ -100,26 +102,56 @@ func (cm *ConnectionManager) UpdateCreds(creds *config.Credentials) {
 	cm.creds = creds
 }
 
-// SetupMainTunnel establishes the shared main tunnel (Server + API Tunnel).
-// Called once at startup if connector info is available in credentials.
-func (cm *ConnectionManager) SetupMainTunnel() error {
+// MainTunnelStatus returns the current main tunnel status and any error message.
+// Status: "connected", "connecting", "disconnected"
+func (cm *ConnectionManager) MainTunnelStatus() (status string, errMsg string) {
 	cm.mainMu.Lock()
 	defer cm.mainMu.Unlock()
 
 	if cm.mainReady {
+		return "connected", ""
+	}
+	if cm.mainStarting {
+		return "connecting", ""
+	}
+	return "disconnected", cm.mainError
+}
+
+// SetupMainTunnel establishes the shared main tunnel (Server + API Tunnel).
+// Called once at startup if connector info is available in credentials.
+func (cm *ConnectionManager) SetupMainTunnel() error {
+	cm.mainMu.Lock()
+
+	if cm.mainReady {
+		cm.mainMu.Unlock()
 		return nil
 	}
 
 	creds := cm.GetCreds()
 	if !creds.HasConnectorInfo() {
 		slog.Info("No saved connector info, main tunnel will be established on first app connect")
+		cm.mainMu.Unlock()
 		return nil
 	}
 
-	return cm.setupMainTunnelWithInfo(creds)
+	cm.mainStarting = true
+	cm.mainError = ""
+	cm.mainMu.Unlock()
+
+	err := cm.setupMainTunnelWithInfo(creds)
+
+	cm.mainMu.Lock()
+	cm.mainStarting = false
+	if err != nil {
+		cm.mainError = err.Error()
+	}
+	cm.mainMu.Unlock()
+
+	return err
 }
 
-// setupMainTunnelWithInfo does the actual main tunnel setup (must hold mainMu).
+// setupMainTunnelWithInfo does the actual main tunnel setup.
+// Callers must set mainStarting=true before calling and reset it after.
 func (cm *ConnectionManager) setupMainTunnelWithInfo(creds *config.Credentials) error {
 	// Determine local port
 	localPort := creds.LocalPort
@@ -160,9 +192,11 @@ func (cm *ConnectionManager) setupMainTunnelWithInfo(creds *config.Credentials) 
 	// Chisel typically connects within 3-5 seconds.
 	time.Sleep(5 * time.Second)
 
+	cm.mainMu.Lock()
 	cm.mainMgr = mgr
 	cm.mainReady = true
 	cm.localPort = localPort
+	cm.mainMu.Unlock()
 
 	// Save localPort back to credentials
 	creds.LocalPort = localPort
@@ -179,9 +213,9 @@ func (cm *ConnectionManager) setupMainTunnelWithInfo(creds *config.Credentials) 
 // ensureMainTunnel ensures the main tunnel is ready, bootstrapping from quick-setup response if needed.
 func (cm *ConnectionManager) ensureMainTunnel(resp *QuickSetupResponse, tunnelPort int) error {
 	cm.mainMu.Lock()
-	defer cm.mainMu.Unlock()
 
 	if cm.mainReady {
+		cm.mainMu.Unlock()
 		return nil
 	}
 
@@ -195,7 +229,20 @@ func (cm *ConnectionManager) ensureMainTunnel(resp *QuickSetupResponse, tunnelPo
 	creds.ConnectorName = resp.Data.Connector.Username
 	creds.Password = resp.Data.Connector.Password
 
-	return cm.setupMainTunnelWithInfo(creds)
+	cm.mainStarting = true
+	cm.mainError = ""
+	cm.mainMu.Unlock()
+
+	err := cm.setupMainTunnelWithInfo(creds)
+
+	cm.mainMu.Lock()
+	cm.mainStarting = false
+	if err != nil {
+		cm.mainError = err.Error()
+	}
+	cm.mainMu.Unlock()
+
+	return err
 }
 
 // Connect establishes a tunnel connection for the given app config

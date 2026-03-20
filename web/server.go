@@ -34,13 +34,8 @@ func NewServer(port int) (*Server, error) {
 	}, nil
 }
 
-// Start starts the web server, establishing the main tunnel first if possible
+// Start starts the web server immediately, then establishes the main tunnel in the background
 func (s *Server) Start() error {
-	// Establish main tunnel at startup (uses saved connector info if available)
-	if err := s.connMgr.SetupMainTunnel(); err != nil {
-		slog.Warn("Failed to establish main tunnel at startup, will retry on first connect", "error", err)
-	}
-
 	mux := http.NewServeMux()
 
 	// API routes
@@ -50,6 +45,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/connect/", s.handleConnect)
 	mux.HandleFunc("/api/disconnect/", s.handleDisconnect)
 	mux.HandleFunc("/api/status/", s.handleStatus)
+	mux.HandleFunc("/api/tunnel", s.handleTunnelStatus)
 
 	// Static files
 	staticFS, err := fs.Sub(staticFiles, "static")
@@ -63,6 +59,13 @@ func (s *Server) Start() error {
 	fmt.Printf("\n  Shield Web UI is running at:\n\n")
 	fmt.Printf("    \033[1;36mhttp://%s\033[0m\n\n", addr)
 	fmt.Printf("  \033[90mPress Ctrl+C to stop\033[0m\n\n")
+
+	// Establish main tunnel in the background so Web UI is available immediately
+	go func() {
+		if err := s.connMgr.SetupMainTunnel(); err != nil {
+			slog.Warn("Failed to establish main tunnel at startup, will retry on first connect", "error", err)
+		}
+	}()
 
 	return http.ListenAndServe(addr, mux)
 }
@@ -270,6 +273,15 @@ func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check main tunnel readiness
+	tunnelStatus, _ := s.connMgr.MainTunnelStatus()
+	if tunnelStatus == "connecting" {
+		writeJSON(w, http.StatusServiceUnavailable, map[string]interface{}{
+			"code": 503, "message": "Main tunnel is connecting, please wait...",
+		})
+		return
+	}
+
 	// Check concurrent connection limit
 	if s.connMgr.ActiveCount() >= 3 {
 		writeJSON(w, http.StatusTooManyRequests, map[string]interface{}{
@@ -346,6 +358,24 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"code": 200, "data": status,
+	})
+}
+
+// handleTunnelStatus handles GET /api/tunnel — returns main tunnel readiness
+func (s *Server) handleTunnelStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	status, errMsg := s.connMgr.MainTunnelStatus()
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"code": 200,
+		"data": map[string]interface{}{
+			"status": status,
+			"error":  errMsg,
+		},
 	})
 }
 

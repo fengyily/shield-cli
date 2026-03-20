@@ -64,11 +64,21 @@ More installation methods (deb, rpm, PowerShell, source build): [Installation Gu
 shield start
 ```
 
-Open `http://localhost:8181`, add your services, and connect with one click.
+Open `http://localhost:8181`, add your services, and connect with one click. On macOS and Windows, a system tray icon provides quick access to the Dashboard.
 
 ![Web UI Dashboard](docs/images/shieldcli-webui-001.jpg)
 
 ![RDP via Web UI](docs/images/shieldcli-rdp-web-001.jpg)
+
+### System Service (Auto-Start on Boot)
+
+```bash
+shield install              # Install as system service (port 8181)
+shield install --port 8182  # Use custom port if 8181 is occupied
+shield uninstall            # Remove the service
+```
+
+Supports macOS (launchd), Linux (systemd), and Windows. See [System Service Guide](https://docs.yishield.com/en/guide/system-service) for details.
 
 ### Command Line
 

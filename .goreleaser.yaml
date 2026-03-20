@@ -3,25 +3,43 @@ version: 2
 project_name: shield-cli
 
 builds:
-  - main: .
+  # macOS & Windows: with system tray (requires CGO)
+  - id: desktop
+    main: .
+    binary: shield
+    env:
+      - CGO_ENABLED=1
+    tags:
+      - withtray
+    goos:
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm
+    ldflags:
+      - -s -w
+      - -X shield-cli/cmd.Version={{.Version}}
+      - -X shield-cli/cmd.GitCommit={{.Commit}}
+      - -X shield-cli/cmd.BuildTime={{.Date}}
+
+  # Linux: headless, no tray (pure Go, no CGO)
+  - id: linux
+    main: .
     binary: shield
     env:
       - CGO_ENABLED=0
     goos:
-      - darwin
       - linux
-      - windows
     goarch:
       - amd64
       - arm64
       - "386"
     goarm:
       - "7"
-    ignore:
-      - goos: darwin
-        goarch: "386"
-      - goos: windows
-        goarch: arm
     ldflags:
       - -s -w
       - -X shield-cli/cmd.Version={{.Version}}

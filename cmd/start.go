@@ -8,17 +8,21 @@ import (
 	"strconv"
 	"syscall"
 
+	"shield-cli/tray"
 	"shield-cli/web"
 
 	"github.com/spf13/cobra"
 )
 
+var noTray bool
+
 var startCmd = &cobra.Command{
 	Use:   "start [port]",
 	Short: "Start the Web management platform",
-	Long:  "Start a local Web UI for managing Shield applications.\nDefault port is 8181.",
-	Example: `  shield start          # Start on port 8181
-  shield start 9090     # Start on port 9090`,
+	Long:  "Start a local Web UI for managing Shield applications.\nDefault port is 8181.\nOn macOS and Windows, a system tray icon is shown for quick access.",
+	Example: `  shield start              # Start on port 8181 with tray icon
+  shield start 9090         # Start on port 9090
+  shield start --no-tray    # Start without system tray icon`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		port := 8181
@@ -47,13 +51,39 @@ var startCmd = &cobra.Command{
 		// Graceful shutdown
 		sigCh := make(chan os.Signal, 1)
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-		go func() {
-			<-sigCh
+
+		shutdown := func() {
 			fmt.Println("\n\033[33mShutting down...\033[0m")
 			srv.Shutdown()
 			os.Exit(0)
+		}
+
+		go func() {
+			<-sigCh
+			tray.Quit()
+			shutdown()
 		}()
 
+		// If tray is available and not disabled, run with system tray
+		if tray.Available() && !noTray {
+			slog.Info("System tray enabled", "platform", "macOS/Windows")
+			tray.Run(port, func() {
+				// onReady: start the web server in a goroutine
+				go func() {
+					if err := srv.Start(); err != nil {
+						slog.Error("Web server error", "error", err)
+						tray.Quit()
+					}
+				}()
+			}, shutdown)
+			return nil
+		}
+
+		// No tray: run web server directly (blocks)
 		return srv.Start()
 	},
+}
+
+func init() {
+	startCmd.Flags().BoolVar(&noTray, "no-tray", false, "Disable system tray icon")
 }

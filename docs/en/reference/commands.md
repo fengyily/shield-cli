@@ -20,6 +20,8 @@ head:
 | `shield http [address]` | Create an HTTP tunnel |
 | `shield https [address]` | Create an HTTPS tunnel |
 | `shield telnet [address]` | Create a Telnet tunnel |
+| `shield install [--port]` | Install as system service (auto-start on boot) |
+| `shield uninstall` | Uninstall system service |
 | `shield clean` | Clear local credential cache |
 
 ## Address Format
@@ -68,6 +70,22 @@ head:
 | `--visable=<node>` | Visible mode with specific node | `--visable=HK` |
 | `--invisible` | Invisible mode, requires auth code | `--invisible` |
 
+## Service Management
+
+| Command | Description |
+|---|---|
+| `shield install` | Install as system service with default port 8181 |
+| `shield install --port 8182` | Install with custom port |
+| `shield uninstall` | Remove system service |
+
+### Install Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--port` | `8181` | Web UI port number |
+
+The install command automatically detects port conflicts and suggests available alternatives. See [System Service Installation](/en/guide/system-service) for platform-specific details.
+
 ## Examples
 
 ```bash
@@ -86,4 +104,11 @@ shield rdp 10.0.0.5 --username Administrator --invisible
 
 # Clear cache
 shield clean
+
+# Install as system service
+shield install
+shield install --port 8182
+
+# Uninstall service
+shield uninstall
 ```

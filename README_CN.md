@@ -64,11 +64,21 @@ curl -fsSL https://cdn.jsdelivr.net/gh/fengyily/shield-cli@main/install.sh | sh
 shield start
 ```
 
-打开 `http://localhost:8181`，添加服务，一键连接。
+打开 `http://localhost:8181`，添加服务，一键连接。macOS 和 Windows 上会在系统托盘显示图标，点击即可快速打开 Dashboard。
 
 ![Web 管理面板](docs/images/shieldcli-webui-001.jpg)
 
 ![通过 Web UI 访问 RDP](docs/images/shieldcli-rdp-web-001.jpg)
+
+### 系统服务安装（开机自启）
+
+```bash
+shield install              # 安装为系统服务（默认端口 8181）
+shield install --port 8182  # 如果 8181 被占用，指定其他端口
+shield uninstall            # 卸载服务
+```
+
+支持 macOS (launchd)、Linux (systemd) 和 Windows。详见[系统服务安装指南](https://docs.yishield.com/zh/guide/system-service)。
 
 ### 命令行模式
 
