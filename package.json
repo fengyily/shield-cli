@@ -1,0 +1,30 @@
+{
+  "name": "sheild-cli",
+  "version": "1.0.0",
+  "description": "<p align=\"center\">   <img src=\"docs/logo.svg\" alt=\"Shield CLI\" width=\"128\" height=\"128\"> </p>",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "scripts": {
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fengyily/sheild-cli.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/fengyily/sheild-cli/issues"
+  },
+  "homepage": "https://github.com/fengyily/sheild-cli#readme",
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}

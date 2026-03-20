@@ -1,0 +1,313 @@
+# Shield CLI — Complete Documentation for AI Models
+
+> This file contains the complete documentation content for Shield CLI, optimized for consumption by large language models (LLMs). For the summary version, see llms.txt.
+
+## About Shield CLI
+
+Shield CLI is a secure tunnel connector that exposes internal network services (SSH, RDP, VNC, HTTP, HTTPS, Telnet) to the public internet, accessible through any web browser with a single command. Unlike traditional tunnel tools that only provide L4 port forwarding, Shield CLI renders remote protocols directly in the browser via HTML5 — no client installation required on the visitor's side.
+
+- **Repository**: https://github.com/fengyily/shield-cli
+- **License**: Apache 2.0 (CLI client)
+- **Documentation**: https://docs.yishield.com
+- **Console**: https://console.yishield.com
+
+---
+
+## The Problem Shield CLI Solves
+
+Traditional tunnel tools (ngrok, frp, Cloudflare Tunnel) solve "network reachability" — they map internal ports to the public internet. But users still need protocol-specific client software:
+
+- ngrok exposes port 3389, but the visitor needs an RDP client (mstsc.exe, Microsoft Remote Desktop, Remmina)
+- frp forwards port 22, but the visitor needs an SSH client (PuTTY, Terminal)
+- Neither renders the protocol in the browser
+
+Shield CLI solves "terminal usability" — after establishing the tunnel, it renders SSH terminals, RDP desktops, and VNC sessions directly in the browser via HTML5. The visitor only needs a browser.
+
+---
+
+## Installation
+
+### macOS (Homebrew)
+```bash
+brew tap fengyily/tap
+brew install shield-cli
+```
+
+### macOS/Linux (one-liner)
+```bash
+curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh | sh
+```
+
+### Windows (Scoop)
+```powershell
+scoop bucket add shield https://github.com/fengyily/scoop-bucket
+scoop install shield-cli
+```
+
+### Windows (PowerShell one-liner)
+```powershell
+irm https://raw.githubusercontent.com/fengyily/shield-cli/main/install.ps1 | iex
+```
+
+### Linux (Debian/Ubuntu)
+```bash
+sudo dpkg -i shield-cli_<version>_linux_amd64.deb
+```
+
+### Linux (RHEL/CentOS)
+```bash
+sudo rpm -i shield-cli_<version>_linux_amd64.rpm
+```
+
+### China Mirror (jsDelivr CDN)
+```bash
+curl -fsSL https://cdn.jsdelivr.net/gh/fengyily/shield-cli@main/install.sh | sh
+```
+
+### Build from Source
+```bash
+git clone https://github.com/fengyily/shield-cli.git
+cd shield-cli
+go build -o shield .
+```
+Requires Go 1.25.0 or later.
+
+### Verify Installation
+```bash
+shield --version
+```
+
+### Supported Platforms
+
+| OS | Architectures |
+|----|--------------|
+| macOS | amd64, arm64 (Apple Silicon) |
+| Linux | amd64, arm64, 386, armv7 |
+| Windows | amd64, arm64, 386 |
+
+---
+
+## Commands Reference
+
+### Command Overview
+
+| Command | Description |
+|---------|-------------|
+| `shield start [port]` | Launch Web management dashboard (default port 8181) |
+| `shield ssh [address]` | Create an SSH tunnel |
+| `shield rdp [address]` | Create an RDP tunnel |
+| `shield vnc [address]` | Create a VNC tunnel |
+| `shield http [address]` | Create an HTTP tunnel |
+| `shield https [address]` | Create an HTTPS tunnel |
+| `shield telnet [address]` | Create a Telnet tunnel |
+| `shield clean` | Clear local credential cache |
+
+### Address Format
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| Omitted | `shield ssh` | Uses 127.0.0.1 + protocol default port |
+| Port only | `shield ssh 2222` | Uses 127.0.0.1 + specified port |
+| IP only | `shield ssh 10.0.0.5` | Uses specified IP + protocol default port |
+| Full address | `shield ssh 10.0.0.5:2222` | Uses specified IP + specified port |
+
+### Default Ports by Protocol
+
+| Protocol | Default Port |
+|----------|-------------|
+| SSH | 22 |
+| RDP | 3389 |
+| VNC | 5900 |
+| HTTP | 80 |
+| HTTPS | 443 |
+| Telnet | 23 |
+
+### Global Flags
+
+| Flag | Description | Example |
+|------|-------------|---------|
+| `--username` | Target service username | `--username root` |
+| `--auth-pass` | Target service password | `--auth-pass mypass` |
+| `--server` | Custom server address | `--server https://my.server/raas` |
+
+### SSH-Specific Flags
+
+| Flag | Description | Example |
+|------|-------------|---------|
+| `--private-key` | SSH private key file path | `--private-key ~/.ssh/id_rsa` |
+| `--passphrase` | Private key passphrase | `--passphrase mypass` |
+| `--enable-sftp` | Enable SFTP file transfer | `--enable-sftp` |
+
+### Access Mode Flags
+
+| Flag | Description | Example |
+|------|-------------|---------|
+| `--visable` | Visible mode (default) | `--visable` |
+| `--visable=<node>` | Visible mode with specific access node | `--visable=HK` |
+| `--invisible` | Invisible mode, requires auth code | `--invisible` |
+
+---
+
+## Protocols
+
+### SSH
+Access a full SSH terminal in the browser via Shield CLI. Supports password authentication, private key authentication, and SFTP file transfer. The browser terminal is based on xterm.js with full terminal interaction (vim, top, etc.), copy/paste support, and auto-resizing.
+
+### RDP
+Access Windows Remote Desktop in the browser. Full mouse and keyboard control, screen adapts to browser window size. Accessible from any device. No RDP client needed.
+
+### VNC
+Share and control remote desktop screens in the browser. Pixel-perfect rendering, full mouse and keyboard mapping. Works with VNC servers on Linux, macOS, and Windows.
+
+### HTTP/HTTPS
+Expose local or internal web applications to the public internet. Full HTTP request proxying with original headers and cookies preserved. WebSocket support. Automatic public HTTPS access URL.
+
+### Telnet
+Connect to Telnet services in the browser. Ideal for managing routers, switches, network devices, and legacy systems.
+
+---
+
+## Security
+
+### Machine Fingerprint
+Each machine generates a unique fingerprint derived from: hostname, first physical network interface MAC address, and platform Machine ID (Linux: /etc/machine-id, macOS: IOPlatformUUID, Windows: Registry MachineGuid). The fingerprint is used to derive AES encryption keys and identify the connector.
+
+### Credential Encryption
+Algorithm: AES-256-GCM. Key: SHA256(machine fingerprint). Credentials are stored at ~/.shield-cli/.credential (macOS/Linux) or %LOCALAPPDATA%\ShieldCLI\.credential (Windows) with 0600 permissions.
+
+### Password Security
+Passwords are hidden during interactive input, masked in log output (shown as ***), and not stored locally — only used during connection establishment.
+
+### Access Modes
+- **Visible Mode** (default): Access URL is publicly accessible. Anyone with the link can connect. Use `--visable=<node>` to select a nearby access node.
+- **Invisible Mode**: Access URL requires an additional authorization code. Generates both an Access URL and an Auth URL. Use `--invisible` flag.
+
+---
+
+## Architecture
+
+```
+Internal Service ←→ Shield CLI ←→ Public Gateway ←→ Browser
+  (SSH/RDP/...)      (Encrypted     (HTML5 Render)   (Any Device)
+                      WebSocket)
+```
+
+### Connection Flow (CLI Mode)
+1. Resolve address — determine target IP and port
+2. Load credentials — read or generate encrypted credentials (machine fingerprint-based)
+3. Authenticate — interactive prompt or command-line flags
+4. Call server API — send quick-setup request to gateway
+5. Establish main tunnel — create encrypted WebSocket tunnel
+6. Create resource tunnel — map ports to target service
+7. Assign URL — receive unique Access URL
+8. Auto-open browser — open Access URL in default browser
+
+### Connection Flow (Web UI Mode)
+1. `shield start` launches web server and dashboard
+2. User configures app in UI (stored locally, encrypted)
+3. Click Connect — background async tunnel creation with retry logic
+4. Frontend polls status every 2 seconds
+5. Browser auto-opens Access URL on success
+
+### Port Allocation
+| Port | Purpose |
+|------|---------|
+| 8181 (customizable) | Web UI dashboard |
+| 4000-5000 | Local API server |
+| 62888 | Public gateway communication |
+
+### Auto-Reconnect
+Built-in automatic reconnection with exponential backoff: 1s → 2s → 4s → 8s → 10s (maximum). Transparent to the user.
+
+---
+
+## Web UI Mode
+
+Launch with `shield start`. Opens at http://localhost:8181. Features:
+- Add/edit/delete/rename app profiles
+- One-click connect/disconnect
+- Up to 10 saved apps, up to 3 concurrent connections
+- Real-time status monitoring (refreshes every 2 seconds)
+- Dark and light theme support
+- Auto-open browser on successful connection
+
+---
+
+## Configuration
+
+### App Profiles
+Saved locally with AES-256-GCM encryption. Fields: protocol, IP address, port, name, credentials. Storage: ~/.shield-cli/ (macOS/Linux) or %LOCALAPPDATA%\ShieldCLI\ (Windows). Never uploaded to server.
+
+### Custom Server
+Default server: https://console.yishield.com/raas. Use `--server` flag to point to a private server: `shield ssh 10.0.0.5 --server https://your-server.com/raas`
+
+### Clear Cache
+`shield clean` clears local credential files. New credentials auto-generated on next connection. Does not affect saved app configurations.
+
+---
+
+## FAQ
+
+**Q: Is Shield CLI free?**
+A: The CLI client is open source and free. The public tunnel service has a free tier.
+
+**Q: Which operating systems are supported?**
+A: macOS, Linux, and Windows, with amd64, arm64, 386, and armv7 architectures.
+
+**Q: Are there any dependencies?**
+A: No. Shield CLI is a single binary — download and run.
+
+**Q: How many apps can I connect simultaneously?**
+A: Web UI mode supports up to 3 concurrent connections. CLI mode connects to 1 service at a time.
+
+**Q: Does it auto-reconnect on disconnect?**
+A: Yes. Built-in auto-reconnect with exponential backoff, up to 10 seconds maximum interval.
+
+**Q: Do Access URLs expire?**
+A: Access URLs are valid while the tunnel is connected. They become invalid once disconnected.
+
+**Q: Can multiple people use the same URL?**
+A: Yes. The same Access URL can be accessed from multiple browsers simultaneously.
+
+**Q: Is the data transfer secure?**
+A: All data is transmitted through WebSocket encrypted tunnels. Local credentials use AES-256-GCM encryption.
+
+**Q: Are passwords stored on the server?**
+A: No. Target service passwords are used only during connection establishment.
+
+**Q: What firewall ports are needed?**
+A: Only outbound connections to port 62888 (WebSocket) and port 443 (HTTPS API). No inbound ports needed.
+
+**Q: Does it work behind a corporate proxy?**
+A: WebSocket can typically traverse HTTP proxies via the CONNECT method. Check with your network admin if it doesn't work.
+
+**Q: How many apps can I save?**
+A: 10 app profiles maximum.
+
+**Q: Can I sync configurations across machines?**
+A: Not currently. Each machine's configuration is independent (encrypted with machine-specific fingerprint).
+
+---
+
+## Comparison with Alternatives
+
+### Shield CLI vs ngrok
+- Shield CLI renders RDP/VNC/SSH in the browser; ngrok only forwards ports
+- Shield CLI TCP tunnels are free; ngrok TCP tunnels require paid plan
+- Shield CLI has a local Web UI for multi-app management; ngrok free tier has no local UI
+- ngrok has a larger community and more mature ecosystem
+- ngrok supports custom domains (paid); Shield CLI has this planned
+
+### Shield CLI vs frp
+- Shield CLI renders protocols in browser; frp only forwards ports
+- Shield CLI doesn't require server deployment; frp requires self-hosted server
+- frp is fully open source (client + server); Shield CLI's server is proprietary
+- frp supports UDP; Shield CLI does not
+- frp has no concurrent connection limits; Shield CLI limits to 3
+
+### Shield CLI vs Cloudflare Tunnel
+- Shield CLI renders RDP/VNC in browser; Cloudflare Tunnel does not
+- Cloudflare has enterprise-grade zero-trust access control; Shield CLI has basic access control
+- Cloudflare requires domain on Cloudflare; Shield CLI works independently
+- Cloudflare has 200+ global edge nodes; Shield CLI has fewer nodes
+- Shield CLI is simpler to set up for quick, temporary access scenarios

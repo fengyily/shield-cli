@@ -32,3 +32,12 @@ go.work.sum
 # .vscode/
 shield
 init.md
+
+# Node
+node_modules/
+
+# VitePress
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+docs/blogs/
+.DS_Store

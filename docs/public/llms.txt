@@ -1,0 +1,172 @@
+# Shield CLI
+
+> Shield CLI is a secure tunnel connector that exposes internal network services to the public internet, accessible through any web browser with a single command.
+
+Shield CLI is different from traditional tunnel tools (ngrok, frp, Cloudflare Tunnel) because it not only establishes encrypted tunnels but also renders remote protocols directly in the browser via HTML5. Users get a public HTTPS URL — open it in any browser to operate SSH terminals, RDP desktops, VNC sessions, or access web applications. No client software installation is required on the visitor's side.
+
+## Key Facts
+
+- Name: Shield CLI
+- Type: Secure tunnel connector with browser-based protocol rendering
+- License: Apache 2.0 (CLI client is open source)
+- Repository: https://github.com/fengyily/shield-cli
+- Documentation: https://docs.yishield.com
+- Console: https://console.yishield.com
+
+## What Shield CLI Does
+
+Shield CLI creates encrypted WebSocket tunnels from your machine to a public gateway. The gateway assigns a unique HTTPS Access URL. When visitors open this URL in a browser, the gateway renders the remote service using HTML5:
+
+- **SSH**: Full xterm.js-based terminal in the browser, with optional SFTP file transfer
+- **RDP**: Complete Windows Remote Desktop rendered in HTML5, with mouse and keyboard control
+- **VNC**: Pixel-perfect remote desktop sharing in the browser
+- **HTTP/HTTPS**: Reverse proxy with full header/cookie/WebSocket preservation
+- **Telnet**: Browser-based terminal for network devices and legacy systems
+
+## Core Differentiator
+
+Traditional tunnel tools like ngrok and frp solve "network reachability" (L4 port forwarding), but users still need to install protocol-specific clients (RDP client, SSH client, etc.). Shield CLI solves "terminal usability" (L7 protocol rendering) — the browser IS the client.
+
+## Supported Protocols and Default Ports
+
+| Protocol | Default Port | Browser Experience |
+|----------|-------------|-------------------|
+| SSH | 22 | Full terminal (xterm.js) + optional SFTP |
+| RDP | 3389 | Complete Windows desktop |
+| VNC | 5900 | Remote desktop sharing |
+| HTTP | 80 | Web application proxy |
+| HTTPS | 443 | Secure web application proxy |
+| Telnet | 23 | Terminal for network devices |
+
+## Installation
+
+### macOS
+```bash
+brew tap fengyily/tap
+brew install shield-cli
+```
+
+### Windows
+```powershell
+scoop bucket add shield https://github.com/fengyily/scoop-bucket
+scoop install shield-cli
+```
+
+### Linux / macOS (one-liner)
+```bash
+curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh | sh
+```
+
+### China Mirror
+```bash
+curl -fsSL https://cdn.jsdelivr.net/gh/fengyily/shield-cli@main/install.sh | sh
+```
+
+## Usage Examples
+
+```bash
+# Connect to local SSH (resolves to 127.0.0.1:22)
+shield ssh
+
+# Connect to a remote SSH server
+shield ssh 10.0.0.5
+
+# Connect to Windows Remote Desktop
+shield rdp 10.0.0.5 --username Administrator --auth-pass mypassword
+
+# Share a VNC desktop
+shield vnc 10.0.0.10
+
+# Expose a local web app
+shield http 3000
+
+# Launch the Web UI management dashboard
+shield start
+
+# Clear cached credentials
+shield clean
+```
+
+## Two Usage Modes
+
+1. **Web UI Mode** (recommended): Run `shield start` to launch a local management dashboard at `http://localhost:8181`. Manage up to 10 app profiles with one-click connect/disconnect. Supports up to 3 concurrent connections.
+
+2. **CLI Mode**: Run `shield <protocol> [address]` directly from the terminal. Ideal for servers, scripting, and automation.
+
+## Smart Address Resolution
+
+Shield CLI uses intelligent address parsing to minimize typing:
+- `shield ssh` → `127.0.0.1:22` (empty = localhost + default port)
+- `shield ssh 2222` → `127.0.0.1:2222` (number = port on localhost)
+- `shield ssh 10.0.0.5` → `10.0.0.5:22` (IP = IP + default port)
+- `shield ssh 10.0.0.5:2222` → `10.0.0.5:2222` (full specification)
+
+## Security Model
+
+- **Encryption**: All tunnels use encrypted WebSocket (WSS). Local credentials are encrypted with AES-256-GCM.
+- **Machine Fingerprint**: Encryption keys are derived from SHA256 of hostname + MAC address + platform Machine ID. Credentials are bound to the machine — copying the credential file to another machine won't work.
+- **Password Handling**: Passwords are masked in logs, hidden during interactive input, and not stored locally.
+- **Access Modes**: Visible mode (default, public URL) and Invisible mode (requires authorization code).
+
+## Architecture
+
+```
+Internal Service ←→ Shield CLI ←→ Public Gateway ←→ Browser
+  (SSH/RDP/...)      (Encrypted     (HTML5 Render)   (Any Device)
+                      WebSocket)
+```
+
+Shield CLI uses Chisel (WebSocket-based TCP tunnel) to establish two layers:
+1. **API Tunnel** (Main): Persistent control channel for dynamic tunnel management
+2. **Resource Tunnel**: Per-app data channel, created on demand (up to 3 concurrent)
+
+## Platform Support
+
+| OS | Architectures |
+|----|--------------|
+| macOS | amd64, arm64 (Apple Silicon) |
+| Linux | amd64, arm64, 386, armv7 |
+| Windows | amd64, arm64, 386 |
+
+## Comparison with Alternatives
+
+| Feature | Shield CLI | ngrok | frp | Cloudflare Tunnel |
+|---------|-----------|-------|-----|-------------------|
+| Browser RDP/VNC | Yes | No | No | No |
+| Browser SSH terminal | Yes | No | No | Partial |
+| Free TCP tunnels | Yes | Paid only | Yes | Paid (Spectrum) |
+| Self-hosted server | Planned | No | Yes | No |
+| China-friendly install | Yes (CDN mirror) | No | Yes | No |
+| Zero client needed | Yes | No (need protocol clients) | No | Partial |
+| Open source (client) | Apache 2.0 | Proprietary | Apache 2.0 | Proprietary |
+
+## Limitations
+
+- Server-side gateway is not open source (self-hosted deployment is planned)
+- Maximum 3 concurrent tunnel connections
+- Maximum 10 saved app profiles
+- No UDP protocol support
+- Access control is basic (Invisible mode with auth codes is planned)
+
+## Documentation Pages
+
+- What is Shield CLI: /en/guide/what-is-shield
+- Installation: /en/guide/install
+- Quick Start: /en/guide/quickstart
+- Web UI Mode: /en/guide/web-ui
+- CLI Mode: /en/guide/cli-mode
+- SSH Protocol: /en/protocols/ssh
+- RDP Protocol: /en/protocols/rdp
+- VNC Protocol: /en/protocols/vnc
+- HTTP/HTTPS Protocol: /en/protocols/http
+- Telnet Protocol: /en/protocols/telnet
+- Connection Flow: /en/security/connection-flow
+- Credentials: /en/security/credentials
+- Access Modes: /en/security/access-modes
+- App Profiles: /en/config/apps
+- Custom Server: /en/config/server
+- Clear Cache: /en/config/clean
+- Commands Reference: /en/reference/commands
+- FAQ: /en/reference/faq
+- Common Errors: /en/troubleshooting/errors
+- Network Issues: /en/troubleshooting/network
