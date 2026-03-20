@@ -1,0 +1,55 @@
+/* Feature cards: horizontal layout (icon left, text right) */
+.VPFeature .box {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.VPFeature .box .icon {
+  flex-shrink: 0;
+}
+
+.VPFeature .box .icon img {
+  width: 40px;
+  height: 40px;
+}
+
+.VPFeature .box > .details {
+  flex: 1;
+}
+
+.VPFeature .box > h2.title {
+  flex: 1;
+}
+
+/* Wrap title + details in a vertical flow */
+.VPFeature .box {
+  flex-wrap: wrap;
+}
+
+.VPFeature .box .icon {
+  margin-top: 2px;
+}
+
+.VPFeature .box .title {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.VPFeature .box .details {
+  flex-basis: 100%;
+  padding-left: 56px;
+  margin-top: -4px;
+}
+
+/* Feature icon background circle */
+.VPFeature .icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--vp-c-default-soft);
+}

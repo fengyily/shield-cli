@@ -16,7 +16,7 @@ hero:
   actions:
     - theme: brand
       text: 快速入门
-      link: /zh/guide/what-is-shield
+      link: /guide/what-is-shield
     - theme: alt
       text: English
       link: /en/guide/what-is-shield
@@ -24,22 +24,28 @@ hero:
       text: GitHub
       link: https://github.com/fengyily/shield-cli
 features:
-  - icon: 🌐
+  - icon:
+      src: /icons/browser.svg
     title: 浏览器即终端
     details: SSH、RDP、VNC、Web 应用，全部通过浏览器 HTML5 直接访问，无需安装客户端
-  - icon: 🔒
+  - icon:
+      src: /icons/lock.svg
     title: 端到端加密
     details: 基于 WebSocket 的加密隧道，AES-256-GCM 凭证加密，机器指纹身份绑定
-  - icon: ⚡
+  - icon:
+      src: /icons/zap.svg
     title: 一条命令连接
     details: 智能地址解析，shield ssh 即可连接，自动分配公网访问地址
-  - icon: 🖥️
+  - icon:
+      src: /icons/dashboard.svg
     title: Web 管理面板
     details: 本地 Web UI 管理多达 10 个应用，一键连接/断开，实时状态监控
-  - icon: 📦
+  - icon:
+      src: /icons/devices.svg
     title: 全平台支持
     details: macOS / Linux / Windows，amd64 / arm64，Homebrew / Scoop / deb / rpm
-  - icon: 🔌
+  - icon:
+      src: /icons/protocol.svg
     title: 六大协议
     details: SSH、RDP、VNC、HTTP、HTTPS、Telnet，覆盖主流远程访问场景
 ---

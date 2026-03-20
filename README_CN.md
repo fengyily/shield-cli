@@ -10,9 +10,9 @@
 </p>
 
 <p align="center">
-  <a href="https://docs.yishield.com/zh/guide/what-is-shield">文档中心</a> &bull;
-  <a href="https://docs.yishield.com/zh/guide/install">安装</a> &bull;
-  <a href="https://docs.yishield.com/zh/guide/quickstart">快速开始</a> &bull;
+  <a href="https://docs.yishield.com/guide/what-is-shield">文档中心</a> &bull;
+  <a href="https://docs.yishield.com/guide/install">安装</a> &bull;
+  <a href="https://docs.yishield.com/guide/quickstart">快速开始</a> &bull;
   <a href="README.md">English</a>
 </p>
 
@@ -54,7 +54,7 @@ curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh
 curl -fsSL https://cdn.jsdelivr.net/gh/fengyily/shield-cli@main/install.sh | sh
 ```
 
-更多安装方式（deb、rpm、PowerShell、源码编译）：[安装指南](https://docs.yishield.com/zh/guide/install)
+更多安装方式（deb、rpm、PowerShell、源码编译）：[安装指南](https://docs.yishield.com/guide/install)
 
 ## 快速开始
 
@@ -78,7 +78,7 @@ shield install --port 8182  # 如果 8181 被占用，指定其他端口
 shield uninstall            # 卸载服务
 ```
 
-支持 macOS (launchd)、Linux (systemd) 和 Windows。详见[系统服务安装指南](https://docs.yishield.com/zh/guide/system-service)。
+支持 macOS (launchd)、Linux (systemd) 和 Windows。详见[系统服务安装指南](https://docs.yishield.com/guide/system-service)。
 
 ### 命令行模式
 
@@ -103,7 +103,7 @@ shield vnc 10.0.0.10    # 浏览器内 VNC 屏幕共享
 | `shield rdp` | `127.0.0.1:3389` |
 | `shield http 3000` | `127.0.0.1:3000` |
 
-支持协议：`ssh`、`rdp`、`vnc`、`http`、`https`、`telnet` — [完整命令参考](https://docs.yishield.com/zh/reference/commands)
+支持协议：`ssh`、`rdp`、`vnc`、`http`、`https`、`telnet` — [完整命令参考](https://docs.yishield.com/reference/commands)
 
 ## 工作原理
 
@@ -118,7 +118,7 @@ shield vnc 10.0.0.10    # 浏览器内 VNC 屏幕共享
 └──────────────┘                             └──────────────┘
 ```
 
-了解更多：[连接流程](https://docs.yishield.com/zh/security/connection-flow) | [安全模型](https://docs.yishield.com/zh/security/credentials)
+了解更多：[连接流程](https://docs.yishield.com/security/connection-flow) | [安全模型](https://docs.yishield.com/security/credentials)
 
 ## 安全性
 
@@ -127,19 +127,19 @@ shield vnc 10.0.0.10    # 浏览器内 VNC 屏幕共享
 - **WebSocket 传输** — 带认证的加密隧道
 - **0600 权限** — 凭证文件仅当前用户可读
 
-详情：[凭证管理](https://docs.yishield.com/zh/security/credentials) | [访问模式](https://docs.yishield.com/zh/security/access-modes)
+详情：[凭证管理](https://docs.yishield.com/security/credentials) | [访问模式](https://docs.yishield.com/security/access-modes)
 
 ## 文档中心
 
 完整文档请访问 **[docs.yishield.com](https://docs.yishield.com)**：
 
-- [Shield CLI 是什么](https://docs.yishield.com/zh/guide/what-is-shield) — 概述和核心特性
-- [安装指南](https://docs.yishield.com/zh/guide/install) — 所有安装方式
-- [5 分钟上手](https://docs.yishield.com/zh/guide/quickstart) — 快速入门教程
-- [协议指南](https://docs.yishield.com/zh/protocols/ssh) — SSH、RDP、VNC、HTTP、Telnet
-- [命令参考](https://docs.yishield.com/zh/reference/commands) — 完整参数列表
-- [常见问题](https://docs.yishield.com/zh/reference/faq) — FAQ
-- [故障排查](https://docs.yishield.com/zh/troubleshooting/errors) — 常见错误和解决方案
+- [Shield CLI 是什么](https://docs.yishield.com/guide/what-is-shield) — 概述和核心特性
+- [安装指南](https://docs.yishield.com/guide/install) — 所有安装方式
+- [5 分钟上手](https://docs.yishield.com/guide/quickstart) — 快速入门教程
+- [协议指南](https://docs.yishield.com/protocols/ssh) — SSH、RDP、VNC、HTTP、Telnet
+- [命令参考](https://docs.yishield.com/reference/commands) — 完整参数列表
+- [常见问题](https://docs.yishield.com/reference/faq) — FAQ
+- [故障排查](https://docs.yishield.com/troubleshooting/errors) — 常见错误和解决方案
 
 ## 许可证
 

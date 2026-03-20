@@ -59,15 +59,15 @@ export default defineConfig({
   },
 
   locales: {
-    zh: {
+    root: {
       label: '简体中文',
       lang: 'zh-CN',
-      link: '/zh/',
       themeConfig: {
         nav: [
-          { text: '指南', link: '/zh/guide/what-is-shield' },
-          { text: '协议', link: '/zh/protocols/ssh' },
-          { text: '参考', link: '/zh/reference/commands' },
+          { text: '指南', link: '/guide/what-is-shield' },
+          { text: '协议', link: '/protocols/ssh' },
+          { text: '参考', link: '/reference/commands' },
+          { text: '更新日志', link: '/reference/changelog' },
           {
             text: '相关链接',
             items: [
@@ -77,62 +77,62 @@ export default defineConfig({
           },
         ],
         sidebar: {
-          '/zh/': [
+          '/': [
             {
               text: '快速入门',
               items: [
-                { text: 'Shield CLI 是什么', link: '/zh/guide/what-is-shield' },
-                { text: '安装', link: '/zh/guide/install' },
-                { text: '5 分钟上手', link: '/zh/guide/quickstart' },
+                { text: 'Shield CLI 是什么', link: '/guide/what-is-shield' },
+                { text: '安装', link: '/guide/install' },
+                { text: '5 分钟上手', link: '/guide/quickstart' },
               ],
             },
             {
               text: '使用模式',
               items: [
-                { text: 'Web UI 模式', link: '/zh/guide/web-ui' },
-                { text: '命令行模式', link: '/zh/guide/cli-mode' },
-                { text: '系统服务安装', link: '/zh/guide/system-service' },
+                { text: 'Web UI 模式', link: '/guide/web-ui' },
+                { text: '命令行模式', link: '/guide/cli-mode' },
+                { text: '系统服务安装', link: '/guide/system-service' },
               ],
             },
             {
               text: '协议指南',
               items: [
-                { text: 'SSH', link: '/zh/protocols/ssh' },
-                { text: 'RDP', link: '/zh/protocols/rdp' },
-                { text: 'VNC', link: '/zh/protocols/vnc' },
-                { text: 'HTTP / HTTPS', link: '/zh/protocols/http' },
-                { text: 'Telnet', link: '/zh/protocols/telnet' },
+                { text: 'SSH', link: '/protocols/ssh' },
+                { text: 'RDP', link: '/protocols/rdp' },
+                { text: 'VNC', link: '/protocols/vnc' },
+                { text: 'HTTP / HTTPS', link: '/protocols/http' },
+                { text: 'Telnet', link: '/protocols/telnet' },
               ],
             },
             {
               text: '连接与安全',
               items: [
-                { text: '连接流程', link: '/zh/security/connection-flow' },
-                { text: '凭证管理', link: '/zh/security/credentials' },
-                { text: '访问模式', link: '/zh/security/access-modes' },
+                { text: '连接流程', link: '/security/connection-flow' },
+                { text: '凭证管理', link: '/security/credentials' },
+                { text: '访问模式', link: '/security/access-modes' },
               ],
             },
             {
               text: '配置管理',
               items: [
-                { text: '应用配置', link: '/zh/config/apps' },
-                { text: '自定义服务器', link: '/zh/config/server' },
-                { text: '清除缓存', link: '/zh/config/clean' },
+                { text: '应用配置', link: '/config/apps' },
+                { text: '自定义服务器', link: '/config/server' },
+                { text: '清除缓存', link: '/config/clean' },
               ],
             },
             {
               text: '参考',
               items: [
-                { text: '命令参考', link: '/zh/reference/commands' },
-                { text: '更新日志', link: '/zh/reference/changelog' },
-                { text: '常见问题', link: '/zh/reference/faq' },
+                { text: '命令参考', link: '/reference/commands' },
+                { text: '更新日志', link: '/reference/changelog' },
+                { text: '常见问题', link: '/reference/faq' },
               ],
             },
             {
               text: '故障排查',
               items: [
-                { text: '常见错误', link: '/zh/troubleshooting/errors' },
-                { text: '网络问题', link: '/zh/troubleshooting/network' },
+                { text: '常见错误', link: '/troubleshooting/errors' },
+                { text: '网络问题', link: '/troubleshooting/network' },
               ],
             },
           ],
@@ -155,6 +155,7 @@ export default defineConfig({
           { text: 'Guide', link: '/en/guide/what-is-shield' },
           { text: 'Protocols', link: '/en/protocols/ssh' },
           { text: 'Reference', link: '/en/reference/commands' },
+          { text: 'Changelog', link: '/en/reference/changelog' },
           {
             text: 'Links',
             items: [
