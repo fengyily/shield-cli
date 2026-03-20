@@ -98,15 +98,8 @@ Protocols: `ssh`, `rdp`, `vnc`, `http`, `https`, `telnet` — [Full Commands Ref
 ## How It Works
 
 ```
-                      Browser (RDP/VNC/SSH via HTML5)
-                                │
-                                ▼
-┌──────────────┐      ┌──────────────┐      ┌──────────────┐
-│  Internal     │ ◄──► │  Shield CLI   │ ◄══► │  Public      │
-│  Service      │ local│  (tunnel)     │chisel│  Gateway     │
-│  10.0.0.5:    │      │  127.0.0.1   │wss://│  + HTML5     │
-│  3389/5900/22 │      └──────────────┘      │  Rendering   │
-└──────────────┘                             └──────────────┘
+Internal Service ←→ Shield CLI ←→ Public Gateway ←→ Browser
+  (SSH/RDP/...)      (Encrypted)    (HTML5 Render)   (Any Device)
 ```
 
 Learn more: [Connection Flow](https://docs.yishield.com/en/security/connection-flow) | [Security Model](https://docs.yishield.com/en/security/credentials)
