@@ -39,5 +39,4 @@ node_modules/
 # VitePress
 docs/.vitepress/dist/
 docs/.vitepress/cache/
-docs/blogs/
 .DS_Store
