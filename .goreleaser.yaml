@@ -3,25 +3,58 @@ version: 2
 project_name: shield-cli
 
 builds:
-  - main: .
+  # macOS: CGO required for systray (Cocoa framework)
+  - id: macos
+    main: .
+    binary: shield
+    tags:
+      - withtray
+    env:
+      - CGO_ENABLED=1
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X shield-cli/cmd.Version={{.Version}}
+      - -X shield-cli/cmd.GitCommit={{.Commit}}
+      - -X shield-cli/cmd.BuildTime={{.Date}}
+
+  # Windows: systray uses pure Go syscalls, no CGO needed
+  - id: windows
+    main: .
+    binary: shield
+    tags:
+      - withtray
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X shield-cli/cmd.Version={{.Version}}
+      - -X shield-cli/cmd.GitCommit={{.Commit}}
+      - -X shield-cli/cmd.BuildTime={{.Date}}
+
+  # Linux: static build, no tray
+  - id: linux
+    main: .
     binary: shield
     env:
       - CGO_ENABLED=0
     goos:
-      - darwin
       - linux
-      - windows
     goarch:
       - amd64
       - arm64
       - "386"
     goarm:
       - "7"
-    ignore:
-      - goos: darwin
-        goarch: "386"
-      - goos: windows
-        goarch: arm
     ldflags:
       - -s -w
       - -X shield-cli/cmd.Version={{.Version}}
