@@ -11,7 +11,29 @@ head:
 
 Shield CLI 所有版本的变更记录。
 
-## v0.2.1 <Badge type="tip" text="最新" />
+## v0.2.2 <Badge type="tip" text="最新" />
+
+**发布日期：2026-03-22**
+
+### 新功能
+
+- **Docker 支持** — 新增 Dockerfile，支持容器化部署
+  - 多阶段构建，基于 Alpine 的轻量镜像
+  - 多架构支持（linux/amd64、linux/arm64）
+  - `--network host` 模式下可访问宿主机及内网资源
+- **Docker 镜像自动发布** — CI 流水线新增 Docker 构建任务
+  - 同时推送至 Docker Hub（`fengyily/shield-cli`）和 GHCR（`ghcr.io/fengyily/shield-cli`）
+  - 自动生成语义化版本标签（`latest`、`0.2.2`、`0.2`）
+- **监听地址可配置** — 新增 `SHIELD_LISTEN_HOST` 环境变量，支持自定义 Web UI 监听地址（默认 `127.0.0.1`，容器内自动设为 `0.0.0.0`）
+
+### 文档
+
+- README 和安装指南新增 Docker 部署说明（中英文）
+- 新增博客：[用 Docker 跑 Shield CLI](../../blogs/blog-shield-cli-docker.md)
+
+---
+
+## v0.2.1
 
 **发布日期：2026-03-20**
 

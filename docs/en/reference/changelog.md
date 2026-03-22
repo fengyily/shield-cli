@@ -11,7 +11,29 @@ head:
 
 All notable changes to Shield CLI are documented here.
 
-## v0.2.1 <Badge type="tip" text="latest" />
+## v0.2.2 <Badge type="tip" text="latest" />
+
+**Released: 2026-03-22**
+
+### New Features
+
+- **Docker support** — added Dockerfile for containerized deployment
+  - Multi-stage build with lightweight Alpine-based image
+  - Multi-architecture support (linux/amd64, linux/arm64)
+  - `--network host` mode for accessing host and LAN services
+- **Docker image CI pipeline** — automated Docker build and push on release
+  - Published to Docker Hub (`fengyily/shield-cli`) and GHCR (`ghcr.io/fengyily/shield-cli`)
+  - Automatic semver tagging (`latest`, `0.2.2`, `0.2`)
+- **Configurable listen address** — new `SHIELD_LISTEN_HOST` environment variable to customize Web UI bind address (defaults to `127.0.0.1`, automatically set to `0.0.0.0` in container)
+
+### Documentation
+
+- Added Docker deployment instructions to README and install guide (both languages)
+- New blog post: [Running Shield CLI with Docker](../../blogs/blog-shield-cli-docker.md)
+
+---
+
+## v0.2.1
 
 **Released: 2026-03-20**
 
