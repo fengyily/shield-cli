@@ -29,7 +29,7 @@ Shield CLI 所有版本的变更记录。
 ### 文档
 
 - README 和安装指南新增 Docker 部署说明（中英文）
-- 新增博客：[用 Docker 跑 Shield CLI](../../blogs/blog-shield-cli-docker.md)
+- 新增博客：[用 Docker 跑 Shield CLI](../blogs/blog-shield-cli-docker.md)
 
 ---
 
