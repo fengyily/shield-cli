@@ -614,19 +614,35 @@ func callQuickSetupAPI(params ConnectParams, creds *config.Credentials) (*QuickS
 	return &result, nil
 }
 
-// waitForSiteReady polls the site URL until it responds (any HTTP response = tunnel is working).
-// This also activates the server-side route by triggering the first request through the tunnel.
+// tunnelCheckResponse is the response from the tunnel health-check API
+type tunnelCheckResponse struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+// waitForSiteReady polls the site's tunnel API until it confirms the tunnel is active.
+// POST {siteURL}/_webgate/api/tunnel with empty JSON body; code=0 means ready.
 func waitForSiteReady(siteURL string, timeout time.Duration) bool {
 	client := &http.Client{Timeout: 5 * time.Second}
+	apiURL := strings.TrimRight(siteURL, "/") + "/_webgate/api/tunnel"
 	deadline := time.Now().Add(timeout)
+
 	for attempt := 1; time.Now().Before(deadline); attempt++ {
-		resp, err := client.Get(siteURL)
-		if err == nil {
-			resp.Body.Close()
-			slog.Debug("Site URL reachable", "site_url", siteURL, "status", resp.StatusCode, "attempt", attempt)
+		resp, err := client.Post(apiURL, "application/json", bytes.NewReader([]byte("{}")))
+		if err != nil {
+			slog.Debug("Tunnel API not ready, retrying", "url", apiURL, "attempt", attempt, "error", err)
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+
+		var result tunnelCheckResponse
+		if err := json.Unmarshal(body, &result); err == nil && result.Code == 0 {
+			slog.Debug("Tunnel API ready", "url", apiURL, "attempt", attempt)
 			return true
 		}
-		slog.Debug("Site URL not ready, retrying", "site_url", siteURL, "attempt", attempt, "error", err)
+		slog.Debug("Tunnel API not ready, retrying", "url", apiURL, "attempt", attempt, "status", resp.StatusCode, "body", string(body))
 		time.Sleep(2 * time.Second)
 	}
 	return false
