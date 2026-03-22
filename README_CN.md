@@ -54,6 +54,28 @@ curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh
 curl -fsSL https://cdn.jsdelivr.net/gh/fengyily/shield-cli@main/install.sh | sh
 ```
 
+### Docker
+
+```bash
+# 使用预构建镜像（推荐）
+docker run -d --name shield \
+  --network host \
+  --restart unless-stopped \
+  fengyily/shield-cli
+
+# 或从源码构建
+docker build -t shield-cli .
+docker run -d --name shield --network host --restart unless-stopped shield-cli
+```
+
+> **说明：** `--network host` 让容器直接使用宿主机网络栈，Shield CLI 可以访问宿主机本机服务以及宿主机所在的内网资源（如 `10.0.0.x`、`192.168.x.x`）。启动后访问 `http://localhost:8181` 即可使用 Web UI。
+>
+> **注意：** `--network host` 仅在 **Linux** 上生效。macOS 和 Windows 的 Docker Desktop 不支持 host 网络模式，可改用端口映射：
+>
+> ```bash
+> docker run -d --name shield -p 8181:8181 --restart unless-stopped fengyily/shield-cli
+> ```
+
 更多安装方式（deb、rpm、PowerShell、源码编译）：[安装指南](https://docs.yishield.com/guide/install)
 
 ## 快速开始

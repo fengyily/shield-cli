@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"shield-cli/config"
 )
@@ -54,7 +55,11 @@ func (s *Server) Start() error {
 	}
 	mux.Handle("/", http.FileServer(http.FS(staticFS)))
 
-	addr := fmt.Sprintf("127.0.0.1:%d", s.port)
+	host := "127.0.0.1"
+	if os.Getenv("SHIELD_LISTEN_HOST") != "" {
+		host = os.Getenv("SHIELD_LISTEN_HOST")
+	}
+	addr := fmt.Sprintf("%s:%d", host, s.port)
 	slog.Info("Web UI starting", "url", fmt.Sprintf("http://%s", addr))
 	fmt.Printf("\n  Shield Web UI is running at:\n\n")
 	fmt.Printf("    \033[1;36mhttp://%s\033[0m\n\n", addr)

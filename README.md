@@ -54,6 +54,28 @@ curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh
 curl -fsSL https://cdn.jsdelivr.net/gh/fengyily/shield-cli@main/install.sh | sh
 ```
 
+### Docker
+
+```bash
+# Use the prebuilt image (recommended)
+docker run -d --name shield \
+  --network host \
+  --restart unless-stopped \
+  fengyily/shield-cli
+
+# Or build from source
+docker build -t shield-cli .
+docker run -d --name shield --network host --restart unless-stopped shield-cli
+```
+
+> **Note:** `--network host` shares the host's network stack, allowing Shield CLI to reach local and LAN services (e.g., `10.0.0.x`, `192.168.x.x`). Open `http://localhost:8181` to access the Web UI.
+>
+> **Caveat:** `--network host` only works on **Linux**. On macOS/Windows Docker Desktop, use port mapping instead:
+>
+> ```bash
+> docker run -d --name shield -p 8181:8181 --restart unless-stopped fengyily/shield-cli
+> ```
+
 More installation methods (deb, rpm, PowerShell, source build): [Installation Guide](https://docs.yishield.com/en/guide/install)
 
 ## Quick Start

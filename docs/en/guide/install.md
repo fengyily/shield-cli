@@ -4,7 +4,7 @@ description: Install Shield CLI via Homebrew, Scoop, apt, rpm, one-liner scripts
 head:
   - - meta
     - name: keywords
-      content: Shield CLI install, Homebrew, Scoop, Linux, macOS, Windows, download, one-liner
+      content: Shield CLI install, Homebrew, Scoop, Docker, Linux, macOS, Windows, download, one-liner
 ---
 
 # Installation
@@ -70,6 +70,28 @@ If GitHub is slow in your region, use the jsDelivr CDN mirror:
 ```bash
 curl -fsSL https://cdn.jsdelivr.net/gh/fengyily/shield-cli@main/install.sh | sh
 ```
+
+## Docker
+
+```bash
+# Use the prebuilt image (recommended)
+docker run -d --name shield \
+  --network host \
+  --restart unless-stopped \
+  fengyily/shield-cli
+
+# Or build from source
+docker build -t shield-cli https://github.com/fengyily/shield-cli.git
+docker run -d --name shield --network host --restart unless-stopped shield-cli
+```
+
+`--network host` shares the host's network stack so Shield CLI can reach local and LAN services. Open `http://localhost:8181` after startup.
+
+> **Note:** `--network host` only works on Linux. On macOS / Windows Docker Desktop, use port mapping instead:
+>
+> ```bash
+> docker run -d --name shield -p 8181:8181 --restart unless-stopped fengyily/shield-cli
+> ```
 
 ## Build from Source
 
