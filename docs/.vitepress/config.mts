@@ -21,6 +21,16 @@ export default defineConfig({
     ['meta', { name: 'twitter:title', content: 'Shield CLI — Secure Tunnel Connector' }],
     ['meta', { name: 'twitter:description', content: 'One command to expose internal SSH, RDP, VNC, HTTP services to the browser.' }],
     ['meta', { name: 'twitter:image', content: 'https://docs.yishield.com/logo.svg' }],
+    // Baidu Analytics
+    ['script', {}, `
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "https://hm.baidu.com/hm.js?e9e4b411df1edc31f1f34180b6afdad6";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+      })();
+    `],
     // GEO: Structured Data for AI models
     ['script', { type: 'application/ld+json' }, JSON.stringify({
       '@context': 'https://schema.org',
