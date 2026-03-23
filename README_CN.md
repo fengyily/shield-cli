@@ -24,6 +24,22 @@
 
 ---
 
+## 演示
+
+### RDP — 浏览器远程桌面
+
+<p align="center">
+  <img src="docs/demo/demo-rdp.gif" alt="Shield CLI RDP 演示" width="960">
+</p>
+
+### SSH — 浏览器终端
+
+<p align="center">
+  <img src="docs/demo/demo-ssh.gif" alt="Shield CLI SSH 演示" width="960">
+</p>
+
+---
+
 ## 为什么选择 Shield CLI？
 
 传统隧道工具（ngrok、frp）解决的是**网络可达** — 端口映射到公网，但对方仍需安装 RDP 客户端、SSH 终端、VNC Viewer。

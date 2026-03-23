@@ -24,6 +24,22 @@
 
 ---
 
+## Demo
+
+### RDP — Browser Remote Desktop
+
+<p align="center">
+  <img src="docs/demo/demo-rdp.gif" alt="Shield CLI RDP Demo" width="960">
+</p>
+
+### SSH — Browser Terminal
+
+<p align="center">
+  <img src="docs/demo/demo-ssh.gif" alt="Shield CLI SSH Demo" width="960">
+</p>
+
+---
+
 ## Why Shield CLI?
 
 Traditional tunnel tools (ngrok, frp) solve **network reachability** — they map ports to the internet, but users still need protocol-specific clients (RDP client, SSH terminal, VNC viewer).
