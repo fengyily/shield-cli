@@ -32,7 +32,7 @@ jobs:
       - name: Create tag for workflow_dispatch
         if: github.event_name == 'workflow_dispatch'
         run: |
-          git tag ${{ inputs.tag }}
+          git tag -f ${{ inputs.tag }}
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
