@@ -102,7 +102,9 @@ scoops:
     license: Apache-2.0
 
 nfpms:
-  - package_name: shield-cli
+  - builds:
+      - linux
+    package_name: shield-cli
     homepage: "https://github.com/fengyily/shield-cli"
     maintainer: "fengyily <fengyily@users.noreply.github.com>"
     description: "Shield CLI - Secure Tunnel Connector"
@@ -111,6 +113,8 @@ nfpms:
       - deb
       - rpm
     bindir: /usr/bin
+    section: net
+    priority: optional
 
 checksum:
   name_template: "checksums.txt"

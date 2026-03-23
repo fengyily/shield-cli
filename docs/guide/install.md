@@ -43,25 +43,57 @@ irm https://raw.githubusercontent.com/fengyily/shield-cli/main/install.ps1 | iex
 
 ## Linux
 
-### 一键安装
+### 一键安装（推荐）
+
+自动检测 apt / yum / dnf，添加仓库源并安装：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/scripts/setup-repo.sh | sudo bash
+```
+
+安装后可通过 `apt upgrade` 或 `yum update` 自动获取新版本。
+
+### APT（Debian / Ubuntu）
+
+手动添加仓库源：
+
+```bash
+echo "deb [trusted=yes] https://fengyily.github.io/linux-repo/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/shield-cli.list
+sudo apt update
+sudo apt install shield-cli
+```
+
+### YUM / DNF（RHEL / CentOS / Fedora）
+
+```bash
+sudo tee /etc/yum.repos.d/shield-cli.repo <<EOF
+[shield-cli]
+name=Shield CLI Repository
+baseurl=https://fengyily.github.io/linux-repo/yum
+enabled=1
+gpgcheck=0
+EOF
+sudo yum install shield-cli   # 或 dnf install shield-cli
+```
+
+### 二进制直装
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh | sh
 ```
 
-### Debian / Ubuntu
+### 手动安装 deb / rpm
+
+从 [GitHub Releases](https://github.com/fengyily/shield-cli/releases) 下载对应的安装包：
 
 ```bash
-sudo dpkg -i shield-cli_<version>_linux_amd64.deb
+# Debian / Ubuntu
+sudo dpkg -i shield-cli_<version>_amd64.deb
+
+# RHEL / CentOS
+sudo rpm -i shield-cli_<version>_amd64.rpm
 ```
-
-### RHEL / CentOS
-
-```bash
-sudo rpm -i shield-cli_<version>_linux_amd64.rpm
-```
-
-从 [GitHub Releases](https://github.com/fengyily/shield-cli/releases) 下载对应的安装包。
 
 ## 中国大陆镜像
 

@@ -47,7 +47,13 @@ brew tap fengyily/tap && brew install shield-cli
 # Windows
 scoop bucket add shield https://github.com/fengyily/scoop-bucket && scoop install shield-cli
 
-# Linux / macOS 一键安装
+# Linux (apt) — Debian / Ubuntu
+curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/scripts/setup-repo.sh | sudo bash
+
+# Linux (yum) — RHEL / CentOS / Fedora
+curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/scripts/setup-repo.sh | sudo bash
+
+# Linux / macOS 一键安装（直接下载二进制）
 curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh | sh
 
 # 国内镜像（推荐）
@@ -76,7 +82,7 @@ docker run -d --name shield --network host --restart unless-stopped shield-cli
 > docker run -d --name shield -p 8181:8181 --restart unless-stopped fengyily/shield-cli
 > ```
 
-更多安装方式（deb、rpm、PowerShell、源码编译）：[安装指南](https://docs.yishield.com/guide/install)
+更多安装方式（apt、yum、deb、rpm、PowerShell、源码编译）：[安装指南](https://docs.yishield.com/guide/install)
 
 ## 快速开始
 

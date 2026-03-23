@@ -11,11 +11,29 @@ head:
 
 All notable changes to Shield CLI are documented here.
 
-## v0.2.2 <Badge type="tip" text="latest" />
+## v0.2.x <Badge type="tip" text="latest" />
+
+### v0.2.5 — Linux Package Manager Support {#v0.2.5}
+
+**Released: 2026-03-23**
+
+#### New Features
+
+- **APT / YUM repository** — install via `apt install shield-cli` or `yum install shield-cli`
+  - APT repository (Debian/Ubuntu) and YUM repository (RHEL/CentOS/Fedora) hosted on GitHub Pages
+  - After adding the repo source, `apt upgrade` / `yum update` automatically fetches new versions
+- **One-liner repo setup script** — `setup-repo.sh` auto-detects package manager and configures the repository
+- **install.sh enhancement** — supports `--apt`, `--yum`, `--dnf` flags for quick package manager setup
+
+#### Documentation
+
+- Added APT / YUM installation instructions to README and install guide (both languages)
+
+### v0.2.2 — Docker Support {#v0.2.2}
 
 **Released: 2026-03-22**
 
-### New Features
+#### New Features
 
 - **Docker support** — added Dockerfile for containerized deployment
   - Multi-stage build with lightweight Alpine-based image
@@ -26,7 +44,7 @@ All notable changes to Shield CLI are documented here.
   - Automatic semver tagging (`latest`, `0.2.2`, `0.2`)
 - **Configurable listen address** — new `SHIELD_LISTEN_HOST` environment variable to customize Web UI bind address (defaults to `127.0.0.1`, automatically set to `0.0.0.0` in container)
 
-### Documentation
+#### Documentation
 
 - Added Docker deployment instructions to README and install guide (both languages)
 - New blog post: [Running Shield CLI with Docker](../../blogs/blog-shield-cli-docker.md)

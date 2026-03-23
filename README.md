@@ -47,7 +47,13 @@ brew tap fengyily/tap && brew install shield-cli
 # Windows
 scoop bucket add shield https://github.com/fengyily/scoop-bucket && scoop install shield-cli
 
-# Linux / macOS (one-liner)
+# Linux (apt) — Debian / Ubuntu
+curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/scripts/setup-repo.sh | sudo bash
+
+# Linux (yum) — RHEL / CentOS / Fedora
+curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/scripts/setup-repo.sh | sudo bash
+
+# Linux / macOS (one-liner binary)
 curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh | sh
 
 # China mirror (jsDelivr CDN)
@@ -76,7 +82,7 @@ docker run -d --name shield --network host --restart unless-stopped shield-cli
 > docker run -d --name shield -p 8181:8181 --restart unless-stopped fengyily/shield-cli
 > ```
 
-More installation methods (deb, rpm, PowerShell, source build): [Installation Guide](https://docs.yishield.com/en/guide/install)
+More installation methods (apt, yum, deb, rpm, PowerShell, source build): [Installation Guide](https://docs.yishield.com/en/guide/install)
 
 ## Quick Start
 

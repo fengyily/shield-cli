@@ -43,25 +43,57 @@ irm https://raw.githubusercontent.com/fengyily/shield-cli/main/install.ps1 | iex
 
 ## Linux
 
-### One-Liner
+### One-Liner (Recommended)
+
+Automatically detects apt / yum / dnf, adds the repository, and installs:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/scripts/setup-repo.sh | sudo bash
+```
+
+Once installed, future updates are available via `apt upgrade` or `yum update`.
+
+### APT (Debian / Ubuntu)
+
+Manually add the repository:
+
+```bash
+echo "deb [trusted=yes] https://fengyily.github.io/linux-repo/apt stable main" \
+  | sudo tee /etc/apt/sources.list.d/shield-cli.list
+sudo apt update
+sudo apt install shield-cli
+```
+
+### YUM / DNF (RHEL / CentOS / Fedora)
+
+```bash
+sudo tee /etc/yum.repos.d/shield-cli.repo <<EOF
+[shield-cli]
+name=Shield CLI Repository
+baseurl=https://fengyily.github.io/linux-repo/yum
+enabled=1
+gpgcheck=0
+EOF
+sudo yum install shield-cli   # or: dnf install shield-cli
+```
+
+### Binary Install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh | sh
 ```
 
-### Debian / Ubuntu
+### Manual deb / rpm Install
+
+Download packages from [GitHub Releases](https://github.com/fengyily/shield-cli/releases):
 
 ```bash
-sudo dpkg -i shield-cli_<version>_linux_amd64.deb
+# Debian / Ubuntu
+sudo dpkg -i shield-cli_<version>_amd64.deb
+
+# RHEL / CentOS
+sudo rpm -i shield-cli_<version>_amd64.rpm
 ```
-
-### RHEL / CentOS
-
-```bash
-sudo rpm -i shield-cli_<version>_linux_amd64.rpm
-```
-
-Download packages from [GitHub Releases](https://github.com/fengyily/shield-cli/releases).
 
 ## China Mirror
 

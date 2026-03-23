@@ -11,11 +11,29 @@ head:
 
 Shield CLI 所有版本的变更记录。
 
-## v0.2.2 <Badge type="tip" text="最新" />
+## v0.2.x <Badge type="tip" text="最新" />
+
+### v0.2.5 — Linux 包管理器支持 {#v0.2.5}
+
+**发布日期：2026-03-23**
+
+#### 新功能
+
+- **APT / YUM 仓库** — 支持通过 `apt install shield-cli` 和 `yum install shield-cli` 安装
+  - 基于 GitHub Pages 托管的 APT（Debian/Ubuntu）和 YUM（RHEL/CentOS/Fedora）包仓库
+  - 添加仓库源后，`apt upgrade` / `yum update` 自动获取新版本
+- **一键仓库配置脚本** — `setup-repo.sh` 自动检测包管理器并配置仓库源
+- **install.sh 增强** — 支持 `--apt`、`--yum`、`--dnf` 参数快速配置包管理器安装
+
+#### 文档
+
+- README 和安装指南新增 APT / YUM 安装说明（中英文）
+
+### v0.2.2 — Docker 支持 {#v0.2.2}
 
 **发布日期：2026-03-22**
 
-### 新功能
+#### 新功能
 
 - **Docker 支持** — 新增 Dockerfile，支持容器化部署
   - 多阶段构建，基于 Alpine 的轻量镜像
@@ -26,7 +44,7 @@ Shield CLI 所有版本的变更记录。
   - 自动生成语义化版本标签（`latest`、`0.2.2`、`0.2`）
 - **监听地址可配置** — 新增 `SHIELD_LISTEN_HOST` 环境变量，支持自定义 Web UI 监听地址（默认 `127.0.0.1`，容器内自动设为 `0.0.0.0`）
 
-### 文档
+#### 文档
 
 - README 和安装指南新增 Docker 部署说明（中英文）
 - 新增博客：[用 Docker 跑 Shield CLI](../blogs/blog-shield-cli-docker.md)
