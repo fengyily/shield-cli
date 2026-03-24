@@ -34,6 +34,16 @@ jobs:
         run: |
           git tag -f ${{ inputs.tag }}
 
+      - name: Delete existing release if retrying
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          fi
+          gh release delete "$TAG" --repo "${{ github.repository }}" --yes 2>/dev/null || true
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
