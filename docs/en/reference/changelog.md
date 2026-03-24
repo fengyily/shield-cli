@@ -11,7 +11,57 @@ head:
 
 All notable changes to Shield CLI are documented here.
 
-## v0.2.x <Badge type="tip" text="latest" />
+## v0.3.x <Badge type="tip" text="latest" />
+
+### v0.3.1 — Read-Only Mode for MySQL Plugin {#v0.3.1}
+
+**Released: 2026-03-24**
+
+#### New Features
+
+- **Read-only mode** — server-side enforcement for MySQL plugin write query blocking
+  - `--readonly` CLI flag to force read-only mode
+  - **Read-Only Mode** checkbox in Web UI when adding/editing MySQL applications
+  - Read-only state passed through the full chain: CLI/Web UI → PluginConfig → plugin backend
+  - Frontend badge is display-only — remote users cannot toggle it
+  - Backend double enforcement: write queries blocked at both frontend and HTTP handler level
+
+#### Documentation
+
+- Blog post: [Plugin System & MySQL Web Management](/blogs/blog-shield-cli-plugin-mysql) (rewritten with Web UI as primary workflow)
+- Updated MySQL plugin docs with read-only mode details (both languages)
+- Added `--readonly` to commands reference
+
+### v0.3.0 — Plugin System & MySQL Web Client {#v0.3.0}
+
+**Released: 2026-03-24**
+
+#### New Features
+
+- **Plugin system** — extend protocol support via independent binary plugins, zero bloat to the main binary
+  - `shield plugin add <name>` — install plugin (from GitHub Releases or local binary)
+  - `shield plugin list` — list installed plugins
+  - `shield plugin remove <name>` — uninstall plugin
+  - Plugins communicate with the main process via stdin/stdout JSON protocol
+- **MySQL plugin** — browser-based Web database management client
+  - `shield mysql 127.0.0.1:3306` — one command to expose a MySQL Web management interface
+  - Supports `mysql` and `mariadb` protocol aliases
+  - Web UI features: database browsing, table filtering & pagination, schema viewer, SQL execution
+  - Result sorting (click column headers), CSV export, one-click copy
+  - Interactive credential input (auto-prompt when `--db-user` / `--db-pass` are missing)
+  - Compatible with `--username` / `--auth-pass` generic auth flags
+- **Database connection flags** — new `--db-user`, `--db-pass`, `--db-name` flags
+
+#### Documentation
+
+- Added [Plugin System overview](/en/plugins/) docs
+- Added [MySQL Plugin documentation](/en/plugins/mysql)
+- Added [Plugin Development Guide](/en/plugins/development)
+- Commands reference updated with plugin management and database flags
+
+---
+
+## v0.2.x
 
 ### v0.2.6 — TCP/UDP Port Proxy {#v0.2.6}
 

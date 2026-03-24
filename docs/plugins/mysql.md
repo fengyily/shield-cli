@@ -11,6 +11,8 @@ head:
 
 通过 Shield CLI 在浏览器中打开完整的 MySQL / MariaDB 数据库管理界面。
 
+![Shield MySQL 插件演示](/demo/demo-mysql.gif)
+
 ## 安装
 
 ```bash

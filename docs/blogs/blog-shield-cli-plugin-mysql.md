@@ -17,6 +17,8 @@ head:
 
 ## 先看效果
 
+![Shield MySQL 插件演示](/demo/demo-mysql.gif)
+
 整个流程三步：
 
 1. 安装 MySQL 插件

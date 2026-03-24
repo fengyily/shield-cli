@@ -24,7 +24,11 @@ head:
 | `shield udp <port\|address>` | Create a UDP port proxy (port required) |
 | `shield install [--port]` | Install as system service (auto-start on boot) |
 | `shield uninstall` | Uninstall system service |
+| `shield stop` | Stop Shield service |
 | `shield clean` | Clear local credential cache |
+| `shield plugin add <name>` | Install a plugin |
+| `shield plugin list` | List installed plugins |
+| `shield plugin remove <name>` | Remove a plugin |
 
 ## Address Format
 
@@ -65,6 +69,15 @@ head:
 | `--private-key` | SSH private key file path | `--private-key ~/.ssh/id_rsa` |
 | `--passphrase` | Private key passphrase | `--passphrase mypass` |
 | `--enable-sftp` | Enable SFTP file transfer | `--enable-sftp` |
+
+## Database Plugin Flags
+
+| Flag | Description | Example |
+|---|---|---|
+| `--db-user` | Database username (also accepts `--username`) | `--db-user root` |
+| `--db-pass` | Database password (also accepts `--auth-pass`) | `--db-pass mypass` |
+| `--db-name` | Database name (optional) | `--db-name mydb` |
+| `--readonly` | Force read-only mode, block write operations | `--readonly` |
 
 ## Access Mode Flags
 
@@ -107,6 +120,10 @@ shield start 9090
 shield tcp 3306                          # MySQL
 shield tcp 192.168.1.10:6379             # Redis
 shield udp 53                            # DNS
+
+# MySQL plugin
+shield mysql 10.0.0.5:3306 --db-user root --db-pass mypass
+shield mysql 10.0.0.5:3306 --db-user root --readonly
 
 # Invisible mode RDP
 shield rdp 10.0.0.5 --username Administrator --invisible

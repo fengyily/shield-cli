@@ -13,6 +13,25 @@ Shield CLI 所有版本的变更记录。
 
 ## v0.3.x <Badge type="tip" text="最新" />
 
+### v0.3.1 — MySQL 插件只读模式 {#v0.3.1}
+
+**发布日期：2026-03-24**
+
+#### 新功能
+
+- **只读模式** — MySQL 插件支持服务端强制只读，远程用户无法绕过
+  - CLI 新增 `--readonly` 参数强制只读模式
+  - Web UI 添加/编辑应用时可勾选 **Read-Only Mode** 复选框
+  - 只读状态全链路传递：CLI/Web UI → PluginConfig → 插件后端
+  - 页面右上角标识仅展示当前模式，远程用户无法切换
+  - 前后端双重拦截写操作
+
+#### 文档
+
+- 博文重写：[插件系统 & MySQL Web 管理](/blogs/blog-shield-cli-plugin-mysql)（以 Web UI 操作为主线）
+- MySQL 插件文档更新只读模式说明（中英文）
+- 命令参考新增 `--readonly` 参数
+
 ### v0.3.0 — 插件系统 & MySQL Web 客户端 {#v0.3.0}
 
 **发布日期：2026-03-24**
