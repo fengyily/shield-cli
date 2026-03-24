@@ -72,6 +72,7 @@ brews:
   - repository:
       owner: fengyily
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: "https://github.com/fengyily/shield-cli"
     description: "Shield CLI - Secure Tunnel Connector"
     license: "MIT"
@@ -97,6 +98,7 @@ scoops:
   - repository:
       owner: fengyily
       name: scoop-bucket
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: "https://github.com/fengyily/shield-cli"
     description: "Shield CLI - Secure Tunnel Connector"
     license: Apache-2.0
