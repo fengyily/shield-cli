@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"shield-cli/config"
+	"shield-cli/plugin"
 
 	"github.com/spf13/cobra"
 )
@@ -52,13 +53,33 @@ var rootCmd = &cobra.Command{
 	RunE:         runShield,
 }
 
+var (
+	dbUser   string
+	dbPass   string
+	dbName   string
+)
+
 func isValidProtocol(p string) bool {
 	for _, v := range validProtocols {
 		if strings.EqualFold(p, v) {
 			return true
 		}
 	}
+	// Check installed plugins
+	reg, err := plugin.LoadRegistry()
+	if err == nil && reg.Find(p) != nil {
+		return true
+	}
 	return false
+}
+
+// isPluginProtocol returns the plugin info if the protocol is provided by a plugin.
+func isPluginProtocol(p string) *plugin.PluginInfo {
+	reg, err := plugin.LoadRegistry()
+	if err != nil {
+		return nil
+	}
+	return reg.Find(p)
 }
 
 func init() {
@@ -76,6 +97,11 @@ func init() {
 	rootCmd.Flags().StringVar(&privateKey, "private-key", "", "SSH private key")
 	rootCmd.Flags().StringVar(&passphrase, "passphrase", "", "SSH private key passphrase")
 	rootCmd.Flags().BoolVar(&enableSftp, "enable-sftp", false, "Enable SFTP (SSH only)")
+
+	// Database plugin flags
+	rootCmd.Flags().StringVar(&dbUser, "db-user", "", "Database username (plugin mode)")
+	rootCmd.Flags().StringVar(&dbPass, "db-pass", "", "Database password (plugin mode)")
+	rootCmd.Flags().StringVar(&dbName, "db-name", "", "Database name (plugin mode)")
 
 	// Subcommand: start web management platform
 	rootCmd.AddCommand(startCmd)

@@ -24,7 +24,11 @@ head:
 | `shield udp <port\|address>` | 创建 UDP 端口代理（必须指定端口） |
 | `shield install [--port]` | 安装为系统服务（开机自启） |
 | `shield uninstall` | 卸载系统服务 |
+| `shield stop` | 停止 Shield 服务 |
 | `shield clean` | 清除本地凭证缓存 |
+| `shield plugin add <name>` | 安装插件 |
+| `shield plugin list` | 查看已安装插件 |
+| `shield plugin remove <name>` | 卸载插件 |
 
 ## 地址格式
 
@@ -65,6 +69,25 @@ head:
 | `--private-key` | SSH 私钥文件路径 | `--private-key ~/.ssh/id_rsa` |
 | `--passphrase` | 私钥密码 | `--passphrase mypass` |
 | `--enable-sftp` | 启用 SFTP 文件传输 | `--enable-sftp` |
+
+## 数据库插件参数
+
+| 参数 | 说明 | 示例 |
+|---|---|---|
+| `--db-user` | 数据库用户名（也可用 `--username`） | `--db-user root` |
+| `--db-pass` | 数据库密码（也可用 `--auth-pass`） | `--db-pass mypass` |
+| `--db-name` | 数据库名（可选） | `--db-name mydb` |
+
+## 插件管理
+
+| 命令 | 说明 |
+|---|---|
+| `shield plugin add <name>` | 安装插件（从 GitHub Releases 下载） |
+| `shield plugin add <name> --from <path>` | 从本地二进制安装插件 |
+| `shield plugin list` | 查看已安装插件 |
+| `shield plugin remove <name>` | 卸载插件 |
+
+详见[插件系统文档](/plugins/)。
 
 ## 访问模式参数
 
@@ -111,6 +134,11 @@ shield udp 53                            # DNS
 # 隐身模式连接 RDP
 shield rdp 10.0.0.5 --username Administrator --invisible
 
+# 数据库插件
+shield plugin add mysql                  # 安装 MySQL 插件
+shield mysql 127.0.0.1:3306              # 交互式输入凭证
+shield mysql 10.0.0.5 --db-user root --db-pass mypass --db-name mydb
+
 # 清除缓存
 shield clean
 
@@ -120,4 +148,8 @@ shield install --port 8182
 
 # 卸载服务
 shield uninstall
+
+# 插件管理
+shield plugin list                       # 查看已安装插件
+shield plugin remove mysql               # 卸载插件
 ```
