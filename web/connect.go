@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"shield-cli/config"
+	"shield-cli/plugin"
 	"shield-cli/tunnel"
 )
 
@@ -32,6 +33,9 @@ type ConnectParams struct {
 	EnableSftp  bool   `json:"enable_sftp"`
 	DisplayName string `json:"display_name"`
 	SiteName    string `json:"site_name"`
+	DBUser      string `json:"db_user"`
+	DBPass      string `json:"db_pass"`
+	DBName      string `json:"db_name"`
 }
 
 // ConnectResult holds the result of a connection attempt
@@ -50,6 +54,7 @@ type ActiveConnection struct {
 	ResourcePort string // remote resource port key for CloseTunnel
 	Result       ConnectResult
 	StopCh       chan struct{}
+	PluginProc   *plugin.Process // non-nil if this connection uses a plugin
 }
 
 // ConnectionManager manages the shared main tunnel and per-app resource tunnels
@@ -324,6 +329,10 @@ func (cm *ConnectionManager) ActiveCount() int {
 func (cm *ConnectionManager) disconnectLocked(appID string) {
 	if conn, ok := cm.connections[appID]; ok {
 		close(conn.StopCh)
+		// Stop plugin process if any
+		if conn.PluginProc != nil {
+			conn.PluginProc.Stop()
+		}
 		// Close only the resource tunnel for this app, not the main tunnel
 		if conn.ResourcePort != "" && cm.mainMgr != nil {
 			cm.mainMgr.CloseTunnel(conn.ResourcePort)
@@ -393,6 +402,52 @@ type QuickSetupResponse struct {
 
 func (cm *ConnectionManager) doConnect(appID string, params ConnectParams, conn *ActiveConnection) {
 	slog.Info("Connecting app", "appID", appID, "protocol", params.Protocol, "target", fmt.Sprintf("%s:%d", params.IP, params.Port))
+
+	// Check if this is a plugin protocol — if so, start the plugin first
+	origProtocol := params.Protocol
+	var pluginProc *plugin.Process
+	pluginIP := params.IP
+	pluginPort := params.Port
+
+	if info := findPluginForProtocol(params.Protocol); info != nil {
+		slog.Info("Starting plugin for protocol", "protocol", params.Protocol, "plugin", info.Name)
+
+		// Use DB credentials, falling back to auth credentials
+		dbUser := params.DBUser
+		dbPass := params.DBPass
+		if dbUser == "" {
+			dbUser = params.Username
+		}
+		if dbPass == "" {
+			dbPass = params.AuthPass
+		}
+
+		cfg := plugin.PluginConfig{
+			Host:     params.IP,
+			Port:     params.Port,
+			User:     dbUser,
+			Pass:     dbPass,
+			Database: params.DBName,
+		}
+		proc, resp, err := plugin.StartPlugin(info, cfg)
+		if err != nil {
+			cm.setError(appID, fmt.Sprintf("Plugin failed to start: %v", err))
+			return
+		}
+		pluginProc = proc
+		conn.PluginProc = proc
+
+		slog.Info("Plugin ready", "name", resp.Name, "version", resp.Version, "web_port", resp.WebPort)
+
+		// Override: register the plugin's web port as HTTP
+		params.Protocol = "http"
+		pluginIP = "127.0.0.1"
+		pluginPort = resp.WebPort
+		params.IP = pluginIP
+		params.Port = pluginPort
+		_ = origProtocol
+		_ = pluginProc
+	}
 
 	// Use shared credentials
 	creds := cm.GetCreds()
@@ -677,6 +732,16 @@ func friendlyError(err error) string {
 	default:
 		return msg
 	}
+}
+
+// findPluginForProtocol returns the installed plugin info if the protocol is handled by a plugin.
+func findPluginForProtocol(proto string) *plugin.PluginInfo {
+	reg, err := plugin.LoadRegistry()
+	if err != nil {
+		return nil
+	}
+	info := reg.Find(proto)
+	return info
 }
 
 func startConnLocalAPI(port int) {

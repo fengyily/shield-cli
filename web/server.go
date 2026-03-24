@@ -334,6 +334,9 @@ func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 		EnableSftp:  app.EnableSftp,
 		DisplayName: app.DisplayName,
 		SiteName:    app.SiteName,
+		DBUser:      app.DBUser,
+		DBPass:      app.DBPass,
+		DBName:      app.DBName,
 	}
 
 	result, err := s.connMgr.Connect(id, params)
