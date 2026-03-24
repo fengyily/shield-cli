@@ -43,6 +43,7 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:          "shield <protocol> [ip:port] [flags]",
+	Version:      Version,
 	Short:        "Shield CLI - Secure Tunnel Connector",
 	Long:         "Shield CLI exposes internal network resources to the public server via secure tunnels.\n\nIf ip:port is omitted, defaults to 127.0.0.1 with the protocol's standard port.\nIf only ip is given, the protocol's standard port is used.",
 	Example:      "  shield ssh                        # 127.0.0.1:22\n  shield ssh 2222                   # 127.0.0.1:2222\n  shield ssh 10.0.0.2               # 10.0.0.2:22\n  shield ssh 10.0.0.2:2222          # 10.0.0.2:2222\n  shield http 3000                  # 127.0.0.1:3000\n  shield rdp 192.168.1.100          # 192.168.1.100:3389\n  shield https 10.0.0.5 --visable=HK\n  shield tcp 3306                   # 127.0.0.1:3306 (MySQL)\n  shield tcp 192.168.1.10:6379      # Redis\n  shield udp 53                     # 127.0.0.1:53 (DNS)",
