@@ -337,6 +337,7 @@ func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 		DBUser:      app.DBUser,
 		DBPass:      app.DBPass,
 		DBName:      app.DBName,
+		DBReadOnly:  app.DBReadOnly,
 	}
 
 	result, err := s.connMgr.Connect(id, params)

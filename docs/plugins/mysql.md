@@ -79,6 +79,7 @@ shield mysql 127.0.0.1:3306 --username root --auth-pass mypassword
 | `--db-user` | `--username` | 数据库用户名 |
 | `--db-pass` | `--auth-pass` | 数据库密码 |
 | `--db-name` | — | 数据库名（可选） |
+| `--readonly` | — | 强制只读模式，禁止写操作 |
 
 ## Web 管理界面
 
@@ -99,12 +100,26 @@ shield mysql 127.0.0.1:3306 --username root --auth-pass mypassword
 
 ### 只读模式
 
-默认情况下，Web 界面以只读模式运行。右上角显示当前模式状态：
+只读/读写模式完全由启动参数决定，页面上仅展示当前状态，远程用户无法更改。
 
-- **🔒 Read-Only**（橙色标签）— 写操作被前端拦截
+**CLI 模式**：通过 `--readonly` 参数控制：
+
+```bash
+# 只读模式（推荐用于分享场景）
+shield mysql 10.0.0.5:3306 --db-user root --readonly
+
+# 读写模式（默认）
+shield mysql 10.0.0.5:3306 --db-user root
+```
+
+**Web UI 模式**：在添加/编辑应用时，勾选 **Read-Only Mode** 复选框。
+
+页面右上角显示当前模式：
+
+- **🔒 Read-Only**（橙色标签）— 写操作被前后端双重拦截
 - **🔓 Read-Write**（绿色标签）— 允许所有操作
 
-点击标签可切换模式。只读模式下以下语句会被阻止：
+只读模式下以下语句会被阻止：
 
 ```
 INSERT, UPDATE, DELETE, DROP, ALTER, CREATE,
@@ -112,9 +127,9 @@ TRUNCATE, RENAME, REPLACE, GRANT, REVOKE
 ```
 
 ::: tip 安全建议
-在公网暴露数据库管理界面时，建议保持只读模式，并配合 `--invisible` 隐身模式使用：
+在公网暴露数据库管理界面时，建议开启只读模式，并配合 `--invisible` 隐身模式使用：
 ```bash
-shield mysql 127.0.0.1:3306 --db-user readonly_user --invisible
+shield mysql 127.0.0.1:3306 --db-user readonly_user --readonly --invisible
 ```
 :::
 

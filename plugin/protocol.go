@@ -13,6 +13,7 @@ type PluginConfig struct {
 	User     string `json:"user,omitempty"`
 	Pass     string `json:"pass,omitempty"`
 	Database string `json:"database,omitempty"`
+	ReadOnly bool   `json:"readonly,omitempty"`
 }
 
 // StartResponse is returned from the plugin via stdout.

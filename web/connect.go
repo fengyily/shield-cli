@@ -36,6 +36,7 @@ type ConnectParams struct {
 	DBUser      string `json:"db_user"`
 	DBPass      string `json:"db_pass"`
 	DBName      string `json:"db_name"`
+	DBReadOnly  bool   `json:"db_readonly"`
 }
 
 // ConnectResult holds the result of a connection attempt
@@ -428,6 +429,7 @@ func (cm *ConnectionManager) doConnect(appID string, params ConnectParams, conn 
 			User:     dbUser,
 			Pass:     dbPass,
 			Database: params.DBName,
+			ReadOnly: params.DBReadOnly,
 		}
 		proc, resp, err := plugin.StartPlugin(info, cfg)
 		if err != nil {

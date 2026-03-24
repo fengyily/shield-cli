@@ -8,6 +8,7 @@
 #   ./record-demo.sh ssh
 #   ./record-demo.sh rdp
 #   ./record-demo.sh http
+#   ./record-demo.sh mysql
 #
 # 操作步骤：
 #   1. 运行本脚本，录屏自动开始

@@ -79,6 +79,7 @@ shield mysql 127.0.0.1:3306 --username root --auth-pass mypassword
 | `--db-user` | `--username` | Database username |
 | `--db-pass` | `--auth-pass` | Database password |
 | `--db-name` | — | Database name (optional) |
+| `--readonly` | — | Force read-only mode, block write operations |
 
 ## Web Management Interface
 
@@ -99,12 +100,26 @@ After connecting, the browser opens a Web SQL Client automatically:
 
 ### Read-Only Mode
 
-By default, the Web interface runs in read-only mode. The top-right badge shows the current mode:
+Read-only / read-write mode is fully controlled by the startup parameters. The Web UI only displays the current state — remote users cannot change it.
 
-- **🔒 Read-Only** (orange badge) — write operations are blocked
+**CLI mode**: use the `--readonly` flag:
+
+```bash
+# Read-only mode (recommended for sharing)
+shield mysql 10.0.0.5:3306 --db-user root --readonly
+
+# Read-write mode (default)
+shield mysql 10.0.0.5:3306 --db-user root
+```
+
+**Web UI mode**: check the **Read-Only Mode** checkbox when adding or editing an application.
+
+The top-right badge shows the current mode:
+
+- **🔒 Read-Only** (orange badge) — write operations are blocked on both frontend and backend
 - **🔓 Read-Write** (green badge) — all operations allowed
 
-Click the badge to toggle. In read-only mode, these statements are blocked:
+In read-only mode, these statements are blocked:
 
 ```
 INSERT, UPDATE, DELETE, DROP, ALTER, CREATE,
@@ -112,9 +127,9 @@ TRUNCATE, RENAME, REPLACE, GRANT, REVOKE
 ```
 
 ::: tip Security Recommendation
-When exposing a database management interface to the internet, keep read-only mode enabled and use `--invisible` mode:
+When exposing a database management interface to the internet, enable read-only mode and use `--invisible` mode:
 ```bash
-shield mysql 127.0.0.1:3306 --db-user readonly_user --invisible
+shield mysql 127.0.0.1:3306 --db-user readonly_user --readonly --invisible
 ```
 :::
 

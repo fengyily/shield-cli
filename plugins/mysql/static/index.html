@@ -85,9 +85,7 @@ body {
   font-weight: 500;
   padding: 4px 10px;
   border-radius: 4px;
-  cursor: pointer;
   user-select: none;
-  transition: all 0.15s;
 }
 
 .readonly-badge.on {
@@ -545,7 +543,7 @@ table.result-table tr:hover td {
     <div class="server-info" id="serverInfo">Connecting...</div>
   </div>
   <div class="header-right">
-    <div class="readonly-badge on" id="readonlyBadge" onclick="toggleReadonly()">
+    <div class="readonly-badge on" id="readonlyBadge">
       <span id="readonlyIcon">&#128274;</span>
       <span id="readonlyLabel">Read-Only</span>
     </div>
@@ -625,6 +623,19 @@ async function init() {
       document.getElementById('serverInfo').innerHTML =
         `<span class="host">${esc(info.host)}</span> &middot; ${esc(info.version)} &middot; ${esc(info.user)}`;
       if (info.database) currentDB = info.database;
+      readOnly = !!info.readonly;
+      const badge = document.getElementById('readonlyBadge');
+      const icon = document.getElementById('readonlyIcon');
+      const label = document.getElementById('readonlyLabel');
+      if (readOnly) {
+        badge.className = 'readonly-badge on';
+        icon.innerHTML = '&#128274;';
+        label.textContent = 'Read-Only';
+      } else {
+        badge.className = 'readonly-badge off';
+        icon.innerHTML = '&#128275;';
+        label.textContent = 'Read-Write';
+      }
     }
   } catch (e) {
     document.getElementById('serverInfo').textContent = 'Connection error';
@@ -765,23 +776,6 @@ async function showSchema(db, table) {
   }
   html += '</tbody></table></div>';
   area.innerHTML = html;
-}
-
-// ── Read-Only Mode ──
-function toggleReadonly() {
-  readOnly = !readOnly;
-  const badge = document.getElementById('readonlyBadge');
-  const icon = document.getElementById('readonlyIcon');
-  const label = document.getElementById('readonlyLabel');
-  if (readOnly) {
-    badge.className = 'readonly-badge on';
-    icon.innerHTML = '&#128274;';
-    label.textContent = 'Read-Only';
-  } else {
-    badge.className = 'readonly-badge off';
-    icon.innerHTML = '&#128275;';
-    label.textContent = 'Read-Write';
-  }
 }
 
 function isWriteQuery(sql) {

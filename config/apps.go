@@ -36,6 +36,7 @@ type AppConfig struct {
 	DBUser      string    `json:"db_user,omitempty"`
 	DBPass      string    `json:"db_pass,omitempty"`
 	DBName      string    `json:"db_name,omitempty"`
+	DBReadOnly  bool      `json:"db_readonly"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 	LastConnectedAt *time.Time `json:"last_connected_at,omitempty"`

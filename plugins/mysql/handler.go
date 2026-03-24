@@ -37,6 +37,7 @@ func infoHandler(db *sql.DB, cfg PluginConfig) http.HandlerFunc {
 			"user":     cfg.User,
 			"database": cfg.Database,
 			"version":  version,
+			"readonly": cfg.ReadOnly,
 		})
 	}
 }
@@ -128,7 +129,7 @@ func schemaHandler(db *sql.DB) http.HandlerFunc {
 
 // queryHandler executes a SQL query and returns results.
 // POST body: {"sql": "SELECT ...", "db": "mydb"}
-func queryHandler(db *sql.DB) http.HandlerFunc {
+func queryHandler(db *sql.DB, readOnly bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			writeError(w, 405, "POST required")
@@ -146,6 +147,11 @@ func queryHandler(db *sql.DB) http.HandlerFunc {
 
 		if strings.TrimSpace(req.SQL) == "" {
 			writeError(w, 400, "sql is required")
+			return
+		}
+
+		if readOnly && isWriteSQL(req.SQL) {
+			writeError(w, 403, "blocked: read-only mode is enabled")
 			return
 		}
 
@@ -224,6 +230,18 @@ func queryHandler(db *sql.DB) http.HandlerFunc {
 			})
 		}
 	}
+}
+
+// isWriteSQL checks if a SQL statement is a write operation.
+func isWriteSQL(sql string) bool {
+	t := strings.TrimSpace(strings.ToUpper(sql))
+	writeKeywords := []string{"INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE", "TRUNCATE", "RENAME", "REPLACE", "GRANT", "REVOKE"}
+	for _, k := range writeKeywords {
+		if strings.HasPrefix(t, k) {
+			return true
+		}
+	}
+	return false
 }
 
 // sanitizeIdentifier removes backticks to prevent SQL injection in identifiers.

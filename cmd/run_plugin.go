@@ -72,6 +72,7 @@ func runWithPlugin(cmd *cobra.Command, info *plugin.PluginInfo, rawTarget string
 		User:     dbUser,
 		Pass:     dbPass,
 		Database: dbName,
+		ReadOnly: dbReadOnly,
 	}
 
 	proc, pluginResp, err := plugin.StartPlugin(info, cfg)

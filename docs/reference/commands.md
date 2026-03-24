@@ -77,6 +77,7 @@ head:
 | `--db-user` | 数据库用户名（也可用 `--username`） | `--db-user root` |
 | `--db-pass` | 数据库密码（也可用 `--auth-pass`） | `--db-pass mypass` |
 | `--db-name` | 数据库名（可选） | `--db-name mydb` |
+| `--readonly` | 强制只读模式，禁止写操作 | `--readonly` |
 
 ## 插件管理
 

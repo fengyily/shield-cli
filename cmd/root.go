@@ -54,9 +54,10 @@ var rootCmd = &cobra.Command{
 }
 
 var (
-	dbUser   string
-	dbPass   string
-	dbName   string
+	dbUser     string
+	dbPass     string
+	dbName     string
+	dbReadOnly bool
 )
 
 func isValidProtocol(p string) bool {
@@ -102,6 +103,7 @@ func init() {
 	rootCmd.Flags().StringVar(&dbUser, "db-user", "", "Database username (plugin mode)")
 	rootCmd.Flags().StringVar(&dbPass, "db-pass", "", "Database password (plugin mode)")
 	rootCmd.Flags().StringVar(&dbName, "db-name", "", "Database name (plugin mode)")
+	rootCmd.Flags().BoolVar(&dbReadOnly, "readonly", false, "Force read-only mode (plugin mode)")
 
 	// Subcommand: start web management platform
 	rootCmd.AddCommand(startCmd)

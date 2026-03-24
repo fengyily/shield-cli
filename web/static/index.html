@@ -1000,6 +1000,13 @@ body {
           <label>DB Name</label>
           <input type="text" id="fDBName" placeholder="Optional">
         </div>
+        <div class="form-group">
+          <div class="form-check">
+            <input type="checkbox" id="fDBReadOnly" checked>
+            <label for="fDBReadOnly" style="margin:0; color:var(--text)">Read-Only Mode</label>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Block write queries (INSERT, UPDATE, DELETE, DROP, etc.)</div>
+        </div>
       </div>
 
       <!-- Advanced section -->
@@ -1647,6 +1654,7 @@ async function editApp(id) {
   document.getElementById('fDBUser').value = app.db_user || '';
   document.getElementById('fDBPass').value = app.db_pass || '';
   document.getElementById('fDBName').value = app.db_name || '';
+  document.getElementById('fDBReadOnly').checked = !!app.db_readonly;
   onProtocolChange();
   const shouldOpen = hasAdvancedValues();
   setAdvanceOpen(shouldOpen);
@@ -1708,6 +1716,7 @@ async function saveApp(e) {
     db_user: document.getElementById('fDBUser').value,
     db_pass: document.getElementById('fDBPass').value,
     db_name: document.getElementById('fDBName').value,
+    db_readonly: document.getElementById('fDBReadOnly').checked,
   };
 
   let res;

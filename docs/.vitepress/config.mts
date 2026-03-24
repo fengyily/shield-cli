@@ -77,6 +77,7 @@ export default defineConfig({
         nav: [
           { text: '指南', link: '/guide/what-is-shield' },
           { text: '协议', link: '/protocols/ssh' },
+          { text: '插件', link: '/plugins/' },
           { text: '参考', link: '/reference/commands' },
           { text: '更新日志', link: '/reference/changelog' },
           {
@@ -114,6 +115,14 @@ export default defineConfig({
                 { text: 'HTTP / HTTPS', link: '/protocols/http' },
                 { text: 'Telnet', link: '/protocols/telnet' },
                 { text: 'TCP / UDP', link: '/protocols/tcp-udp' },
+              ],
+            },
+            {
+              text: '插件',
+              items: [
+                { text: '插件系统', link: '/plugins/' },
+                { text: 'MySQL 插件', link: '/plugins/mysql' },
+                { text: '插件开发指南', link: '/plugins/development' },
               ],
             },
             {
@@ -166,6 +175,7 @@ export default defineConfig({
         nav: [
           { text: 'Guide', link: '/en/guide/what-is-shield' },
           { text: 'Protocols', link: '/en/protocols/ssh' },
+          { text: 'Plugins', link: '/en/plugins/' },
           { text: 'Reference', link: '/en/reference/commands' },
           { text: 'Changelog', link: '/en/reference/changelog' },
           {
@@ -203,6 +213,14 @@ export default defineConfig({
                 { text: 'HTTP / HTTPS', link: '/en/protocols/http' },
                 { text: 'Telnet', link: '/en/protocols/telnet' },
                 { text: 'TCP / UDP', link: '/en/protocols/tcp-udp' },
+              ],
+            },
+            {
+              text: 'Plugins',
+              items: [
+                { text: 'Plugin System', link: '/en/plugins/' },
+                { text: 'MySQL Plugin', link: '/en/plugins/mysql' },
+                { text: 'Plugin Development', link: '/en/plugins/development' },
               ],
             },
             {
