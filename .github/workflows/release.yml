@@ -53,6 +53,62 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
 
+  plugins:
+    name: Build Plugins (${{ matrix.plugin }}, ${{ matrix.goos }}/${{ matrix.goarch }})
+    runs-on: ubuntu-latest
+    needs: release
+    strategy:
+      matrix:
+        plugin: [mysql]
+        goos: [linux, darwin, windows]
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build plugin
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: "0"
+        run: |
+          cd plugins/${{ matrix.plugin }}
+          BINARY="shield-plugin-${{ matrix.plugin }}"
+          if [ "$GOOS" = "windows" ]; then
+            BINARY="${BINARY}.exe"
+          fi
+          go build -ldflags="-s -w" -o "${BINARY}" .
+
+          ASSET="shield-plugin-${{ matrix.plugin }}_${{ matrix.goos }}_${{ matrix.goarch }}"
+          if [ "$GOOS" = "windows" ]; then
+            zip "${ASSET}.zip" "${BINARY}"
+          else
+            tar czf "${ASSET}.tar.gz" "${BINARY}"
+          fi
+
+      - name: Upload plugin asset to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd plugins/${{ matrix.plugin }}
+          for f in shield-plugin-*.tar.gz shield-plugin-*.zip; do
+            [ -f "$f" ] && gh release upload "${{ steps.tag.outputs.version }}" "$f" \
+              --repo "${{ github.repository }}" --clobber
+          done
+
   linux-repo:
     name: Update Linux Package Repository
     runs-on: ubuntu-latest

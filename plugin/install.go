@@ -13,13 +13,16 @@ import (
 	"strings"
 )
 
-const defaultSourceOrg = "pfrancis-yishield"
+const (
+	mainRepo         = "fengyily/shield-cli"
+	defaultSourceOrg = "fengyily"
+)
 
 // KnownPlugins maps plugin names to their GitHub repo and metadata.
 var KnownPlugins = map[string]PluginInfo{
 	"mysql": {
 		Name:        "mysql",
-		Source:      defaultSourceOrg + "/shield-plugin-mysql",
+		Source:      mainRepo, // built in-repo, assets attached to main release
 		Protocols:   []string{"mysql", "mariadb"},
 		DefaultPort: 3306,
 	},
