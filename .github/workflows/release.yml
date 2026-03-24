@@ -104,8 +104,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd plugins/${{ matrix.plugin }}
-          for f in shield-plugin-*.tar.gz shield-plugin-*.zip; do
-            [ -f "$f" ] && gh release upload "${{ steps.tag.outputs.version }}" "$f" \
+          shopt -s nullglob
+          files=(shield-plugin-*.tar.gz shield-plugin-*.zip)
+          for f in "${files[@]}"; do
+            gh release upload "${{ steps.tag.outputs.version }}" "$f" \
               --repo "${{ github.repository }}" --clobber
           done
 
