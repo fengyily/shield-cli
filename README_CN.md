@@ -119,8 +119,12 @@ shield start
 ```bash
 shield install              # 安装为系统服务（默认端口 8181）
 shield install --port 8182  # 如果 8181 被占用，指定其他端口
+shield start                # 启动服务（如果服务已停止）
+shield stop                 # 停止服务
 shield uninstall            # 卸载服务
 ```
+
+`shield install` 后服务会自动启动并开机自启。如果服务被停止，使用 `shield start` 即可重新启动，无需重新安装。
 
 支持 macOS (launchd)、Linux (systemd) 和 Windows。详见[系统服务安装指南](https://docs.yishield.com/guide/system-service)。
 

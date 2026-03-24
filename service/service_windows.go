@@ -36,6 +36,30 @@ func Install(cfg Config) error {
 	return nil
 }
 
+// Start starts the installed Windows service
+func Start() error {
+	if !IsInstalled() {
+		return fmt.Errorf("service is not installed")
+	}
+	cmd := exec.Command("sc", "start", windowsServiceName)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to start service: %s (%w)", string(output), err)
+	}
+	return nil
+}
+
+// Stop stops the running Windows service
+func Stop() error {
+	if !IsInstalled() {
+		return fmt.Errorf("service is not installed")
+	}
+	cmd := exec.Command("sc", "stop", windowsServiceName)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to stop service: %s (%w)", string(output), err)
+	}
+	return nil
+}
+
 // Uninstall removes the shield Windows service
 func Uninstall() error {
 	if !IsInstalled() {

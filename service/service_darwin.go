@@ -92,6 +92,32 @@ func Install(cfg Config) error {
 	return nil
 }
 
+// Start starts the installed launchd service
+func Start() error {
+	plistPath := getPlistPath()
+	if _, err := os.Stat(plistPath); os.IsNotExist(err) {
+		return fmt.Errorf("service is not installed")
+	}
+	cmd := exec.Command("launchctl", "load", plistPath)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to start service: %s (%w)", string(output), err)
+	}
+	return nil
+}
+
+// Stop stops the running launchd service
+func Stop() error {
+	plistPath := getPlistPath()
+	if _, err := os.Stat(plistPath); os.IsNotExist(err) {
+		return fmt.Errorf("service is not installed")
+	}
+	cmd := exec.Command("launchctl", "unload", plistPath)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to stop service: %s (%w)", string(output), err)
+	}
+	return nil
+}
+
 // Uninstall removes the shield launchd service
 func Uninstall() error {
 	plistPath := getPlistPath()

@@ -80,9 +80,10 @@ func init() {
 	// Subcommand: start web management platform
 	rootCmd.AddCommand(startCmd)
 
-	// Subcommand: install/uninstall as system service
+	// Subcommand: install/uninstall/stop as system service
 	rootCmd.AddCommand(installCmd)
 	rootCmd.AddCommand(uninstallCmd)
+	rootCmd.AddCommand(stopCmd)
 
 	// Subcommand: clear cached credentials
 	rootCmd.AddCommand(&cobra.Command{

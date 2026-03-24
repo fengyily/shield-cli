@@ -281,6 +281,7 @@ func runShield(cmd *cobra.Command, args []string) error {
 	}
 	var resp *QuickSetupResponse
 	maxAttempts := 5
+	credReset := false
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		resp, err = callQuickSetup(ip, port, creds)
 		if err == nil {
@@ -296,10 +297,12 @@ func runShield(cmd *cobra.Command, args []string) error {
 			fmt.Fprintf(os.Stdout, "  [debug] callQuickSetup: attempt %d/%d failed: %v\n", attempt, maxAttempts, err)
 		}
 		errMsg := err.Error()
-		// Auth failure: reset credentials and retry
-		if strings.Contains(errMsg, "401") && creds.Password != "" {
+		// Auth failure: reset credentials once and retry with delay
+		if strings.Contains(errMsg, "401") && !credReset {
+			credReset = true
 			os.Remove(config.GetCredentialFilePath())
 			creds, _ = config.GetOrCreateCredentials()
+			time.Sleep(2 * time.Second)
 			continue
 		}
 		// Rate limited: wait longer and retry
@@ -330,7 +333,7 @@ func runShield(cmd *cobra.Command, args []string) error {
 
 	// Save credentials from response (including connector info for shield start reuse)
 	newCreds := &config.Credentials{
-		ConnectorName: resp.Data.Connector.Username,
+		ConnectorName: creds.ConnectorName,
 		Password:      resp.Data.Connector.Password,
 		ExternalIP:    resp.Data.Connector.ExternalIP,
 		APIPort:       resp.Data.Connector.APIPort,
@@ -417,8 +420,8 @@ func runShield(cmd *cobra.Command, args []string) error {
 	fmt.Println("  \033[1;32m✓ Tunnel established successfully!\033[0m")
 	fmt.Println()
 
-	// In visible mode, auto-open the access URL in the browser (skip for tcp/udp port proxies)
-	if !invisible && siteURL != "" && protocol != "tcp" && protocol != "udp" {
+	// In visible mode, auto-open the access URL in the browser
+	if !invisible && siteURL != "" {
 		openBrowser(siteURL)
 	}
 
@@ -642,9 +645,26 @@ func printHeader(resp *QuickSetupResponse, resourcePort int, targetIP string, ta
 	p("    \033[36mServer:\033[0m       %s:%d", resp.Data.Connector.ExternalIP, tunnelPort)
 	p("")
 
-	// TCP/UDP: show connection guide instead of Access URL
+	// Access URL
+	p("  \033[1;36mAccess URL:\033[0m")
+	p("    %s", resp.Data.App.SiteURL)
+	p("")
+
+	// Auth URL (only in invisible mode)
+	if invisible {
+		apiKey := resp.Data.APIKey
+		if apiKey.NHPServer != "" && apiKey.Code != "" {
+			authURL := fmt.Sprintf("https://%s/plugins/auth?resid=%s&action=valid&format=redirect&passcode=%s",
+				apiKey.NHPServer, apiKey.AppID, apiKey.Code,
+			)
+			p("  \033[1;36mAuth URL:\033[0m")
+			p("    %s", authURL)
+			p("")
+		}
+	}
+
+	// TCP/UDP: show additional connection guide
 	if protocol == "tcp" || protocol == "udp" {
-		// Extract domain from SiteURL as the dedicated connection host
 		connectHost := resp.Data.Connector.ExternalIP
 		if siteURL := resp.Data.App.SiteURL; siteURL != "" {
 			if h := extractHost(siteURL); h != "" {
@@ -666,24 +686,6 @@ func printHeader(resp *QuickSetupResponse, resourcePort int, targetIP string, ta
 			p("      dig @%s -p %d example.com", connectHost, resourcePort)
 		}
 		p("")
-	} else {
-		// Access URL (non tcp/udp protocols)
-		p("  \033[1;36mAccess URL:\033[0m")
-		p("    %s", resp.Data.App.SiteURL)
-		p("")
-
-		// Auth URL (only in invisible mode)
-		if invisible {
-			apiKey := resp.Data.APIKey
-			if apiKey.NHPServer != "" && apiKey.Code != "" {
-				authURL := fmt.Sprintf("https://%s/plugins/auth?resid=%s&action=valid&format=redirect&passcode=%s",
-					apiKey.NHPServer, apiKey.AppID, apiKey.Code,
-				)
-				p("  \033[1;36mAuth URL:\033[0m")
-				p("    %s", authURL)
-				p("")
-			}
-		}
 	}
 
 	p("  \033[90mProtocol: %s | Target: %s\033[0m", protocol, target)

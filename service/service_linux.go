@@ -78,6 +78,22 @@ func Install(cfg Config) error {
 	return nil
 }
 
+// Start starts the installed systemd service
+func Start() error {
+	if !IsInstalled() {
+		return fmt.Errorf("service is not installed")
+	}
+	return runCmd("systemctl", "start", systemdServiceName)
+}
+
+// Stop stops the running systemd service
+func Stop() error {
+	if !IsInstalled() {
+		return fmt.Errorf("service is not installed")
+	}
+	return runCmd("systemctl", "stop", systemdServiceName)
+}
+
 // Uninstall removes the shield systemd service
 func Uninstall() error {
 	if _, err := os.Stat(systemdServicePath); os.IsNotExist(err) {

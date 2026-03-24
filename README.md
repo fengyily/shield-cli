@@ -119,8 +119,12 @@ Open `http://localhost:8181`, add your services, and connect with one click. On 
 ```bash
 shield install              # Install as system service (port 8181)
 shield install --port 8182  # Use custom port if 8181 is occupied
+shield start                # Start the service (if stopped)
+shield stop                 # Stop the service
 shield uninstall            # Remove the service
 ```
+
+After `shield install`, the service starts automatically and will restart on boot. If the service is stopped, use `shield start` to restart it — no need to reinstall.
 
 Supports macOS (launchd), Linux (systemd), and Windows. See [System Service Guide](https://docs.yishield.com/en/guide/system-service) for details.
 
