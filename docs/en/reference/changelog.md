@@ -13,6 +13,24 @@ All notable changes to Shield CLI are documented here.
 
 ## v0.2.x <Badge type="tip" text="latest" />
 
+### v0.2.6 — TCP/UDP Port Proxy {#v0.2.6}
+
+**Released: 2026-03-24**
+
+#### New Features
+
+- **TCP/UDP port proxy** — forward arbitrary TCP/UDP ports through encrypted tunnels
+  - `shield tcp 3306` — proxy MySQL, Redis, PostgreSQL, or any TCP service
+  - `shield udp 53` — proxy DNS, Syslog, or any UDP service
+  - Port is required (no default port for tcp/udp)
+  - Displays connection guide with dedicated domain and port instead of opening a browser
+- **UDP over chisel** — UDP tunnels use chisel's native `/udp` remote suffix for proper UDP forwarding
+
+#### Improvements
+
+- **Tunnel activation fix** — CLI now calls `POST _webgate/api/tunnel` (consistent with Web UI) instead of a simple GET request
+- **Verbose debug output** — `-v` flag now prints debug logs during the silent setup phase (quick-setup API, tunnel creation, activation)
+
 ### v0.2.5 — Linux Package Manager Support {#v0.2.5}
 
 **Released: 2026-03-23**

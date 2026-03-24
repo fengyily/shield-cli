@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -138,6 +139,15 @@ func muteStderr() func() {
 	}
 }
 
+// extractHost returns the hostname (without port) from a URL string.
+func extractHost(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	return u.Hostname()
+}
+
 // openBrowser opens the given URL in the default browser.
 func openBrowser(url string) {
 	var cmd *exec.Cmd
@@ -211,6 +221,16 @@ func runShield(cmd *cobra.Command, args []string) error {
 
 	// Apply defaults: ip defaults to 127.0.0.1, port defaults to protocol standard port
 	defaultPort := defaultPorts[protocol]
+
+	// tcp/udp have no default port — user must specify one
+	if defaultPort == 0 && target == "" {
+		return fmt.Errorf("port is required for %s protocol\n\nUsage: shield %s <port> or shield %s <ip:port>", protocol, protocol, protocol)
+	}
+	if defaultPort == 0 && !strings.Contains(target, ":") && strings.Contains(target, ".") {
+		// Only IP without port for tcp/udp: shield tcp 10.0.0.2
+		return fmt.Errorf("port is required for %s protocol\n\nUsage: shield %s %s:<port>", protocol, protocol, target)
+	}
+
 	if target == "" {
 		// No target at all: shield ssh => 127.0.0.1:22
 		target = fmt.Sprintf("127.0.0.1:%d", defaultPort)
@@ -256,12 +276,24 @@ func runShield(cmd *cobra.Command, args []string) error {
 	}
 
 	// Call quick-setup API, auto-reset on auth failure, retry on transient errors
+	if verbose {
+		fmt.Fprintf(os.Stdout, "\n  [debug] callQuickSetup: protocol=%s target=%s:%d server=%s\n", protocol, ip, port, apiServer)
+	}
 	var resp *QuickSetupResponse
 	maxAttempts := 5
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		resp, err = callQuickSetup(ip, port, creds)
 		if err == nil {
+			if verbose {
+				fmt.Fprintf(os.Stdout, "  [debug] callQuickSetup: success on attempt %d\n", attempt)
+				fmt.Fprintf(os.Stdout, "  [debug]   siteURL=%s\n", resp.Data.App.SiteURL)
+				fmt.Fprintf(os.Stdout, "  [debug]   externalIP=%s apiPort=%d\n", resp.Data.Connector.ExternalIP, resp.Data.Connector.APIPort)
+				fmt.Fprintf(os.Stdout, "  [debug]   resourcePort=%d\n", resp.Data.App.Resource.Port)
+			}
 			break
+		}
+		if verbose {
+			fmt.Fprintf(os.Stdout, "  [debug] callQuickSetup: attempt %d/%d failed: %v\n", attempt, maxAttempts, err)
 		}
 		errMsg := err.Error()
 		// Auth failure: reset credentials and retry
@@ -342,14 +374,23 @@ func runShield(cmd *cobra.Command, args []string) error {
 	// Create single chisel connection with both API tunnel and resource tunnel
 	resource := resp.Data.App.Resource
 	resourceRemote := fmt.Sprintf("R:%d:%s:%d", resource.Port, ip, port)
+	if protocol == "udp" {
+		resourceRemote += "/udp"
+	}
 
+	if verbose {
+		fmt.Fprintf(os.Stdout, "  [debug] createMainTunnel: apiPort=%d localPort=%d resource=%s\n", resp.Data.Connector.APIPort, localPort, resourceRemote)
+	}
 	err = mgr.CreateMainTunnel(resp.Data.Connector.APIPort, localPort, resourceRemote)
 	if err != nil {
 		restoreStderr()
 		return fmt.Errorf("failed to create tunnel: %w", err)
 	}
+	if verbose {
+		fmt.Fprintf(os.Stdout, "  [debug] createMainTunnel: started successfully\n")
+	}
 
-	// Activate tunnel (silent, no logs)
+	// Activate tunnel
 	siteURL := resp.Data.App.SiteURL
 	activateTunnel(siteURL, 3, mgr)
 
@@ -376,8 +417,8 @@ func runShield(cmd *cobra.Command, args []string) error {
 	fmt.Println("  \033[1;32m✓ Tunnel established successfully!\033[0m")
 	fmt.Println()
 
-	// In visible mode, auto-open the access URL in the browser
-	if !invisible && siteURL != "" {
+	// In visible mode, auto-open the access URL in the browser (skip for tcp/udp port proxies)
+	if !invisible && siteURL != "" && protocol != "tcp" && protocol != "udp" {
 		openBrowser(siteURL)
 	}
 
@@ -526,17 +567,36 @@ func callQuickSetup(ip string, port int, creds *config.Credentials) (*QuickSetup
 	return &result, nil
 }
 
-// activateTunnel sends requests to warm up the tunnel, stops early if tunnel is connected.
+// activateTunnel polls the site's _webgate/api/tunnel endpoint to confirm the tunnel is active.
+// POST {siteURL}/_webgate/api/tunnel with empty JSON body; code=0 means ready.
 func activateTunnel(siteURL string, times int, mgr *tunnel.Manager) {
 	client := &http.Client{Timeout: 5 * time.Second}
+	apiURL := strings.TrimRight(siteURL, "/") + "/_webgate/api/tunnel"
+
+	// Use stdout for progress since stderr is muted during Phase 1
+	if verbose {
+		fmt.Fprintf(os.Stdout, "\n  [debug] activateTunnel: POST %s (attempts=%d)\n", apiURL, times)
+	}
+
 	for i := 0; i < times; i++ {
 		// Stop early if main tunnel is already connected
 		if mgr.IsMainConnected() {
+			if verbose {
+				fmt.Fprintf(os.Stdout, "  [debug] activateTunnel: main tunnel already connected, skipping\n")
+			}
 			return
 		}
-		resp, err := client.Get(siteURL)
-		if err == nil {
+		resp, err := client.Post(apiURL, "application/json", bytes.NewReader([]byte("{}")))
+		if err != nil {
+			if verbose {
+				fmt.Fprintf(os.Stdout, "  [debug] activateTunnel: attempt %d/%d failed: %v\n", i+1, times, err)
+			}
+		} else {
+			body, _ := io.ReadAll(resp.Body)
 			resp.Body.Close()
+			if verbose {
+				fmt.Fprintf(os.Stdout, "  [debug] activateTunnel: attempt %d/%d status=%d body=%s\n", i+1, times, resp.StatusCode, string(body))
+			}
 		}
 		if i < times-1 {
 			time.Sleep(1 * time.Second)
@@ -582,21 +642,47 @@ func printHeader(resp *QuickSetupResponse, resourcePort int, targetIP string, ta
 	p("    \033[36mServer:\033[0m       %s:%d", resp.Data.Connector.ExternalIP, tunnelPort)
 	p("")
 
-	// Access URL
-	p("  \033[1;36mAccess URL:\033[0m")
-	p("    %s", resp.Data.App.SiteURL)
-	p("")
+	// TCP/UDP: show connection guide instead of Access URL
+	if protocol == "tcp" || protocol == "udp" {
+		// Extract domain from SiteURL as the dedicated connection host
+		connectHost := resp.Data.Connector.ExternalIP
+		if siteURL := resp.Data.App.SiteURL; siteURL != "" {
+			if h := extractHost(siteURL); h != "" {
+				connectHost = h
+			}
+		}
 
-	// Auth URL (only in invisible mode)
-	if invisible {
-		apiKey := resp.Data.APIKey
-		if apiKey.NHPServer != "" && apiKey.Code != "" {
-			authURL := fmt.Sprintf("https://%s/plugins/auth?resid=%s&action=valid&format=redirect&passcode=%s",
-				apiKey.NHPServer, apiKey.AppID, apiKey.Code,
-			)
-			p("  \033[1;36mAuth URL:\033[0m")
-			p("    %s", authURL)
-			p("")
+		p("  \033[1;33m📡 Connection Guide (%s port proxy):\033[0m", strings.ToUpper(protocol))
+		p("    \033[1;36m%s:%d\033[0m  →  %s:%d", connectHost, resourcePort, targetIP, targetPort)
+		p("")
+		if protocol == "tcp" {
+			p("    \033[90mExamples:\033[0m")
+			p("      telnet %s %d", connectHost, resourcePort)
+			p("      mysql -h %s -P %d -u root", connectHost, resourcePort)
+			p("      redis-cli -h %s -p %d", connectHost, resourcePort)
+		} else {
+			p("    \033[90mExamples:\033[0m")
+			p("      nc -u %s %d", connectHost, resourcePort)
+			p("      dig @%s -p %d example.com", connectHost, resourcePort)
+		}
+		p("")
+	} else {
+		// Access URL (non tcp/udp protocols)
+		p("  \033[1;36mAccess URL:\033[0m")
+		p("    %s", resp.Data.App.SiteURL)
+		p("")
+
+		// Auth URL (only in invisible mode)
+		if invisible {
+			apiKey := resp.Data.APIKey
+			if apiKey.NHPServer != "" && apiKey.Code != "" {
+				authURL := fmt.Sprintf("https://%s/plugins/auth?resid=%s&action=valid&format=redirect&passcode=%s",
+					apiKey.NHPServer, apiKey.AppID, apiKey.Code,
+				)
+				p("  \033[1;36mAuth URL:\033[0m")
+				p("    %s", authURL)
+				p("")
+			}
 		}
 	}
 

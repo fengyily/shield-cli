@@ -13,6 +13,24 @@ Shield CLI 所有版本的变更记录。
 
 ## v0.2.x <Badge type="tip" text="最新" />
 
+### v0.2.6 — TCP/UDP 端口代理 {#v0.2.6}
+
+**发布日期：2026-03-24**
+
+#### 新功能
+
+- **TCP/UDP 端口代理** — 通过加密隧道转发任意 TCP/UDP 端口
+  - `shield tcp 3306` — 代理 MySQL、Redis、PostgreSQL 等 TCP 服务
+  - `shield udp 53` — 代理 DNS、Syslog 等 UDP 服务
+  - 必须指定端口（tcp/udp 无默认端口）
+  - 隧道建立后显示连接指南（专属域名 + 端口），不会自动打开浏览器
+- **UDP over chisel** — UDP 隧道使用 chisel 原生 `/udp` 后缀进行 UDP 转发
+
+#### 改进
+
+- **隧道激活修复** — CLI 改为调用 `POST _webgate/api/tunnel`（与 Web UI 一致），而非简单 GET 请求
+- **verbose 调试输出** — `-v` 参数现在在静默阶段也输出调试日志（quick-setup API、隧道创建、激活过程）
+
 ### v0.2.5 — Linux 包管理器支持 {#v0.2.5}
 
 **发布日期：2026-03-23**

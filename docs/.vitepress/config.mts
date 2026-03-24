@@ -50,6 +50,7 @@ export default defineConfig({
         'Browser-based VNC screen sharing',
         'HTTP/HTTPS reverse proxy tunnel',
         'Telnet browser access',
+        'TCP/UDP port proxy for arbitrary services (MySQL, Redis, DNS, etc.)',
         'SFTP file transfer in browser',
         'AES-256-GCM encrypted credential storage',
         'Machine fingerprint identity binding',
@@ -112,6 +113,7 @@ export default defineConfig({
                 { text: 'VNC', link: '/protocols/vnc' },
                 { text: 'HTTP / HTTPS', link: '/protocols/http' },
                 { text: 'Telnet', link: '/protocols/telnet' },
+                { text: 'TCP / UDP', link: '/protocols/tcp-udp' },
               ],
             },
             {
@@ -200,6 +202,7 @@ export default defineConfig({
                 { text: 'VNC', link: '/en/protocols/vnc' },
                 { text: 'HTTP / HTTPS', link: '/en/protocols/http' },
                 { text: 'Telnet', link: '/en/protocols/telnet' },
+                { text: 'TCP / UDP', link: '/en/protocols/tcp-udp' },
               ],
             },
             {

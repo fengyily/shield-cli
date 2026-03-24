@@ -131,6 +131,8 @@ shield ssh              # 浏览器内 SSH 终端 (127.0.0.1:22)
 shield rdp 10.0.0.5     # 浏览器内 Windows 桌面
 shield http 3000        # 暴露本地 Web 应用
 shield vnc 10.0.0.10    # 浏览器内 VNC 屏幕共享
+shield tcp 3306         # TCP 端口代理（MySQL）
+shield udp 53           # UDP 端口代理（DNS）
 ```
 
 ![Shield CLI 终端](docs/images/shieldcli-ssh-001.jpg)
@@ -146,8 +148,10 @@ shield vnc 10.0.0.10    # 浏览器内 VNC 屏幕共享
 | `shield ssh 10.0.0.2` | `10.0.0.2:22` |
 | `shield rdp` | `127.0.0.1:3389` |
 | `shield http 3000` | `127.0.0.1:3000` |
+| `shield tcp 3306` | `127.0.0.1:3306` |
+| `shield udp 53` | `127.0.0.1:53` |
 
-支持协议：`ssh`、`rdp`、`vnc`、`http`、`https`、`telnet` — [完整命令参考](https://docs.yishield.com/reference/commands)
+支持协议：`ssh`、`rdp`、`vnc`、`http`、`https`、`telnet`、`tcp`、`udp` — [完整命令参考](https://docs.yishield.com/reference/commands)
 
 ## 工作原理
 

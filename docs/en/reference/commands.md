@@ -20,6 +20,8 @@ head:
 | `shield http [address]` | Create an HTTP tunnel |
 | `shield https [address]` | Create an HTTPS tunnel |
 | `shield telnet [address]` | Create a Telnet tunnel |
+| `shield tcp <port\|address>` | Create a TCP port proxy (port required) |
+| `shield udp <port\|address>` | Create a UDP port proxy (port required) |
 | `shield install [--port]` | Install as system service (auto-start on boot) |
 | `shield uninstall` | Uninstall system service |
 | `shield clean` | Clear local credential cache |
@@ -45,6 +47,8 @@ head:
 | HTTP | 80 |
 | HTTPS | 443 |
 | Telnet | 23 |
+| TCP | None (must specify) |
+| UDP | None (must specify) |
 
 ## Global Flags
 
@@ -98,6 +102,11 @@ shield ssh 10.0.0.5:2222 --username root --auth-pass mypass --enable-sftp
 # Web UI mode
 shield start
 shield start 9090
+
+# TCP/UDP port proxy
+shield tcp 3306                          # MySQL
+shield tcp 192.168.1.10:6379             # Redis
+shield udp 53                            # DNS
 
 # Invisible mode RDP
 shield rdp 10.0.0.5 --username Administrator --invisible

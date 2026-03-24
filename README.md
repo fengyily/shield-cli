@@ -131,6 +131,8 @@ shield ssh              # SSH terminal in browser (127.0.0.1:22)
 shield rdp 10.0.0.5     # Windows desktop in browser
 shield http 3000        # Expose local web app
 shield vnc 10.0.0.10    # VNC screen sharing in browser
+shield tcp 3306         # TCP port proxy (MySQL)
+shield udp 53           # UDP port proxy (DNS)
 ```
 
 ![Shield CLI Terminal](docs/images/shieldcli-ssh-001.jpg)
@@ -146,8 +148,10 @@ shield vnc 10.0.0.10    # VNC screen sharing in browser
 | `shield ssh 10.0.0.2` | `10.0.0.2:22` |
 | `shield rdp` | `127.0.0.1:3389` |
 | `shield http 3000` | `127.0.0.1:3000` |
+| `shield tcp 3306` | `127.0.0.1:3306` |
+| `shield udp 53` | `127.0.0.1:53` |
 
-Protocols: `ssh`, `rdp`, `vnc`, `http`, `https`, `telnet` — [Full Commands Reference](https://docs.yishield.com/en/reference/commands)
+Protocols: `ssh`, `rdp`, `vnc`, `http`, `https`, `telnet`, `tcp`, `udp` — [Full Commands Reference](https://docs.yishield.com/en/reference/commands)
 
 ## How It Works
 

@@ -20,6 +20,8 @@ head:
 | `shield http [address]` | 创建 HTTP 隧道 |
 | `shield https [address]` | 创建 HTTPS 隧道 |
 | `shield telnet [address]` | 创建 Telnet 隧道 |
+| `shield tcp <port\|address>` | 创建 TCP 端口代理（必须指定端口） |
+| `shield udp <port\|address>` | 创建 UDP 端口代理（必须指定端口） |
 | `shield install [--port]` | 安装为系统服务（开机自启） |
 | `shield uninstall` | 卸载系统服务 |
 | `shield clean` | 清除本地凭证缓存 |
@@ -45,6 +47,8 @@ head:
 | HTTP | 80 |
 | HTTPS | 443 |
 | Telnet | 23 |
+| TCP | 无（必须指定） |
+| UDP | 无（必须指定） |
 
 ## 全局参数
 
@@ -98,6 +102,11 @@ shield ssh 10.0.0.5:2222 --username root --auth-pass mypass --enable-sftp
 # Web UI 模式
 shield start
 shield start 9090
+
+# TCP/UDP 端口代理
+shield tcp 3306                          # MySQL
+shield tcp 192.168.1.10:6379             # Redis
+shield udp 53                            # DNS
 
 # 隐身模式连接 RDP
 shield rdp 10.0.0.5 --username Administrator --invisible
