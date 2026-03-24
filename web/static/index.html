@@ -359,6 +359,12 @@ body {
 [data-theme="dark"] .proto-icon.rdp    { background: rgba(217,119,6,0.15); }
 [data-theme="dark"] .proto-icon.vnc    { background: rgba(219,39,119,0.15); }
 [data-theme="dark"] .proto-icon.telnet { background: rgba(124,58,237,0.15); }
+.proto-icon.mysql, .proto-icon.mariadb { background: #fff7ed; color: #ea580c; }
+.proto-icon.postgres { background: #eff6ff; color: #2563eb; }
+.proto-icon.sqlserver { background: #fef3c7; color: #d97706; }
+[data-theme="dark"] .proto-icon.mysql, [data-theme="dark"] .proto-icon.mariadb { background: rgba(234,88,12,0.15); }
+[data-theme="dark"] .proto-icon.postgres { background: rgba(37,99,235,0.15); }
+[data-theme="dark"] .proto-icon.sqlserver { background: rgba(217,119,6,0.15); }
 
 .proto-icon svg { width: 20px; height: 20px; }
 
@@ -791,6 +797,93 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text2); }
 
+/* ── Plugin warning banner ── */
+.plugin-warning {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.25);
+  color: var(--orange);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.plugin-warning.show { display: flex; }
+.plugin-warning .btn-install-inline {
+  margin-left: auto;
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--orange);
+  background: transparent;
+  color: var(--orange);
+  cursor: pointer;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+.plugin-warning .btn-install-inline:hover {
+  background: rgba(245,158,11,0.12);
+}
+.plugin-warning .btn-install-inline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Plugin modal ── */
+.plugin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.plugin-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+}
+.plugin-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.plugin-item-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+.plugin-item-meta {
+  font-size: 12px;
+  color: var(--text2);
+}
+.plugin-item .btn-sm {
+  flex-shrink: 0;
+}
+.btn-install {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid rgba(91,104,219,0.2);
+}
+.btn-install:hover { background: rgba(91,104,219,0.16); }
+.btn-uninstall {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid var(--red-border);
+}
+.btn-uninstall:hover { background: rgba(239,68,68,0.16); }
+.plugin-installed-badge {
+  font-size: 11px;
+  color: var(--green);
+  background: var(--green-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .header { padding: 14px 16px; }
@@ -815,6 +908,9 @@ body {
   </div>
   <div class="header-actions">
     <button class="icon-btn" onclick="toggleTheme()" id="themeBtn" title="Toggle theme">&#9788;</button>
+    <button class="icon-btn" onclick="openPluginModal()" title="Plugins">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:18px;height:18px"><path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z"/></svg>
+    </button>
     <button class="btn btn-primary" onclick="openAddModal()">
       <span class="btn-icon">+</span> Add Application
     </button>
@@ -878,6 +974,32 @@ body {
         <label>Port</label>
         <input type="number" id="fPort" placeholder="22">
         <div class="hint">Leave empty for protocol default</div>
+      </div>
+
+      <!-- Plugin warning -->
+      <div class="plugin-warning" id="pluginWarning">
+        <span>&#9888;</span>
+        <span id="pluginWarningText">Plugin required</span>
+        <button class="btn-install-inline" id="pluginInstallBtn" onclick="installPluginFromWarning()">Install</button>
+      </div>
+
+      <!-- DB credentials section (for plugin protocols) -->
+      <div id="dbSection" style="display:none">
+        <div class="form-section">Database</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>DB User</label>
+            <input type="text" id="fDBUser" placeholder="root">
+          </div>
+          <div class="form-group">
+            <label>DB Password</label>
+            <input type="password" id="fDBPass" placeholder="Optional">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>DB Name</label>
+          <input type="text" id="fDBName" placeholder="Optional">
+        </div>
       </div>
 
       <!-- Advanced section -->
@@ -963,6 +1085,19 @@ body {
   </div>
 </div>
 
+<!-- Plugin Management Modal -->
+<div class="modal-overlay" id="pluginModalOverlay">
+  <div class="modal" style="width:460px">
+    <h2>Plugins</h2>
+    <div id="pluginListContainer" class="plugin-list">
+      <div style="text-align:center;color:var(--text3);padding:20px">Loading...</div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closePluginModal()">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Confirm dialog -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-dialog">
@@ -980,11 +1115,12 @@ body {
 <div class="toast" id="toast"></div>
 
 <script>
-const defaultPorts = { ssh: 22, http: 80, https: 443, rdp: 3389, vnc: 5900, telnet: 23 };
+let defaultPorts = { ssh: 22, http: 80, https: 443, rdp: 3389, vnc: 5900, telnet: 23 };
 const MAX_APPS = 10;
 const MAX_CONNECTIONS = 3;
 let pollingTimers = {};
 let cachedApps = [];
+let cachedProtocols = []; // loaded from /api/protocols
 
 // ── Protocol icons (SVG) ──
 const protoIcons = {
@@ -995,6 +1131,66 @@ const protoIcons = {
   vnc: `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>`,
   telnet: `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 5A.75.75 0 012.75 9h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 9.75zm0 5a.75.75 0 01.75-.75h8.5a.75.75 0 010 1.5h-8.5a.75.75 0 01-.75-.75z" clip-rule="evenodd"/></svg>`,
 };
+
+// ── Load protocols dynamically ──
+async function loadProtocols() {
+  try {
+    const res = await api('/api/protocols');
+    if (res.code === 200 && res.data) {
+      cachedProtocols = res.data;
+      // Update defaultPorts from server data
+      const ports = {};
+      res.data.forEach(p => { if (p.default_port) ports[p.name] = p.default_port; });
+      defaultPorts = { ...defaultPorts, ...ports };
+      // Rebuild protocol select options
+      const sel = document.getElementById('fProtocol');
+      const currentVal = sel.value;
+      sel.innerHTML = '';
+      // Builtin protocols first, then plugins
+      const builtins = res.data.filter(p => p.type === 'builtin');
+      const plugins = res.data.filter(p => p.type === 'plugin');
+      builtins.forEach(p => {
+        if (p.name === 'tcp' || p.name === 'udp') return; // skip tcp/udp from web form
+        const opt = document.createElement('option');
+        opt.value = p.name;
+        opt.textContent = p.label;
+        sel.appendChild(opt);
+      });
+      if (plugins.length > 0) {
+        const group = document.createElement('optgroup');
+        group.label = 'Plugins';
+        plugins.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.name;
+          opt.textContent = p.label + (p.installed ? '' : ' (not installed)');
+          group.appendChild(opt);
+        });
+        sel.appendChild(group);
+      }
+      // Restore selection
+      if (currentVal && sel.querySelector(`option[value="${currentVal}"]`)) {
+        sel.value = currentVal;
+      }
+      // Update proto icons for plugins
+      plugins.forEach(p => {
+        if (!protoIcons[p.name]) {
+          protoIcons[p.name] = `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 3.5a1.5 1.5 0 013 0V4a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-.5a1.5 1.5 0 000 3h.5a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-.5a1.5 1.5 0 00-3 0v.5a1 1 0 01-1 1H6a1 1 0 01-1-1v-3a1 1 0 00-1-1h-.5a1.5 1.5 0 010-3H4a1 1 0 001-1V6a1 1 0 011-1h3a1 1 0 001-1v-.5z"/></svg>`;
+        }
+      });
+    }
+  } catch(e) {
+    console.error('Failed to load protocols', e);
+  }
+}
+
+function getProtocolInfo(name) {
+  return cachedProtocols.find(p => p.name === name);
+}
+
+function isPluginProtocol(name) {
+  const p = getProtocolInfo(name);
+  return p && p.type === 'plugin';
+}
 
 // ── Theme ──
 function getTheme() {
@@ -1161,6 +1357,7 @@ function renderApps(apps) {
             <span>Target: ${app.ip}:${app.port}</span>
             ${tunnelInfo}
             ${app.username ? `<span>User: ${app.username}</span>` : ''}
+            ${app.db_user ? `<span>DB: ${app.db_user}${app.db_name ? '/' + app.db_name : ''}</span>` : ''}
             ${app.invisible ? '<span>Invisible</span>' : ''}
           </div>
           ${connRow}
@@ -1228,6 +1425,21 @@ async function connectApp(id) {
 
   const res = await api(`/api/connect/${id}`, { method: 'POST' });
   if (res.code !== 200) {
+    if (res.plugin) {
+      // Plugin not installed — offer to install
+      if (confirm(res.message + '\n\nInstall now?')) {
+        toast('Installing plugin...', '');
+        const installRes = await api('/api/plugins', { method: 'POST', body: JSON.stringify({ name: res.plugin }) });
+        if (installRes.code === 200) {
+          toast('Plugin installed! Retrying connection...', 'success');
+          await loadProtocols();
+          connectApp(id);
+        } else {
+          toast(installRes.message || 'Install failed', 'error');
+        }
+      }
+      return;
+    }
     toast(res.message || 'Connection failed', 'error');
     return;
   }
@@ -1373,13 +1585,18 @@ function hasAdvancedValues() {
   const visable = document.getElementById('fVisable').value;
   const invisible = document.getElementById('fInvisible').checked;
 
+  const dbUser = document.getElementById('fDBUser').value;
+  const dbPass = document.getElementById('fDBPass').value;
+  const dbName = document.getElementById('fDBName').value;
+
   return (
     (tunnelPort && tunnelPort !== '62888') ||
     server || displayName || siteName ||
     username || authPass || privateKey || passphrase ||
     enableSftp ||
     (visable && visable !== 'visable') ||
-    invisible
+    invisible ||
+    dbUser || dbPass || dbName
   );
 }
 
@@ -1427,6 +1644,9 @@ async function editApp(id) {
   document.getElementById('fEnableSftp').checked = !!app.enable_sftp;
   document.getElementById('fVisable').value = app.visable || 'visable';
   document.getElementById('fInvisible').checked = !!app.invisible;
+  document.getElementById('fDBUser').value = app.db_user || '';
+  document.getElementById('fDBPass').value = app.db_pass || '';
+  document.getElementById('fDBName').value = app.db_name || '';
   onProtocolChange();
   const shouldOpen = hasAdvancedValues();
   setAdvanceOpen(shouldOpen);
@@ -1440,11 +1660,27 @@ function closeModal() {
 
 function onProtocolChange() {
   const proto = document.getElementById('fProtocol').value;
+  const isPlugin = isPluginProtocol(proto);
   const needsAuth = ['ssh', 'rdp', 'vnc'].includes(proto);
   const isSSH = proto === 'ssh';
-  document.getElementById('authSection').style.display = needsAuth ? '' : 'none';
+  document.getElementById('authSection').style.display = (needsAuth && !isPlugin) ? '' : 'none';
   document.getElementById('sshSection').style.display = isSSH ? '' : 'none';
+  document.getElementById('dbSection').style.display = isPlugin ? '' : 'none';
   document.getElementById('fPort').placeholder = defaultPorts[proto] || '80';
+
+  // Plugin warning
+  const warning = document.getElementById('pluginWarning');
+  const pInfo = getProtocolInfo(proto);
+  if (pInfo && pInfo.type === 'plugin' && !pInfo.installed) {
+    document.getElementById('pluginWarningText').textContent =
+      `Plugin "${pInfo.plugin}" is required for ${pInfo.label}. Install it to connect.`;
+    document.getElementById('pluginInstallBtn').dataset.plugin = pInfo.plugin;
+    document.getElementById('pluginInstallBtn').disabled = false;
+    document.getElementById('pluginInstallBtn').textContent = 'Install';
+    warning.classList.add('show');
+  } else {
+    warning.classList.remove('show');
+  }
 }
 
 async function saveApp(e) {
@@ -1469,6 +1705,9 @@ async function saveApp(e) {
     enable_sftp: document.getElementById('fEnableSftp').checked,
     visable: document.getElementById('fVisable').value || 'visable',
     invisible: document.getElementById('fInvisible').checked,
+    db_user: document.getElementById('fDBUser').value,
+    db_pass: document.getElementById('fDBPass').value,
+    db_name: document.getElementById('fDBName').value,
   };
 
   let res;
@@ -1492,13 +1731,96 @@ async function saveApp(e) {
 document.getElementById('modalOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
+document.getElementById('pluginModalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closePluginModal();
+});
 
 // Close modal on Escape
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') { closeConfirm(); closeModal(); }
+  if (e.key === 'Escape') { closeConfirm(); closeModal(); closePluginModal(); }
 });
 
+// ── Plugin Management Modal ──
+function openPluginModal() {
+  document.getElementById('pluginModalOverlay').classList.add('active');
+  loadPluginList();
+}
+function closePluginModal() {
+  document.getElementById('pluginModalOverlay').classList.remove('active');
+}
+
+async function loadPluginList() {
+  const container = document.getElementById('pluginListContainer');
+  container.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px">Loading...</div>';
+  try {
+    const res = await api('/api/plugins');
+    if (res.code !== 200) { container.innerHTML = '<div style="color:var(--red)">Failed to load</div>'; return; }
+    const items = res.data || [];
+    if (items.length === 0) {
+      container.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px">No plugins available</div>';
+      return;
+    }
+    container.innerHTML = items.map(p => `
+      <div class="plugin-item">
+        <div class="plugin-item-info">
+          <div class="plugin-item-name">${p.name} ${p.installed ? '<span class="plugin-installed-badge">Installed</span>' : ''}</div>
+          <div class="plugin-item-meta">Protocols: ${p.protocols.join(', ')} &middot; Port: ${p.default_port}${p.version ? ' &middot; v' + p.version : ''}</div>
+        </div>
+        ${p.installed
+          ? `<button class="btn btn-sm btn-uninstall" onclick="uninstallPlugin('${p.name}')">Remove</button>`
+          : `<button class="btn btn-sm btn-install" onclick="installPlugin('${p.name}', this)">Install</button>`
+        }
+      </div>
+    `).join('');
+  } catch(e) {
+    container.innerHTML = '<div style="color:var(--red)">Failed to load plugins</div>';
+  }
+}
+
+async function installPlugin(name, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Installing...'; }
+  const res = await api('/api/plugins', { method: 'POST', body: JSON.stringify({ name }) });
+  if (res.code === 200) {
+    toast('Plugin "' + name + '" installed', 'success');
+    await loadProtocols();
+    loadPluginList();
+  } else {
+    toast(res.message || 'Install failed', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Install'; }
+  }
+}
+
+async function uninstallPlugin(name) {
+  const res = await api(`/api/plugins/${name}`, { method: 'DELETE' });
+  if (res.code === 200) {
+    toast('Plugin "' + name + '" removed', 'success');
+    await loadProtocols();
+    loadPluginList();
+  } else {
+    toast(res.message || 'Remove failed', 'error');
+  }
+}
+
+async function installPluginFromWarning() {
+  const btn = document.getElementById('pluginInstallBtn');
+  const pluginName = btn.dataset.plugin;
+  if (!pluginName) return;
+  btn.disabled = true;
+  btn.textContent = 'Installing...';
+  const res = await api('/api/plugins', { method: 'POST', body: JSON.stringify({ name: pluginName }) });
+  if (res.code === 200) {
+    toast('Plugin "' + pluginName + '" installed', 'success');
+    await loadProtocols();
+    onProtocolChange(); // refresh warning state
+  } else {
+    toast(res.message || 'Install failed', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Install';
+  }
+}
+
 // Initial load
+loadProtocols();
 loadApps();
 setInterval(loadApps, 5000);
 </script>

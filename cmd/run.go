@@ -242,6 +242,11 @@ func runShield(cmd *cobra.Command, args []string) error {
 		target = fmt.Sprintf("%s:%d", target, defaultPort)
 	}
 
+	// Check if this is a plugin protocol
+	if pluginInfo := isPluginProtocol(protocol); pluginInfo != nil {
+		return runWithPlugin(cmd, pluginInfo, target)
+	}
+
 	// For ssh/rdp/vnc: prompt for credentials if not provided via flags
 	if (protocol == "ssh" || protocol == "rdp" || protocol == "vnc") && authUser == "" && authPass == "" {
 		promptCredentials()

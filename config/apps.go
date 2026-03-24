@@ -33,6 +33,9 @@ type AppConfig struct {
 	EnableSftp  bool      `json:"enable_sftp,omitempty"`
 	DisplayName string    `json:"display_name,omitempty"`
 	SiteName    string    `json:"site_name,omitempty"`
+	DBUser      string    `json:"db_user,omitempty"`
+	DBPass      string    `json:"db_pass,omitempty"`
+	DBName      string    `json:"db_name,omitempty"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 	LastConnectedAt *time.Time `json:"last_connected_at,omitempty"`

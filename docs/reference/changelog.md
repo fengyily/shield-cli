@@ -11,7 +11,39 @@ head:
 
 Shield CLI 所有版本的变更记录。
 
-## v0.2.x <Badge type="tip" text="最新" />
+## v0.3.x <Badge type="tip" text="最新" />
+
+### v0.3.0 — 插件系统 & MySQL Web 客户端 {#v0.3.0}
+
+**发布日期：2026-03-24**
+
+#### 新功能
+
+- **插件系统** — 通过独立二进制插件按需扩展协议支持，主程序零膨胀
+  - `shield plugin add <name>` — 安装插件（支持从 GitHub Releases 下载或本地安装）
+  - `shield plugin list` — 查看已安装插件
+  - `shield plugin remove <name>` — 卸载插件
+  - 插件通过 stdin/stdout JSON 协议与主程序通信，架构简洁可靠
+- **MySQL 插件** — 浏览器内 Web 数据库管理客户端
+  - `shield mysql 127.0.0.1:3306` — 一行命令暴露 MySQL Web 管理界面
+  - 支持 `mysql` 和 `mariadb` 协议别名
+  - Web 界面功能：数据库浏览、表过滤与翻页、表结构查看、SQL 执行
+  - 结果排序（点击列头）、CSV 导出、一键复制
+  - 默认只读模式，阻止写操作（可切换为读写模式）
+  - 交互式凭证输入（缺少 `--db-user` / `--db-pass` 时自动提示）
+  - 兼容 `--username` / `--auth-pass` 通用认证参数
+- **数据库连接参数** — 新增 `--db-user`、`--db-pass`、`--db-name` 参数
+
+#### 文档
+
+- 新增[插件系统概览](/plugins/)文档（中英文）
+- 新增 [MySQL 插件详细文档](/plugins/mysql)（中英文）
+- 新增[插件开发指南](/plugins/development)（中英文）
+- 命令参考新增插件管理和数据库参数说明
+
+---
+
+## v0.2.x
 
 ### v0.2.6 — TCP/UDP 端口代理 {#v0.2.6}
 

@@ -8,8 +8,10 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 
 	"shield-cli/config"
+	"shield-cli/plugin"
 )
 
 //go:embed static
@@ -47,6 +49,11 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/disconnect/", s.handleDisconnect)
 	mux.HandleFunc("/api/status/", s.handleStatus)
 	mux.HandleFunc("/api/tunnel", s.handleTunnelStatus)
+
+	// Plugin management APIs
+	mux.HandleFunc("/api/plugins", s.handlePlugins)
+	mux.HandleFunc("/api/plugins/", s.handlePluginAction)
+	mux.HandleFunc("/api/protocols", s.handleProtocols)
 
 	// Static files
 	staticFS, err := fs.Sub(staticFiles, "static")
@@ -278,6 +285,23 @@ func (s *Server) handleConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if plugin protocol and plugin is installed
+	reg, _ := plugin.LoadRegistry()
+	if reg != nil {
+		for pName, known := range plugin.KnownPlugins {
+			for _, proto := range known.Protocols {
+				if proto == app.Protocol && reg.FindByName(pName) == nil {
+					writeJSON(w, http.StatusBadRequest, map[string]interface{}{
+						"code":    400,
+						"message": fmt.Sprintf("Plugin \"%s\" is required for %s protocol. Please install it first.", pName, app.Protocol),
+						"plugin":  pName,
+					})
+					return
+				}
+			}
+		}
+	}
+
 	// Check main tunnel readiness
 	tunnelStatus, _ := s.connMgr.MainTunnelStatus()
 	if tunnelStatus == "connecting" {
@@ -397,5 +421,171 @@ func defaultPort(protocol string) int {
 	if p, ok := ports[protocol]; ok {
 		return p
 	}
+	// Check plugin default ports
+	reg, err := plugin.LoadRegistry()
+	if err == nil {
+		if info := reg.Find(protocol); info != nil {
+			return info.DefaultPort
+		}
+	}
 	return 80
+}
+
+// handleProtocols returns all available protocols (built-in + plugins)
+func (s *Server) handleProtocols(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	type protocolInfo struct {
+		Name        string `json:"name"`
+		Label       string `json:"label"`
+		DefaultPort int    `json:"default_port"`
+		Type        string `json:"type"`   // "builtin" or "plugin"
+		Plugin      string `json:"plugin,omitempty"`
+		Installed   bool   `json:"installed"`
+	}
+
+	builtins := []protocolInfo{
+		{Name: "ssh", Label: "SSH", DefaultPort: 22, Type: "builtin", Installed: true},
+		{Name: "http", Label: "HTTP", DefaultPort: 80, Type: "builtin", Installed: true},
+		{Name: "https", Label: "HTTPS", DefaultPort: 443, Type: "builtin", Installed: true},
+		{Name: "rdp", Label: "RDP", DefaultPort: 3389, Type: "builtin", Installed: true},
+		{Name: "vnc", Label: "VNC", DefaultPort: 5900, Type: "builtin", Installed: true},
+		{Name: "telnet", Label: "Telnet", DefaultPort: 23, Type: "builtin", Installed: true},
+		{Name: "tcp", Label: "TCP", DefaultPort: 0, Type: "builtin", Installed: true},
+		{Name: "udp", Label: "UDP", DefaultPort: 0, Type: "builtin", Installed: true},
+	}
+
+	// Add known plugins (installed or not)
+	reg, _ := plugin.LoadRegistry()
+	for name, known := range plugin.KnownPlugins {
+		installed := false
+		if reg != nil && reg.FindByName(name) != nil {
+			installed = true
+		}
+		mainProto := known.Protocols[0]
+		builtins = append(builtins, protocolInfo{
+			Name:        mainProto,
+			Label:       strings.ToUpper(name),
+			DefaultPort: known.DefaultPort,
+			Type:        "plugin",
+			Plugin:      name,
+			Installed:   installed,
+		})
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"code": 200, "data": builtins,
+	})
+}
+
+// handlePlugins handles GET (list) and POST (install) for /api/plugins
+func (s *Server) handlePlugins(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	switch r.Method {
+	case http.MethodGet:
+		reg, err := plugin.LoadRegistry()
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]interface{}{
+				"code": 500, "message": err.Error(),
+			})
+			return
+		}
+
+		// Build list with known plugins info
+		type pluginItem struct {
+			Name        string   `json:"name"`
+			Version     string   `json:"version,omitempty"`
+			Protocols   []string `json:"protocols"`
+			DefaultPort int      `json:"default_port"`
+			Installed   bool     `json:"installed"`
+			InstalledAt string   `json:"installed_at,omitempty"`
+		}
+
+		var items []pluginItem
+		for name, known := range plugin.KnownPlugins {
+			item := pluginItem{
+				Name:        name,
+				Protocols:   known.Protocols,
+				DefaultPort: known.DefaultPort,
+			}
+			if info := reg.FindByName(name); info != nil {
+				item.Installed = true
+				item.Version = info.Version
+				item.InstalledAt = info.InstalledAt
+			}
+			items = append(items, item)
+		}
+
+		writeJSON(w, http.StatusOK, map[string]interface{}{
+			"code": 200, "data": items,
+		})
+
+	case http.MethodPost:
+		var body struct {
+			Name string `json:"name"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Name == "" {
+			writeJSON(w, http.StatusBadRequest, map[string]interface{}{
+				"code": 400, "message": "name is required",
+			})
+			return
+		}
+
+		info, err := plugin.Install(body.Name)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]interface{}{
+				"code": 500, "message": err.Error(),
+			})
+			return
+		}
+
+		writeJSON(w, http.StatusOK, map[string]interface{}{
+			"code": 200, "data": info,
+		})
+
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+	}
+}
+
+// handlePluginAction handles DELETE /api/plugins/{name}
+func (s *Server) handlePluginAction(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	name := r.URL.Path[len("/api/plugins/"):]
+	if name == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]interface{}{
+			"code": 400, "message": "plugin name is required",
+		})
+		return
+	}
+
+	if r.Method != http.MethodDelete {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	reg, err := plugin.LoadRegistry()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]interface{}{
+			"code": 500, "message": err.Error(),
+		})
+		return
+	}
+
+	if err := reg.Remove(name); err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]interface{}{
+			"code": 404, "message": err.Error(),
+		})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"code": 200, "message": "removed",
+	})
 }
