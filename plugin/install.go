@@ -284,6 +284,135 @@ func InstallFromLocal(name, binaryPath string) (*PluginInfo, error) {
 	return &info, nil
 }
 
+// UpgradeResult describes the result of an upgrade check or operation.
+type UpgradeResult struct {
+	Name           string
+	CurrentVersion string
+	LatestVersion  string
+	Upgraded       bool
+}
+
+// CheckUpdate checks if a newer version is available for a plugin without installing it.
+func CheckUpdate(name string) (*UpgradeResult, error) {
+	known, ok := KnownPlugins[name]
+	if !ok {
+		return nil, fmt.Errorf("unknown plugin %q", name)
+	}
+
+	reg, err := LoadRegistry()
+	if err != nil {
+		return nil, err
+	}
+	installed := reg.FindByName(name)
+	if installed == nil {
+		return nil, fmt.Errorf("plugin %q is not installed", name)
+	}
+
+	current := installed.Version
+	if current == "local" || current == "builtin" {
+		return &UpgradeResult{Name: name, CurrentVersion: current, LatestVersion: current}, nil
+	}
+
+	latest, err := fetchLatestVersion(known.Source)
+	if err != nil {
+		return nil, err
+	}
+
+	return &UpgradeResult{
+		Name:           name,
+		CurrentVersion: current,
+		LatestVersion:  latest,
+	}, nil
+}
+
+// Upgrade upgrades a plugin to the latest version if available.
+func Upgrade(name string) (*UpgradeResult, error) {
+	known, ok := KnownPlugins[name]
+	if !ok {
+		return nil, fmt.Errorf("unknown plugin %q", name)
+	}
+
+	reg, err := LoadRegistry()
+	if err != nil {
+		return nil, err
+	}
+	installed := reg.FindByName(name)
+	if installed == nil {
+		return nil, fmt.Errorf("plugin %q is not installed\n\nInstall first: shield plugin add %s", name, name)
+	}
+
+	current := installed.Version
+	if current == "local" || current == "builtin" {
+		return nil, fmt.Errorf("plugin %q was installed from %s, cannot upgrade from GitHub\n\nReinstall: shield plugin remove %s && shield plugin add %s", name, current, name, name)
+	}
+
+	latest, err := fetchLatestVersion(known.Source)
+	if err != nil {
+		return nil, err
+	}
+
+	if latest == current {
+		return &UpgradeResult{Name: name, CurrentVersion: current, LatestVersion: latest, Upgraded: false}, nil
+	}
+
+	// Download and install the new version
+	info, err := Install(name)
+	if err != nil {
+		return nil, fmt.Errorf("upgrade failed: %w", err)
+	}
+
+	return &UpgradeResult{
+		Name:           name,
+		CurrentVersion: current,
+		LatestVersion:  info.Version,
+		Upgraded:       true,
+	}, nil
+}
+
+// UpgradeAll upgrades all installed plugins. Returns results for each.
+func UpgradeAll() ([]UpgradeResult, error) {
+	reg, err := LoadRegistry()
+	if err != nil {
+		return nil, err
+	}
+
+	var results []UpgradeResult
+	for _, p := range reg.Plugins {
+		res, err := Upgrade(p.Name)
+		if err != nil {
+			// Non-fatal: collect the error as a result
+			results = append(results, UpgradeResult{
+				Name:           p.Name,
+				CurrentVersion: p.Version,
+				LatestVersion:  "error: " + err.Error(),
+			})
+			continue
+		}
+		results = append(results, *res)
+	}
+	return results, nil
+}
+
+// fetchLatestVersion fetches the latest release tag from GitHub.
+func fetchLatestVersion(source string) (string, error) {
+	apiURL := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", source)
+	resp, err := http.Get(apiURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to check for updates: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("GitHub API returned status %d", resp.StatusCode)
+	}
+
+	var release githubRelease
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return "", fmt.Errorf("failed to parse release info: %w", err)
+	}
+	return release.TagName, nil
+}
+
 // AvailablePluginNames returns a comma-separated list of known plugin names.
 func AvailablePluginNames() string {
 	names := make([]string, 0, len(KnownPlugins))

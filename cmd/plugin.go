@@ -81,6 +81,48 @@ var pluginListCmd = &cobra.Command{
 	},
 }
 
+var pluginUpgradeCmd = &cobra.Command{
+	Use:     "upgrade [name]",
+	Short:   "Upgrade installed plugins to latest version",
+	Example: "  shield plugin upgrade mysql\n  shield plugin upgrade  # upgrade all",
+	Args:    cobra.MaximumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 1 {
+			name := args[0]
+			fmt.Printf("  Checking for updates: %s...\n", name)
+			result, err := plugin.Upgrade(name)
+			if err != nil {
+				return err
+			}
+			if result.Upgraded {
+				fmt.Printf("  \033[32m✓ Upgraded %s: %s → %s\033[0m\n", result.Name, result.CurrentVersion, result.LatestVersion)
+			} else {
+				fmt.Printf("  %s is already up to date (%s)\n", result.Name, result.CurrentVersion)
+			}
+			return nil
+		}
+
+		// Upgrade all
+		fmt.Println("  Checking for updates...")
+		results, err := plugin.UpgradeAll()
+		if err != nil {
+			return err
+		}
+		if len(results) == 0 {
+			fmt.Println("  No plugins installed.")
+			return nil
+		}
+		for _, r := range results {
+			if r.Upgraded {
+				fmt.Printf("  \033[32m✓ Upgraded %s: %s → %s\033[0m\n", r.Name, r.CurrentVersion, r.LatestVersion)
+			} else {
+				fmt.Printf("  %s: %s (up to date)\n", r.Name, r.CurrentVersion)
+			}
+		}
+		return nil
+	},
+}
+
 var pluginRemoveCmd = &cobra.Command{
 	Use:     "remove <name>",
 	Aliases: []string{"rm"},
@@ -107,5 +149,6 @@ func init() {
 	pluginCmd.AddCommand(pluginAddCmd)
 	pluginCmd.AddCommand(pluginListCmd)
 	pluginCmd.AddCommand(pluginRemoveCmd)
+	pluginCmd.AddCommand(pluginUpgradeCmd)
 	rootCmd.AddCommand(pluginCmd)
 }
