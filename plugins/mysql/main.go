@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -44,6 +45,13 @@ type StartResponse struct {
 }
 
 func main() {
+	// If DB_HOST is set, run in standalone/Docker mode
+	if os.Getenv("DB_HOST") != "" {
+		standaloneMode()
+		return
+	}
+
+	// Otherwise, use Shield CLI plugin protocol (stdin JSON)
 	decoder := json.NewDecoder(os.Stdin)
 
 	for {
@@ -70,35 +78,8 @@ func respondError(msg string) {
 	respond(StartResponse{Status: "error", Message: msg})
 }
 
-func handleStart(cfg PluginConfig) {
-	// Build DSN
-	user := cfg.User
-	if user == "" {
-		user = "root"
-	}
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true&charset=utf8mb4",
-		user, cfg.Pass, cfg.Host, cfg.Port, cfg.Database)
-
-	// Test connection
-	db, err := sql.Open("mysql", dsn)
-	if err != nil {
-		respondError(fmt.Sprintf("failed to open connection: %v", err))
-		return
-	}
-	if err := db.Ping(); err != nil {
-		respondError(fmt.Sprintf("cannot connect to MySQL at %s:%d: %v", cfg.Host, cfg.Port, err))
-		return
-	}
-
-	// Find available port
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		respondError(fmt.Sprintf("failed to find available port: %v", err))
-		return
-	}
-	webPort := listener.Addr().(*net.TCPAddr).Port
-
-	// Setup HTTP handlers
+// setupHTTP creates the HTTP mux with all API routes and static files.
+func setupHTTP(db *sql.DB, cfg PluginConfig) http.Handler {
 	mux := http.NewServeMux()
 
 	// API routes
@@ -113,6 +94,43 @@ func handleStart(cfg PluginConfig) {
 	staticSub, _ := fs.Sub(staticFS, "static")
 	mux.Handle("/", http.FileServer(http.FS(staticSub)))
 
+	return mux
+}
+
+// connectDB builds a DSN from the config, opens, and pings the database.
+func connectDB(cfg PluginConfig) (*sql.DB, error) {
+	user := cfg.User
+	if user == "" {
+		user = "root"
+	}
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?parseTime=true&charset=utf8mb4",
+		user, cfg.Pass, cfg.Host, cfg.Port, cfg.Database)
+
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open connection: %w", err)
+	}
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("cannot connect to MySQL at %s:%d: %w", cfg.Host, cfg.Port, err)
+	}
+	return db, nil
+}
+
+func handleStart(cfg PluginConfig) {
+	db, err := connectDB(cfg)
+	if err != nil {
+		respondError(err.Error())
+		return
+	}
+
+	// Find available port on loopback
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		respondError(fmt.Sprintf("failed to find available port: %v", err))
+		return
+	}
+	webPort := listener.Addr().(*net.TCPAddr).Port
+
 	// Respond with ready
 	respond(StartResponse{
 		Status:  "ready",
@@ -123,15 +141,71 @@ func handleStart(cfg PluginConfig) {
 
 	// Start HTTP server in background
 	go func() {
-		if err := http.Serve(listener, mux); err != nil {
+		if err := http.Serve(listener, setupHTTP(db, cfg)); err != nil {
 			log.Fatalf("HTTP server error: %v", err)
 		}
 	}()
 
-	// Wait for stop signal or stdin close
+	// Wait for stop signal
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	<-sigCh
 
+	db.Close()
+}
+
+// standaloneMode runs the plugin as a standalone server, reading config from
+// environment variables. Intended for Docker / direct execution.
+func standaloneMode() {
+	port := 3306
+	if v := os.Getenv("DB_PORT"); v != "" {
+		if p, err := strconv.Atoi(v); err == nil {
+			port = p
+		}
+	}
+	readOnly := false
+	if v := os.Getenv("DB_READONLY"); v == "true" || v == "1" {
+		readOnly = true
+	}
+	webPort := 8080
+	if v := os.Getenv("WEB_PORT"); v != "" {
+		if p, err := strconv.Atoi(v); err == nil {
+			webPort = p
+		}
+	}
+
+	cfg := PluginConfig{
+		Host:     os.Getenv("DB_HOST"),
+		Port:     port,
+		User:     os.Getenv("DB_USER"),
+		Pass:     os.Getenv("DB_PASS"),
+		Database: os.Getenv("DB_NAME"),
+		ReadOnly: readOnly,
+	}
+
+	db, err := connectDB(cfg)
+	if err != nil {
+		log.Fatalf("Database connection failed: %v", err)
+	}
+
+	addr := fmt.Sprintf("0.0.0.0:%d", webPort)
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Fatalf("Failed to listen on %s: %v", addr, err)
+	}
+
+	log.Printf("MySQL Web Client listening on http://%s", addr)
+
+	go func() {
+		if err := http.Serve(listener, setupHTTP(db, cfg)); err != nil {
+			log.Fatalf("HTTP server error: %v", err)
+		}
+	}()
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	<-sigCh
+
+	log.Println("Shutting down...")
 	db.Close()
 }
