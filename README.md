@@ -5,8 +5,8 @@
 <h1 align="center">Shield CLI</h1>
 
 <p align="center">
-  <strong>One command. One URL. Access anything from a browser.</strong><br>
-  Shield CLI creates encrypted tunnels to your internal services — RDP desktops, VNC sessions, SSH terminals, web apps — and makes them accessible through any browser. No VPN. No client software. No port forwarding.
+  <strong>Access any internal service from your browser. No VPN, no client, one command.</strong><br>
+  Shield CLI is a browser-first internal service gateway — SSH terminals, remote desktops, database admin, web apps — all accessible through any browser with a single command.
 </p>
 
 <p align="center">
@@ -20,6 +20,14 @@
   <img src="https://img.shields.io/badge/go-%3E%3D1.21-blue?logo=go" alt="Go Version">
   <img src="https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-brightgreen" alt="Platform">
   <img src="https://img.shields.io/badge/license-Apache%202.0-green" alt="License">
+</p>
+
+---
+
+## How It Works
+
+<p align="center">
+  <img src="docs/demo/architecture.gif" alt="Shield CLI Architecture" width="800">
 </p>
 
 ---
@@ -42,17 +50,17 @@
 
 ## Why Shield CLI?
 
-Traditional tunnel tools (ngrok, frp) solve **network reachability** — they map ports to the internet, but users still need protocol-specific clients (RDP client, SSH terminal, VNC viewer).
+Traditional tools solve **network reachability** (ngrok, frp) or **access control** (Teleport, Boundary) — but they still require protocol-specific clients or complex setup.
 
-Shield CLI solves **terminal usability** — it renders RDP desktops, VNC sessions, and SSH terminals directly in the browser via HTML5. The visitor only needs a browser.
+Shield CLI is a **unified browser gateway** for all your internal services. One binary, one command — SSH terminals, remote desktops, database admin, web apps — all rendered in the browser via HTML5.
 
-| Feature | Shield CLI | ngrok | frp |
-|---------|-----------|-------|-----|
-| Browser RDP/VNC | Yes | No | No |
-| Browser SSH terminal | Yes | No | No |
-| Free TCP tunnels | Yes | Paid only | Yes (self-hosted) |
+| Capability | Shield CLI | ngrok/frp | Teleport/Boundary |
+|-----------|-----------|-----------|-------------------|
+| Browser RDP/VNC/SSH | Yes | No | Partial |
+| Database Web Admin | Yes (plugins) | No | No |
 | Zero client install | Yes | No | No |
-| China-friendly install | Yes (CDN mirror) | No | Yes |
+| Single binary deploy | Yes | Yes | No |
+| Plugin extensibility | Yes | No | No |
 
 ## Installation
 
@@ -133,10 +141,11 @@ Supports macOS (launchd), Linux (systemd), and Windows. See [System Service Guid
 ```bash
 shield ssh              # SSH terminal in browser (127.0.0.1:22)
 shield rdp 10.0.0.5     # Windows desktop in browser
+shield mysql 10.0.0.20  # Database admin in browser (plugin)
 shield http 3000        # Expose local web app
 shield vnc 10.0.0.10    # VNC screen sharing in browser
-shield tcp 3306         # TCP port proxy (MySQL)
-shield udp 53           # UDP port proxy (DNS)
+shield tcp 3306         # TCP port proxy
+shield udp 53           # UDP port proxy
 ```
 
 ![Shield CLI Terminal](docs/images/shieldcli-ssh-001.jpg)
@@ -157,15 +166,6 @@ shield udp 53           # UDP port proxy (DNS)
 
 Protocols: `ssh`, `rdp`, `vnc`, `http`, `https`, `telnet`, `tcp`, `udp` — [Full Commands Reference](https://docs.yishield.com/en/reference/commands)
 
-## How It Works
-
-```
-Internal Service ←→ Shield CLI ←→ Public Gateway ←→ Browser
-  (SSH/RDP/...)      (Encrypted)    (HTML5 Render)   (Any Device)
-```
-
-Learn more: [Connection Flow](https://docs.yishield.com/en/security/connection-flow) | [Security Model](https://docs.yishield.com/en/security/credentials)
-
 ## Security
 
 - **AES-256-GCM encryption** — credentials encrypted with machine fingerprint-derived keys
@@ -183,6 +183,7 @@ Full documentation is available at **[docs.yishield.com](https://docs.yishield.c
 - [Installation](https://docs.yishield.com/en/guide/install) — all installation methods
 - [Quick Start](https://docs.yishield.com/en/guide/quickstart) — 5-minute tutorial
 - [Protocol Guides](https://docs.yishield.com/en/protocols/ssh) — SSH, RDP, VNC, HTTP, Telnet
+- [Plugin System](https://docs.yishield.com/en/plugins/) — MySQL and more
 - [Commands Reference](https://docs.yishield.com/en/reference/commands) — full parameter guide
 - [FAQ](https://docs.yishield.com/en/reference/faq) — frequently asked questions
 - [Troubleshooting](https://docs.yishield.com/en/troubleshooting/errors) — common errors and fixes

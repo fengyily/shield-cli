@@ -44,15 +44,12 @@ shield ssh 10.0.0.5
 
 ## 工作原理
 
-```
-你的内网服务 ←→ Shield CLI ←→ 公网网关 ←→ 浏览器
-   (SSH/RDP/...)    (加密隧道)    (HTML5 渲染)    (任意设备)
-```
+<ArchitectureDiagram />
 
-1. Shield CLI 在你的机器上运行，连接到内网服务
-2. 通过加密 WebSocket 隧道与公网网关建立连接
-3. 网关分配一个唯一的 Access URL
-4. 访问者在浏览器中打开 URL，即可操作远程服务
+1. 在内网机器上安装 Shield CLI
+2. 添加应用（协议、IP、端口），Shield CLI 连接内网服务
+3. 通过加密 WebSocket 隧道与公网 Webgate 建立连接，获得 Access URL
+4. 外网用户在浏览器中打开 URL，即可操作远程服务
 
 ## 两种使用方式
 

@@ -44,15 +44,12 @@ You get a public URL. Open it in any browser to directly operate the SSH termina
 
 ## How It Works
 
-```
-Your Service ←→ Shield CLI ←→ Public Gateway ←→ Browser
-(SSH/RDP/...)    (Encrypted)    (HTML5 Render)   (Any Device)
-```
+<ArchitectureDiagram />
 
-1. Shield CLI runs on your machine and connects to the internal service
-2. Establishes an encrypted WebSocket tunnel to the public gateway
-3. The gateway assigns a unique Access URL
-4. Visitors open the URL in a browser to operate the remote service
+1. Install Shield CLI on your internal network machine
+2. Add an application (protocol, IP, port) — Shield CLI connects to the internal service
+3. An encrypted WebSocket tunnel is established to the public Webgate, generating an Access URL
+4. External users open the URL in a browser to operate the remote service
 
 ## Two Ways to Use
 
