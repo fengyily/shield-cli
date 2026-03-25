@@ -729,6 +729,9 @@ body {
 }
 .conn-row .copy-btn:hover { color: var(--accent); background: var(--accent-bg); }
 .conn-row .copy-btn.copied { color: var(--green); }
+.conn-row + .conn-row { margin-top: 4px; }
+.conn-row.local-row { background: var(--surface2); color: var(--text2); }
+.conn-row.local-row a { color: var(--text1); }
 
 /* ── Confirm dialog ── */
 .confirm-overlay {
@@ -1316,7 +1319,9 @@ function renderApps(apps) {
     if (status === 'connected' && cs.site_url) {
       const shortUrl = cs.site_url.replace(/^https?:\/\//, '');
       const copyIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/></svg>`;
-      connRow = `<div class="conn-row connected">${extIcon} <a href="${cs.site_url}" target="_blank" title="${cs.site_url}">${shortUrl}</a>${cs.auth_url ? `<span style="color:var(--text3);margin:0 4px">&middot;</span><a href="${cs.auth_url}" target="_blank">Auth</a>` : ''}<button class="copy-btn" onclick="copyUrl(event,'${cs.site_url}')" title="Copy URL">${copyIcon}</button></div>`;
+      const authPart = cs.auth_url ? `<span style="color:var(--text3);margin:0 4px">&middot;</span><a href="${cs.auth_url}" target="_blank">Auth</a>` : '';
+      const localRow = cs.local_url ? `<div class="conn-row local-row">${extIcon} <a href="${cs.local_url}" target="_blank" title="${cs.local_url}">${cs.local_url}</a><button class="copy-btn" onclick="copyUrl(event,'${cs.local_url}')" title="Copy URL">${copyIcon}</button></div>` : '';
+      connRow = `<div class="conn-row connected">${extIcon} <a href="${cs.site_url}" target="_blank" title="${cs.site_url}">${shortUrl}</a>${authPart}<button class="copy-btn" onclick="copyUrl(event,'${cs.site_url}')" title="Copy URL">${copyIcon}</button></div>${localRow}`;
     } else if (status === 'connecting') {
       connRow = `<div class="conn-row connecting"><span class="conn-spinner"></span> <span class="conn-text">Establishing tunnel...</span></div>`;
     } else if (status === 'failed' && cs.error) {

@@ -43,6 +43,7 @@ type ConnectParams struct {
 type ConnectResult struct {
 	Status       string `json:"status"` // connecting, connected, failed, disconnected
 	SiteURL      string `json:"site_url,omitempty"`
+	LocalURL     string `json:"local_url,omitempty"` // local plugin web UI URL (e.g. http://127.0.0.1:port)
 	AuthURL      string `json:"auth_url,omitempty"`
 	Error        string `json:"error,omitempty"`
 	AppID        string `json:"app_id,omitempty"`
@@ -407,6 +408,7 @@ func (cm *ConnectionManager) doConnect(appID string, params ConnectParams, conn 
 	// Check if this is a plugin protocol — if so, start the plugin first
 	origProtocol := params.Protocol
 	var pluginProc *plugin.Process
+	var localURL string
 	pluginIP := params.IP
 	pluginPort := params.Port
 
@@ -447,6 +449,7 @@ func (cm *ConnectionManager) doConnect(appID string, params ConnectParams, conn 
 		pluginPort = resp.WebPort
 		params.IP = pluginIP
 		params.Port = pluginPort
+		localURL = fmt.Sprintf("http://127.0.0.1:%d", resp.WebPort)
 		_ = origProtocol
 		_ = pluginProc
 	}
@@ -558,6 +561,7 @@ func (cm *ConnectionManager) doConnect(appID string, params ConnectParams, conn 
 		c.Result = ConnectResult{
 			Status:       "connected",
 			SiteURL:      siteURL,
+			LocalURL:     localURL,
 			AuthURL:      authURL,
 			AppID:        resp.Data.App.AppID,
 			ResourcePort: resource.Port,
