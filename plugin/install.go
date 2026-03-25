@@ -28,13 +28,13 @@ var KnownPlugins = map[string]PluginInfo{
 	},
 	"postgres": {
 		Name:        "postgres",
-		Source:      defaultSourceOrg + "/shield-plugin-postgres",
+		Source:      defaultSourceOrg + "/shield-plugins",
 		Protocols:   []string{"postgres", "pg", "postgresql"},
 		DefaultPort: 5432,
 	},
 	"sqlserver": {
 		Name:        "sqlserver",
-		Source:      defaultSourceOrg + "/shield-plugin-sqlserver",
+		Source:      defaultSourceOrg + "/shield-plugins",
 		Protocols:   []string{"sqlserver", "mssql"},
 		DefaultPort: 1433,
 	},
