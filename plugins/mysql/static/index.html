@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shield MySQL Client</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%234c6ef5'/%3E%3Cstop offset='100%25' stop-color='%233b5bdb'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='6' fill='url(%23g)'/%3E%3Cpath d='M16 6c-4.4 0-8 1.6-8 3.5v13c0 1.9 3.6 3.5 8 3.5s8-1.6 8-3.5v-13C24 7.6 20.4 6 16 6z' fill='none' stroke='white' stroke-width='1.8'/%3E%3Cellipse cx='16' cy='9.5' rx='8' ry='3.5' fill='none' stroke='white' stroke-width='1.8'/%3E%3Cpath d='M8 15.5c0 1.9 3.6 3.5 8 3.5s8-1.6 8-3.5' fill='none' stroke='white' stroke-width='1.8'/%3E%3Cpath d='M8 21.5c0 1.9 3.6 3.5 8 3.5s8-1.6 8-3.5' fill='none' stroke='white' stroke-width='1.4' opacity='.5'/%3E%3C/svg%3E">
 <style>
 :root {
   --bg: #ffffff;
@@ -38,7 +39,10 @@ body {
   overflow: hidden;
 }
 
-/* Header */
+/* Read-only mode: hide write actions */
+body.readonly-mode .write-action { display: none !important; }
+
+/* ── Header ── */
 .header {
   display: flex;
   align-items: center;
@@ -48,484 +52,375 @@ body {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.logo {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.server-info {
-  font-size: 13px;
-  color: var(--text2);
-}
-
-.server-info .host {
-  color: var(--text);
-  font-weight: 500;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+.header-left { display: flex; align-items: center; gap: 12px; }
+.logo { font-size: 16px; font-weight: 700; color: var(--accent); }
+.server-info { font-size: 13px; color: var(--text2); }
+.server-info .host { color: var(--text); font-weight: 500; }
+.header-right { display: flex; align-items: center; gap: 10px; }
 
 .readonly-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 4px;
-  user-select: none;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 500; padding: 4px 10px;
+  border-radius: 4px; user-select: none;
 }
+.readonly-badge.on { background: var(--warning-light); color: var(--warning); border: 1px solid #ffd89e; }
+.readonly-badge.off { background: var(--success-light); color: var(--success); border: 1px solid #b7e4c7; }
 
-.readonly-badge.on {
-  background: var(--warning-light);
-  color: var(--warning);
-  border: 1px solid #ffd89e;
-}
+/* ── Main layout ── */
+.main { display: flex; flex: 1; overflow: hidden; }
 
-.readonly-badge.off {
-  background: var(--success-light);
-  color: var(--success);
-  border: 1px solid #b7e4c7;
-}
-
-/* Main layout */
-.main {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
-
-/* Sidebar */
+/* ── Sidebar ── */
 .sidebar {
-  width: 240px;
-  background: var(--bg2);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
+  width: 260px; background: var(--bg2); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; flex-shrink: 0;
 }
-
-.sidebar-header {
-  padding: 10px 14px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--text2);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.sidebar-toolbar {
+  padding: 8px 10px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 6px;
 }
-
-.sidebar-header .back-btn {
-  font-size: 12px;
-  color: var(--accent);
-  cursor: pointer;
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0;
+.sidebar-toolbar input {
+  flex: 1; padding: 5px 8px; border: 1px solid var(--border); border-radius: 4px;
+  font-size: 12px; background: var(--bg); color: var(--text); outline: none;
 }
+.sidebar-toolbar input:focus { border-color: var(--accent); }
+.sidebar-toolbar input::placeholder { color: var(--text3); }
 
-.sidebar-header .back-btn:hover {
-  text-decoration: underline;
+.tree-container { flex: 1; overflow-y: auto; padding: 2px 0; }
+
+/* ── Tree nodes ── */
+.tree-node {
+  display: flex; align-items: center; padding: 5px 8px; cursor: pointer;
+  font-size: 13px; color: var(--text); transition: background 0.1s;
+  position: relative; user-select: none;
 }
+.tree-node:hover { background: var(--bg-hover); }
+.tree-node.active { background: var(--accent-light); color: var(--accent); }
 
-.filter-input {
-  width: 100%;
-  padding: 7px 12px;
-  border: none;
-  border-bottom: 1px solid var(--border);
-  background: var(--bg);
-  font-size: 12px;
-  color: var(--text);
-  outline: none;
+.tree-node .toggle {
+  width: 16px; height: 16px; display: inline-flex; align-items: center;
+  justify-content: center; font-size: 10px; color: var(--text3);
+  transition: transform 0.15s; flex-shrink: 0;
 }
+.tree-node .toggle.open { transform: rotate(90deg); }
+.tree-node .toggle.hidden { visibility: hidden; }
 
-.filter-input:focus {
-  background: var(--accent-light);
+.tree-node .node-icon {
+  width: 18px; text-align: center; font-size: 13px; flex-shrink: 0;
+  margin-right: 4px; opacity: 0.55;
 }
-
-.filter-input::placeholder {
-  color: var(--text3);
+.tree-node .node-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-node .node-badge {
+  font-size: 10px; color: var(--text3); margin-left: 4px; flex-shrink: 0;
 }
-
-.db-list, .table-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2px 0;
+.tree-node .node-actions {
+  display: none; gap: 2px; margin-left: auto; flex-shrink: 0;
 }
+.tree-node:hover .node-actions { display: flex; }
 
-.db-item, .table-item {
-  padding: 7px 14px;
-  cursor: pointer;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background 0.1s;
-  color: var(--text);
+.node-action-btn {
+  background: none; border: none; cursor: pointer; font-size: 13px;
+  color: var(--text3); padding: 0 3px; border-radius: 3px;
+  line-height: 1;
 }
+.node-action-btn:hover { color: var(--accent); background: var(--accent-light); }
+.node-action-btn.danger:hover { color: var(--error); background: var(--error-light); }
 
-.db-item:hover, .table-item:hover {
-  background: var(--bg-hover);
+.tree-children { padding-left: 12px; }
+.tree-children.collapsed { display: none; }
+
+/* Level-specific icons */
+.tree-node.db-node .node-icon { color: var(--accent); }
+.tree-node.table-node .node-icon { color: var(--warning); }
+.tree-node.col-node { cursor: default; font-size: 12px; color: var(--text2); }
+.tree-node.col-node:hover { background: transparent; }
+.tree-node.idx-node { cursor: default; font-size: 12px; color: var(--text2); }
+.tree-node.idx-node:hover { background: var(--bg-hover); }
+.tree-node .col-type { font-size: 11px; color: var(--text3); margin-left: 4px; }
+
+/* ── Content ── */
+.content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Tab bar */
+.tab-bar {
+  display: flex; align-items: stretch; background: var(--bg2);
+  border-bottom: 1px solid var(--border); flex-shrink: 0;
+  overflow-x: auto; overflow-y: hidden; min-height: 33px;
 }
+.tab-bar::-webkit-scrollbar { height: 0; }
+.tab-bar:empty { display: none; }
 
-.db-item.active {
-  background: var(--accent-light);
-  color: var(--accent);
-  font-weight: 500;
+.tab-item {
+  display: flex; align-items: center; gap: 6px; padding: 6px 12px;
+  font-size: 12px; color: var(--text2); cursor: pointer;
+  border-right: 1px solid var(--border); white-space: nowrap;
+  transition: background 0.1s; flex-shrink: 0; max-width: 180px;
+  position: relative;
 }
-
-.table-item.active {
-  background: var(--accent-light);
-  color: var(--accent);
+.tab-item:hover { background: var(--bg-hover); color: var(--text); }
+.tab-item.active {
+  background: var(--bg); color: var(--accent); font-weight: 500;
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
-
-.icon { font-size: 13px; opacity: 0.5; }
-
-.table-section {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+.tab-item .tab-icon { font-size: 11px; opacity: 0.5; flex-shrink: 0; }
+.tab-item .tab-label {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-
-.table-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 14px;
-  border-top: 1px solid var(--border);
-  font-size: 11px;
-  color: var(--text2);
-  flex-shrink: 0;
+.tab-item .tab-close {
+  display: none; background: none; border: none; cursor: pointer;
+  font-size: 14px; color: var(--text3); padding: 0 2px; line-height: 1;
+  border-radius: 3px; flex-shrink: 0; margin-left: auto;
 }
-
-.table-pagination button {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 2px 8px;
-  font-size: 11px;
-  cursor: pointer;
-  color: var(--text2);
-}
-
-.table-pagination button:hover:not(:disabled) {
-  background: var(--bg-hover);
-  color: var(--text);
-}
-
-.table-pagination button:disabled {
-  opacity: 0.3;
-  cursor: default;
-}
-
-/* Content */
-.content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+.tab-item:hover .tab-close { display: inline-flex; }
+.tab-item .tab-close:hover { color: var(--error); background: var(--error-light); }
 
 /* SQL Editor */
 .editor-area {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-  background: var(--bg);
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0; background: var(--bg);
 }
-
 textarea.sql-input {
-  width: 100%;
-  min-height: 80px;
-  max-height: 200px;
-  padding: 10px 12px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text);
-  font-family: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Menlo', monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  resize: vertical;
-  outline: none;
+  width: 100%; min-height: 80px; max-height: 200px; padding: 10px 12px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text); font-family: 'SF Mono','Fira Code','JetBrains Mono','Menlo',monospace;
+  font-size: 13px; line-height: 1.5; resize: vertical; outline: none;
 }
-
-textarea.sql-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px rgba(76,110,245,0.1);
-}
+textarea.sql-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(76,110,245,0.1); }
 
 .editor-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 8px;
+  display: flex; align-items: center; justify-content: space-between; margin-top: 8px;
 }
+.editor-actions-left { display: flex; align-items: center; gap: 8px; }
 
-.editor-actions-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
+/* Buttons */
 .btn {
-  padding: 6px 14px;
-  border: 1px solid transparent;
-  border-radius: 5px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  padding: 6px 14px; border: 1px solid transparent; border-radius: 5px;
+  font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+  display: inline-flex; align-items: center; gap: 5px;
 }
+.btn-primary { background: var(--accent); color: white; border-color: var(--accent2); }
+.btn-primary:hover { background: var(--accent2); }
+.btn-primary:disabled { opacity: 0.5; cursor: default; }
+.btn-secondary { background: var(--bg); color: var(--text2); border-color: var(--border); }
+.btn-secondary:hover { background: var(--bg3); color: var(--text); }
+.btn-danger { background: var(--error); color: white; border-color: var(--error); }
+.btn-danger:hover { background: #c92a2a; }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
 
-.btn-primary {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent2);
-}
-
-.btn-primary:hover {
-  background: var(--accent2);
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.btn-secondary {
-  background: var(--bg);
-  color: var(--text2);
-  border-color: var(--border);
-}
-
-.btn-secondary:hover {
-  background: var(--bg3);
-  color: var(--text);
-}
-
-.btn-sm {
-  padding: 4px 10px;
-  font-size: 12px;
-}
-
-.shortcut-hint {
-  font-size: 12px;
-  color: var(--text3);
-}
-
+.shortcut-hint { font-size: 12px; color: var(--text3); }
 .shortcut-hint kbd {
-  background: var(--bg3);
-  padding: 1px 5px;
-  border-radius: 3px;
-  border: 1px solid var(--border);
-  font-family: inherit;
-  font-size: 11px;
-  color: var(--text2);
+  background: var(--bg3); padding: 1px 5px; border-radius: 3px;
+  border: 1px solid var(--border); font-family: inherit; font-size: 11px; color: var(--text2);
 }
 
-/* Results */
-.result-area {
-  flex: 1;
-  overflow: auto;
-  padding: 0;
-  position: relative;
-}
+/* ── Results ── */
+/* Result area: toolbar fixed, table scrolls independently */
+.result-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
 
 .result-toolbar {
-  padding: 6px 16px;
-  font-size: 12px;
-  color: var(--text2);
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  padding: 6px 16px; font-size: 12px; color: var(--text2);
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; z-index: 10;
 }
-
-.result-toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.result-toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
+.result-toolbar-left { display: flex; align-items: center; gap: 12px; }
+.result-toolbar-right { display: flex; align-items: center; gap: 6px; }
 .result-toolbar .count { color: var(--success); font-weight: 500; }
 .result-toolbar .duration { color: var(--text3); }
 .result-toolbar .error { color: var(--error); }
 
-table.result-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
+.result-scroll { flex: 1; overflow: auto; }
 
+/* Data table */
+table.result-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.result-table th {
-  position: sticky;
-  top: 33px;
-  z-index: 5;
-  background: var(--bg2);
-  padding: 7px 12px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 12px;
-  color: var(--text2);
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-  cursor: pointer;
-  user-select: none;
+  position: sticky; top: 0; z-index: 5; background: var(--bg2);
+  padding: 7px 12px; text-align: left; font-weight: 600; font-size: 12px;
+  color: var(--text2); border-bottom: 1px solid var(--border);
+  white-space: nowrap; cursor: pointer; user-select: none;
 }
-
-table.result-table th:hover {
-  color: var(--text);
-  background: var(--bg3);
-}
-
-table.result-table th .sort-icon {
-  margin-left: 3px;
-  font-size: 10px;
-  opacity: 0.4;
-}
-
-table.result-table th .sort-icon.active {
-  opacity: 1;
-  color: var(--accent);
-}
+table.result-table th:hover { color: var(--text); background: var(--bg3); }
+table.result-table th .sort-icon { margin-left: 3px; font-size: 10px; opacity: 0.4; }
+table.result-table th .sort-icon.active { opacity: 1; color: var(--accent); }
 
 table.result-table td {
-  padding: 5px 12px;
+  padding: 5px 12px; border-bottom: 1px solid var(--border);
+  max-width: 300px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; cursor: pointer;
+}
+table.result-table td:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* Zebra striping */
+table.result-table tbody tr:nth-child(even) td { background: var(--bg2); }
+table.result-table tbody tr:hover td { background: var(--accent-light); }
+
+/* Actions column — sticky right */
+table.result-table th.th-actions,
+table.result-table td.td-actions {
+  position: sticky; right: 0; z-index: 3;
+  cursor: default; max-width: none; white-space: nowrap; width: 1%;
+  background: var(--bg);
+  box-shadow: -3px 0 6px rgba(0,0,0,0.06);
+}
+table.result-table th.th-actions { background: var(--bg2); z-index: 6; }
+table.result-table tbody tr:nth-child(even) td.td-actions { background: var(--bg2); }
+table.result-table tbody tr:hover td.td-actions { background: var(--accent-light); }
+table.result-table td.td-actions:hover { outline: none; }
+
+.null-value { color: var(--text3); font-style: italic; }
+
+/* Row actions */
+.row-actions { display: flex; gap: 3px; align-items: center; }
+.row-action-btn {
+  background: none; border: 1px solid transparent; border-radius: 4px;
+  cursor: pointer; padding: 3px 5px; transition: all 0.12s;
+  display: inline-flex; align-items: center; justify-content: center;
+  line-height: 0;
+}
+.row-action-btn svg { width: 14px; height: 14px; }
+.row-action-btn.btn-copy-row { color: var(--accent); }
+.row-action-btn.btn-copy-row:hover { background: var(--accent-light); border-color: var(--accent); }
+.row-action-btn.btn-edit { color: var(--warning); }
+.row-action-btn.btn-edit:hover { background: var(--warning-light); border-color: var(--warning); }
+.row-action-btn.btn-delete { color: var(--error); }
+.row-action-btn.btn-delete:hover { background: var(--error-light); border-color: var(--error); }
+
+/* Cell copy flash */
+.cell-copied { animation: cellFlash 0.3s ease; }
+@keyframes cellFlash {
+  0% { background: var(--accent); color: white; }
+  100% { background: inherit; color: inherit; }
+}
+
+/* ── Schema Panel ── */
+.schema-panel { padding: 0; }
+.schema-panel h3 { font-size: 14px; padding: 14px 16px 0; color: var(--text2); }
+
+.schema-tabs {
+  display: flex; gap: 0; padding: 12px 16px 0; border-bottom: 1px solid var(--border);
+}
+.schema-tab {
+  padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer;
+  border-bottom: 2px solid transparent; color: var(--text2); transition: all 0.15s;
+}
+.schema-tab:hover { color: var(--text); }
+.schema-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.schema-tab-content { padding: 12px 16px; }
+.schema-actions-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+table.schema-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.schema-table th {
+  background: var(--bg2); padding: 7px 12px; text-align: left;
+  font-weight: 600; font-size: 12px; color: var(--text2);
   border-bottom: 1px solid var(--border);
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
+table.schema-table td { padding: 5px 12px; border-bottom: 1px solid var(--border); }
+table.schema-table tbody tr:nth-child(even) td { background: var(--bg2); }
+table.schema-table tbody tr:hover td { background: var(--accent-light); }
 
-table.result-table tr:hover td {
-  background: var(--accent-light);
-}
-
-.null-value {
-  color: var(--text3);
-  font-style: italic;
-}
-
-/* Schema panel */
-.schema-panel {
-  padding: 16px;
-}
-
-.schema-panel h3 {
-  font-size: 14px;
-  margin-bottom: 12px;
-  color: var(--text2);
-}
-
-.schema-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-
-.schema-table th {
-  background: var(--bg2);
-  padding: 7px 12px;
-  text-align: left;
-  font-weight: 600;
-  font-size: 12px;
-  color: var(--text2);
-  border-bottom: 1px solid var(--border);
-}
-
-.schema-table td {
-  padding: 5px 12px;
-  border-bottom: 1px solid var(--border);
-}
-
-.badge {
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-weight: 500;
-}
-
+.badge { font-size: 11px; padding: 2px 6px; border-radius: 3px; font-weight: 500; }
 .badge-pri { background: var(--accent-light); color: var(--accent); }
 .badge-uni { background: var(--success-light); color: var(--success); }
 .badge-mul { background: var(--warning-light); color: var(--warning); }
+.badge-idx { background: var(--bg3); color: var(--text2); }
+
+/* Schema edit buttons */
+.schema-table .col-actions {
+  display: flex; gap: 4px; justify-content: flex-end;
+}
+.schema-table .col-action-btn {
+  background: none; border: none; cursor: pointer; color: var(--text3);
+  font-size: 13px; padding: 2px 4px; border-radius: 3px;
+}
+.schema-table .col-action-btn:hover { color: var(--accent); background: var(--accent-light); }
+.schema-table .col-action-btn.danger:hover { color: var(--error); background: var(--error-light); }
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.35); z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+}
+.modal {
+  background: var(--bg); border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  width: 520px; max-width: 90vw; max-height: 80vh;
+  display: flex; flex-direction: column;
+}
+.modal-header {
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  font-weight: 600; font-size: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.modal-header .modal-close {
+  background: none; border: none; font-size: 18px; cursor: pointer;
+  color: var(--text2); padding: 0 4px;
+}
+.modal-header .modal-close:hover { color: var(--text); }
+.modal-body { padding: 16px 18px; overflow-y: auto; flex: 1; }
+.modal-footer {
+  padding: 12px 18px; border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+
+.form-field { margin-bottom: 12px; }
+.form-field label {
+  display: block; font-size: 12px; font-weight: 500;
+  color: var(--text2); margin-bottom: 4px;
+}
+.form-field input, .form-field select, .form-field textarea {
+  width: 100%; padding: 7px 10px; border: 1px solid var(--border);
+  border-radius: 5px; font-size: 13px; color: var(--text);
+  background: var(--bg); outline: none;
+  font-family: 'SF Mono','Fira Code',monospace;
+}
+.form-field input:focus, .form-field select:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 2px rgba(76,110,245,0.1);
+}
+.form-field input:read-only { background: var(--bg2); color: var(--text2); }
+.form-field .null-toggle {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; color: var(--text3); margin-top: 3px; cursor: pointer;
+}
+.form-field .hint { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+.form-row { display: flex; gap: 10px; }
+.form-row .form-field { flex: 1; }
+
+/* Confirm with typed input */
+.confirm-input {
+  margin-top: 10px; padding: 7px 10px; width: 100%;
+  border: 1px solid var(--border); border-radius: 5px; font-size: 13px;
+  outline: none; text-align: center;
+}
+.confirm-input:focus { border-color: var(--error); }
 
 /* Empty state */
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--text3);
-  gap: 8px;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; height: 100%; color: var(--text3); gap: 8px;
 }
-
 .empty-state .empty-icon { font-size: 40px; opacity: 0.25; }
 .empty-state p { font-size: 14px; }
 
 /* Toast */
 .toast {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  padding: 8px 16px;
-  background: var(--text);
-  color: var(--bg);
-  border-radius: 6px;
-  font-size: 13px;
-  z-index: 1000;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: all 0.2s;
-  pointer-events: none;
+  position: fixed; bottom: 20px; right: 20px; padding: 8px 16px;
+  background: var(--text); color: var(--bg); border-radius: 6px;
+  font-size: 13px; z-index: 1000; opacity: 0; transform: translateY(10px);
+  transition: all 0.2s; pointer-events: none;
 }
-
-.toast.show {
-  opacity: 1;
-  transform: translateY(0);
-}
+.toast.show { opacity: 1; transform: translateY(0); }
 
 /* Loading */
 .loading {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+  display: inline-block; width: 12px; height: 12px;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.6s linear infinite;
 }
-
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Scrollbar */
@@ -552,33 +447,17 @@ table.result-table tr:hover td {
 
 <div class="main">
   <div class="sidebar">
-    <!-- DB section -->
-    <div id="dbSection">
-      <div class="sidebar-header">
-        <span>Databases</span>
-      </div>
-      <div class="db-list" id="dbList"></div>
+    <div class="sidebar-toolbar">
+      <input type="text" id="treeFilter" placeholder="筛选..." oninput="filterTree()">
+      <button class="btn btn-sm btn-primary write-action" onclick="showCreateDatabaseModal()" title="新建数据库">+</button>
     </div>
-
-    <!-- Table section (shown after selecting a DB) -->
-    <div class="table-section" id="tableSection" style="display:none">
-      <div class="sidebar-header">
-        <span id="tableSectionTitle">Tables</span>
-        <span class="back-btn" onclick="backToDatabases()">&#8592; Databases</span>
-      </div>
-      <input class="filter-input" id="tableFilter" type="text" placeholder="Filter tables..." oninput="filterTables()">
-      <div class="table-list" id="tableList"></div>
-      <div class="table-pagination" id="tablePagination" style="display:none">
-        <button onclick="tablePagePrev()" id="tablePrevBtn" disabled>&#8249; Prev</button>
-        <span id="tablePageInfo">1 / 1</span>
-        <button onclick="tablePageNext()" id="tableNextBtn" disabled>Next &#8250;</button>
-      </div>
-    </div>
+    <div class="tree-container" id="sidebarTree"></div>
   </div>
 
   <div class="content">
+    <div class="tab-bar" id="tabBar"></div>
     <div class="editor-area">
-      <textarea class="sql-input" id="sqlInput" placeholder="Enter SQL query..." spellcheck="false">SELECT 1;</textarea>
+      <textarea class="sql-input" id="sqlInput" placeholder="输入 SQL 查询语句..." spellcheck="false">SELECT 1;</textarea>
       <div class="editor-actions">
         <div class="editor-actions-left">
           <button class="btn btn-primary" id="runBtn" onclick="executeQuery()">&#9654; Run</button>
@@ -587,11 +466,10 @@ table.result-table tr:hover td {
         <div class="shortcut-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> to run</div>
       </div>
     </div>
-
     <div class="result-area" id="resultArea">
       <div class="empty-state">
         <div class="empty-icon">&#9741;</div>
-        <p>Run a query to see results</p>
+        <p>运行查询查看结果</p>
       </div>
     </div>
   </div>
@@ -600,20 +478,127 @@ table.result-table tr:hover td {
 <div class="toast" id="toast"></div>
 
 <script>
-// ── State ──
-let currentDB = '';
+// ══════════════════════════════════════════════
+//  State
+// ══════════════════════════════════════════════
 let readOnly = true;
-let allTables = [];
-let filteredTables = [];
-let tablePage = 0;
-const TABLE_PAGE_SIZE = 50;
+let currentDB = '';
 
-// Sort state for query results
-let lastResult = null;
-let sortCol = null;
-let sortAsc = true;
+// Tree
+let treeData = {};
+let treeFilter = '';
 
-// ── Init ──
+// Schema cache (global, shared across tabs)
+let schemaCache = {};
+
+// ── Tab system ──
+let tabs = [];          // [{ id, title, icon, type, sql, resultHtml, lastResult, sortCol, sortAsc, currentTableContext, scrollTop, scrollLeft }]
+let activeTabId = null;
+let tabIdSeq = 0;
+
+function createTab(title, icon, type) {
+  const id = ++tabIdSeq;
+  const tab = {
+    id, title, icon: icon || '&#9776;', type: type || 'query',
+    sql: '', resultHtml: '', lastResult: null,
+    sortCol: null, sortAsc: true, currentTableContext: null,
+    scrollTop: 0, scrollLeft: 0,
+  };
+  tabs.push(tab);
+  return tab;
+}
+
+function getActiveTab() {
+  return tabs.find(t => t.id === activeTabId) || null;
+}
+
+// Save current UI state into the active tab before switching away
+function saveActiveTabState() {
+  const tab = getActiveTab();
+  if (!tab) return;
+  tab.sql = document.getElementById('sqlInput').value;
+  tab.resultHtml = document.getElementById('resultArea').innerHTML;
+  const scroll = document.querySelector('.result-scroll');
+  if (scroll) { tab.scrollTop = scroll.scrollTop; tab.scrollLeft = scroll.scrollLeft; }
+}
+
+// Restore a tab's state into the UI
+function restoreTabState(tab) {
+  document.getElementById('sqlInput').value = tab.sql;
+  document.getElementById('resultArea').innerHTML = tab.resultHtml || `
+    <div class="empty-state"><div class="empty-icon">&#9741;</div><p>运行查询查看结果</p></div>`;
+  // Restore scroll position after DOM update
+  requestAnimationFrame(() => {
+    const scroll = document.querySelector('.result-scroll');
+    if (scroll) { scroll.scrollTop = tab.scrollTop; scroll.scrollLeft = tab.scrollLeft; }
+  });
+}
+
+function switchTab(id) {
+  if (id === activeTabId) return;
+  saveActiveTabState();
+  activeTabId = id;
+  const tab = getActiveTab();
+  if (tab) restoreTabState(tab);
+  renderTabBar();
+}
+
+function closeTab(id) {
+  const idx = tabs.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  tabs.splice(idx, 1);
+  if (activeTabId === id) {
+    // Switch to nearest tab
+    const next = tabs[Math.min(idx, tabs.length - 1)];
+    activeTabId = next ? next.id : null;
+    if (next) restoreTabState(next);
+    else {
+      document.getElementById('sqlInput').value = 'SELECT 1;';
+      document.getElementById('resultArea').innerHTML = `
+        <div class="empty-state"><div class="empty-icon">&#9741;</div><p>运行查询查看结果</p></div>`;
+    }
+  }
+  renderTabBar();
+}
+
+function openOrFocusTab(title, icon, type, setupFn) {
+  // If a tab with same title+type exists, focus it
+  const existing = tabs.find(t => t.title === title && t.type === type);
+  if (existing) { switchTab(existing.id); return existing; }
+  // Otherwise create and switch
+  saveActiveTabState();
+  const tab = createTab(title, icon, type);
+  activeTabId = tab.id;
+  renderTabBar();
+  if (setupFn) setupFn(tab);
+  return tab;
+}
+
+function renderTabBar() {
+  const bar = document.getElementById('tabBar');
+  if (tabs.length === 0) { bar.innerHTML = ''; return; }
+  bar.innerHTML = tabs.map(t => `
+    <div class="tab-item${t.id === activeTabId ? ' active' : ''}" onclick="switchTab(${t.id})" title="${escAttr(t.title)}">
+      <span class="tab-icon">${t.icon}</span>
+      <span class="tab-label">${esc(t.title)}</span>
+      <button class="tab-close" onclick="event.stopPropagation();closeTab(${t.id})">&times;</button>
+    </div>
+  `).join('');
+}
+
+// Helpers to read/write active tab's result state
+function getLastResult() { const t = getActiveTab(); return t ? t.lastResult : null; }
+function setLastResult(v) { const t = getActiveTab(); if (t) t.lastResult = v; }
+function getSortCol() { const t = getActiveTab(); return t ? t.sortCol : null; }
+function setSortCol(v) { const t = getActiveTab(); if (t) t.sortCol = v; }
+function getSortAsc() { const t = getActiveTab(); return t ? t.sortAsc : true; }
+function setSortAsc(v) { const t = getActiveTab(); if (t) t.sortAsc = v; }
+function getTableCtx() { const t = getActiveTab(); return t ? t.currentTableContext : null; }
+function setTableCtx(v) { const t = getActiveTab(); if (t) t.currentTableContext = v; }
+
+// ══════════════════════════════════════════════
+//  Init
+// ══════════════════════════════════════════════
 async function init() {
   try {
     const resp = await fetch('/api/info');
@@ -625,172 +610,963 @@ async function init() {
       if (info.database) currentDB = info.database;
       readOnly = !!info.readonly;
       const badge = document.getElementById('readonlyBadge');
-      const icon = document.getElementById('readonlyIcon');
-      const label = document.getElementById('readonlyLabel');
       if (readOnly) {
         badge.className = 'readonly-badge on';
-        icon.innerHTML = '&#128274;';
-        label.textContent = 'Read-Only';
+        document.getElementById('readonlyIcon').innerHTML = '&#128274;';
+        document.getElementById('readonlyLabel').textContent = 'Read-Only';
+        document.body.classList.add('readonly-mode');
       } else {
         badge.className = 'readonly-badge off';
-        icon.innerHTML = '&#128275;';
-        label.textContent = 'Read-Write';
+        document.getElementById('readonlyIcon').innerHTML = '&#128275;';
+        document.getElementById('readonlyLabel').textContent = 'Read-Write';
+        document.body.classList.remove('readonly-mode');
       }
     }
   } catch (e) {
     document.getElementById('serverInfo').textContent = 'Connection error';
   }
-  loadDatabases();
+  await loadDatabases();
 }
 
-// ── Databases ──
+// ══════════════════════════════════════════════
+//  Sidebar Tree
+// ══════════════════════════════════════════════
 async function loadDatabases() {
   const resp = await fetch('/api/databases');
   const data = await resp.json();
   if (data.code !== 200) return;
 
-  const list = document.getElementById('dbList');
-  list.innerHTML = '';
+  const oldTree = treeData;
+  treeData = {};
   for (const db of data.data) {
-    const el = document.createElement('div');
-    el.className = 'db-item' + (db === currentDB ? ' active' : '');
-    el.innerHTML = `<span class="icon">&#128451;</span>${esc(db)}`;
-    el.onclick = () => selectDatabase(db);
-    list.appendChild(el);
+    treeData[db] = oldTree[db] || { expanded: false, tables: null };
   }
-
-  if (currentDB) selectDatabase(currentDB);
+  // Auto-expand currentDB
+  if (currentDB && treeData[currentDB]) {
+    treeData[currentDB].expanded = true;
+    if (!treeData[currentDB].tables) await loadTables(currentDB);
+  }
+  renderTree();
 }
 
-async function selectDatabase(db) {
-  currentDB = db;
-  document.querySelectorAll('.db-item').forEach(el => {
-    el.classList.toggle('active', el.textContent === db);
-  });
-
-  // Show table section, hide db list
-  document.getElementById('dbSection').style.display = 'none';
-  document.getElementById('tableSection').style.display = 'flex';
-  document.getElementById('tableSectionTitle').textContent = db;
-  document.getElementById('tableFilter').value = '';
-
-  await loadTables(db);
-}
-
-function backToDatabases() {
-  currentDB = '';
-  allTables = [];
-  filteredTables = [];
-  document.getElementById('dbSection').style.display = '';
-  document.getElementById('tableSection').style.display = 'none';
-  document.getElementById('tableList').innerHTML = '';
-  document.querySelectorAll('.db-item').forEach(el => el.classList.remove('active'));
-}
-
-// ── Tables with pagination & filter ──
 async function loadTables(db) {
   const resp = await fetch(`/api/tables?db=${encodeURIComponent(db)}`);
   const data = await resp.json();
   if (data.code !== 200) return;
 
-  allTables = data.data || [];
-  filteredTables = [...allTables];
-  tablePage = 0;
-  renderTables();
+  const existing = treeData[db]?.tables || {};
+  const tables = {};
+  for (const t of (data.data || [])) {
+    tables[t] = existing[t] || { expanded: false, schema: null, indexes: null };
+  }
+  if (treeData[db]) treeData[db].tables = tables;
 }
 
-function filterTables() {
-  const q = document.getElementById('tableFilter').value.toLowerCase();
-  filteredTables = q ? allTables.filter(t => t.toLowerCase().includes(q)) : [...allTables];
-  tablePage = 0;
-  renderTables();
+async function loadTableDetails(db, table) {
+  const [schemaResp, indexResp] = await Promise.all([
+    fetch(`/api/schema?db=${encodeURIComponent(db)}&table=${encodeURIComponent(table)}`),
+    fetch(`/api/indexes?db=${encodeURIComponent(db)}&table=${encodeURIComponent(table)}`)
+  ]);
+  const schemaData = await schemaResp.json();
+  const indexData = await indexResp.json();
+
+  const node = treeData[db]?.tables?.[table];
+  if (node) {
+    node.schema = schemaData.code === 200 ? schemaData.data : [];
+    node.indexes = indexData.code === 200 ? indexData.data : [];
+    schemaCache[`${db}.${table}`] = node.schema;
+  }
 }
 
-function renderTables() {
-  const list = document.getElementById('tableList');
-  const totalPages = Math.max(1, Math.ceil(filteredTables.length / TABLE_PAGE_SIZE));
-  const start = tablePage * TABLE_PAGE_SIZE;
-  const page = filteredTables.slice(start, start + TABLE_PAGE_SIZE);
+function filterTree() {
+  treeFilter = document.getElementById('treeFilter').value.toLowerCase();
+  renderTree();
+}
 
-  list.innerHTML = '';
-  if (filteredTables.length === 0) {
-    list.innerHTML = '<div style="padding:12px 14px;color:var(--text3);font-size:13px">No tables found</div>';
-  } else {
-    for (const table of page) {
-      const el = document.createElement('div');
-      el.className = 'table-item';
-      el.innerHTML = `<span class="icon">&#9638;</span>${esc(table)}`;
-      el.onclick = () => showSchema(currentDB, table);
-      el.ondblclick = () => {
-        document.getElementById('sqlInput').value = `SELECT * FROM \`${currentDB}\`.\`${table}\` LIMIT 100;`;
-        executeQuery();
-      };
-      list.appendChild(el);
+function renderTree() {
+  const container = document.getElementById('sidebarTree');
+  container.innerHTML = '';
+
+  for (const db of Object.keys(treeData)) {
+    const dbState = treeData[db];
+    const tables = dbState.tables || {};
+    const tableNames = Object.keys(tables);
+
+    // Filter
+    if (treeFilter) {
+      const dbMatch = db.toLowerCase().includes(treeFilter);
+      const tableMatch = tableNames.some(t => t.toLowerCase().includes(treeFilter));
+      if (!dbMatch && !tableMatch) continue;
+    }
+
+    // DB node
+    const dbNode = document.createElement('div');
+    dbNode.className = `tree-node db-node${db === currentDB ? ' active' : ''}`;
+    dbNode.innerHTML = `
+      <span class="toggle ${dbState.expanded ? 'open' : ''}">&#9654;</span>
+      <span class="node-icon">&#128451;</span>
+      <span class="node-label">${esc(db)}</span>
+      ${tableNames.length ? `<span class="node-badge">${tableNames.length}</span>` : ''}
+      <span class="node-actions">
+        <button class="node-action-btn write-action" onclick="event.stopPropagation();showCreateTableModal('${escAttr(db)}')" title="新建表">+</button>
+        <button class="node-action-btn danger write-action" onclick="event.stopPropagation();dropDatabase('${escAttr(db)}')" title="删除数据库">&#10005;</button>
+      </span>
+    `;
+    dbNode.onclick = () => toggleDb(db);
+    container.appendChild(dbNode);
+
+    // Children
+    if (dbState.expanded) {
+      const childrenDiv = document.createElement('div');
+      childrenDiv.className = 'tree-children';
+
+      for (const table of tableNames) {
+        if (treeFilter && !table.toLowerCase().includes(treeFilter) && !db.toLowerCase().includes(treeFilter)) continue;
+
+        const tState = tables[table];
+        const tableNode = document.createElement('div');
+        tableNode.className = 'tree-node table-node';
+        tableNode.innerHTML = `
+          <span class="toggle ${tState.expanded ? 'open' : ''}">&#9654;</span>
+          <span class="node-icon">&#9638;</span>
+          <span class="node-label">${esc(table)}</span>
+          <span class="node-actions">
+            <button class="node-action-btn" onclick="event.stopPropagation();viewTableData('${escAttr(db)}','${escAttr(table)}')" title="查看数据">&#9776;</button>
+            <button class="node-action-btn" onclick="event.stopPropagation();showSchemaPanel('${escAttr(db)}','${escAttr(table)}')" title="查看结构">&#9881;</button>
+            <button class="node-action-btn write-action" onclick="event.stopPropagation();renameTable('${escAttr(db)}','${escAttr(table)}')" title="重命名">&#9998;</button>
+            <button class="node-action-btn danger write-action" onclick="event.stopPropagation();dropTable('${escAttr(db)}','${escAttr(table)}')" title="删除表">&#10005;</button>
+          </span>
+        `;
+        tableNode.onclick = () => toggleTable(db, table);
+        childrenDiv.appendChild(tableNode);
+
+        // Column/index leaves
+        if (tState.expanded && tState.schema) {
+          const leaves = document.createElement('div');
+          leaves.className = 'tree-children';
+
+          for (const col of tState.schema) {
+            const colNode = document.createElement('div');
+            colNode.className = 'tree-node col-node';
+            let keyIcon = '';
+            if (col.key === 'PRI') keyIcon = '<span class="badge badge-pri" style="font-size:9px;padding:1px 4px;margin-right:3px">PK</span>';
+            else if (col.key === 'UNI') keyIcon = '<span class="badge badge-uni" style="font-size:9px;padding:1px 4px;margin-right:3px">UQ</span>';
+            else if (col.key === 'MUL') keyIcon = '<span class="badge badge-mul" style="font-size:9px;padding:1px 4px;margin-right:3px">IX</span>';
+            colNode.innerHTML = `
+              <span class="toggle hidden">&#9654;</span>
+              <span class="node-icon" style="font-size:11px">&#9679;</span>
+              ${keyIcon}<span class="node-label">${esc(col.field)}</span>
+              <span class="col-type">${esc(col.type)}</span>
+            `;
+            leaves.appendChild(colNode);
+          }
+
+          // Group indexes
+          const idxGroups = groupIndexes(tState.indexes || []);
+          if (idxGroups.length > 0) {
+            const idxHeader = document.createElement('div');
+            idxHeader.className = 'tree-node col-node';
+            idxHeader.innerHTML = `<span class="toggle hidden">&#9654;</span><span class="node-icon" style="font-size:11px">&#128273;</span><span class="node-label" style="font-weight:600;color:var(--text3)">索引 (${idxGroups.length})</span>`;
+            leaves.appendChild(idxHeader);
+
+            for (const idx of idxGroups) {
+              const idxNode = document.createElement('div');
+              idxNode.className = 'tree-node idx-node';
+              const uniqueTag = idx.unique ? '<span class="badge badge-uni" style="font-size:9px;padding:1px 4px;margin-right:3px">UQ</span>' : '';
+              idxNode.innerHTML = `
+                <span class="toggle hidden">&#9654;</span>
+                <span class="node-icon" style="font-size:10px">&#9656;</span>
+                ${uniqueTag}<span class="node-label">${esc(idx.name)}</span>
+                <span class="col-type">(${esc(idx.columns.join(', '))})</span>
+                <span class="node-actions">
+                  <button class="node-action-btn danger write-action" onclick="event.stopPropagation();dropIndex('${escAttr(db)}','${escAttr(table)}','${escAttr(idx.name)}')" title="删除索引">&#10005;</button>
+                </span>
+              `;
+              leaves.appendChild(idxNode);
+            }
+          }
+
+          childrenDiv.appendChild(leaves);
+        }
+      }
+      container.appendChild(childrenDiv);
     }
   }
+}
 
-  // Pagination
-  const pag = document.getElementById('tablePagination');
-  if (filteredTables.length > TABLE_PAGE_SIZE) {
-    pag.style.display = 'flex';
-    document.getElementById('tablePageInfo').textContent = `${tablePage + 1} / ${totalPages}`;
-    document.getElementById('tablePrevBtn').disabled = tablePage === 0;
-    document.getElementById('tableNextBtn').disabled = tablePage >= totalPages - 1;
+function groupIndexes(rawIndexes) {
+  const map = {};
+  for (const idx of rawIndexes) {
+    const name = idx.Key_name || idx.key_name;
+    if (!name) continue;
+    if (!map[name]) {
+      map[name] = {
+        name,
+        unique: (idx.Non_unique || idx.non_unique) == 0,
+        type: idx.Index_type || idx.index_type || 'BTREE',
+        columns: []
+      };
+    }
+    map[name].columns.push(idx.Column_name || idx.column_name);
+  }
+  return Object.values(map);
+}
+
+async function toggleDb(db) {
+  const state = treeData[db];
+  if (!state) return;
+
+  if (!state.expanded) {
+    state.expanded = true;
+    currentDB = db;
+    if (!state.tables) await loadTables(db);
   } else {
-    pag.style.display = 'none';
+    state.expanded = false;
   }
+  renderTree();
 }
 
-function tablePagePrev() { if (tablePage > 0) { tablePage--; renderTables(); } }
-function tablePageNext() {
-  const totalPages = Math.ceil(filteredTables.length / TABLE_PAGE_SIZE);
-  if (tablePage < totalPages - 1) { tablePage++; renderTables(); }
+async function toggleTable(db, table) {
+  const state = treeData[db]?.tables?.[table];
+  if (!state) return;
+
+  if (!state.expanded) {
+    state.expanded = true;
+    if (!state.schema) await loadTableDetails(db, table);
+  } else {
+    state.expanded = false;
+  }
+  renderTree();
 }
 
-// ── Schema ──
-async function showSchema(db, table) {
-  document.querySelectorAll('.table-item').forEach(el => {
-    el.classList.toggle('active', el.textContent === table);
+// ══════════════════════════════════════════════
+//  Database Management
+// ══════════════════════════════════════════════
+function showCreateDatabaseModal() {
+  showModal({
+    title: '新建数据库',
+    body: `
+      <div class="form-field">
+        <label>数据库名称</label>
+        <input type="text" id="modalDbName" placeholder="my_database" autofocus>
+      </div>
+      <div class="form-field">
+        <label>字符集</label>
+        <select id="modalDbCharset">
+          <option value="utf8mb4" selected>utf8mb4 (推荐)</option>
+          <option value="utf8">utf8</option>
+          <option value="latin1">latin1</option>
+          <option value="gbk">gbk</option>
+        </select>
+      </div>
+    `,
+    confirmText: '创建',
+    onConfirm: async () => {
+      const name = document.getElementById('modalDbName').value.trim();
+      if (!name) { showToast('请输入数据库名称'); return false; }
+      const charset = document.getElementById('modalDbCharset').value;
+      const sql = `CREATE DATABASE \`${sanitizeId(name)}\` DEFAULT CHARACTER SET ${charset}`;
+      const ok = await execSQL(sql);
+      if (ok) { showToast('数据库创建成功'); await loadDatabases(); }
+      return ok;
+    }
   });
-
-  const resp = await fetch(`/api/schema?db=${encodeURIComponent(db)}&table=${encodeURIComponent(table)}`);
-  const data = await resp.json();
-  if (data.code !== 200) return;
-
-  const area = document.getElementById('resultArea');
-  let html = `<div class="schema-panel"><h3>${esc(db)}.${esc(table)}</h3><table class="schema-table">`;
-  html += '<thead><tr><th>Field</th><th>Type</th><th>Null</th><th>Key</th><th>Default</th><th>Extra</th></tr></thead><tbody>';
-  for (const col of data.data) {
-    let keyBadge = '';
-    if (col.key === 'PRI') keyBadge = '<span class="badge badge-pri">PRI</span>';
-    else if (col.key === 'UNI') keyBadge = '<span class="badge badge-uni">UNI</span>';
-    else if (col.key === 'MUL') keyBadge = '<span class="badge badge-mul">MUL</span>';
-    html += `<tr>
-      <td><strong>${esc(col.field)}</strong></td>
-      <td>${esc(col.type)}</td>
-      <td>${esc(col.null)}</td>
-      <td>${keyBadge}</td>
-      <td>${col.default !== null ? esc(String(col.default)) : '<span class="null-value">NULL</span>'}</td>
-      <td>${esc(col.extra)}</td>
-    </tr>`;
-  }
-  html += '</tbody></table></div>';
-  area.innerHTML = html;
 }
 
+function dropDatabase(db) {
+  showDangerConfirm({
+    title: '删除数据库',
+    message: `确定要删除数据库 <strong>${esc(db)}</strong> 吗？`,
+    detail: '此操作不可撤销，数据库中的所有表和数据将被永久删除。',
+    confirmWord: db,
+    onConfirm: async () => {
+      const sql = `DROP DATABASE \`${sanitizeId(db)}\``;
+      const ok = await execSQL(sql);
+      if (ok) {
+        showToast('数据库已删除');
+        if (currentDB === db) currentDB = '';
+        await loadDatabases();
+      }
+      return ok;
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+//  Table Management
+// ══════════════════════════════════════════════
+// ── Column type options (shared by create table / add column / edit column) ──
+const COL_TYPES = [
+  { group: '整数', items: ['INT','BIGINT','TINYINT','SMALLINT','MEDIUMINT'] },
+  { group: '小数', items: ['DECIMAL','FLOAT','DOUBLE'] },
+  { group: '字符串', items: ['VARCHAR','CHAR','TEXT','MEDIUMTEXT','LONGTEXT'] },
+  { group: '日期时间', items: ['DATETIME','TIMESTAMP','DATE','TIME','YEAR'] },
+  { group: '其他', items: ['JSON','BLOB','LONGBLOB','BOOLEAN','ENUM','BINARY','VARBINARY'] },
+];
+const TYPES_NEED_LENGTH = ['VARCHAR','CHAR','VARBINARY','BINARY'];
+const TYPES_NEED_PRECISION = ['DECIMAL','FLOAT','DOUBLE'];
+const LENGTH_DEFAULTS = { VARCHAR: '255', CHAR: '50', DECIMAL: '10,2', VARBINARY: '255', BINARY: '16' };
+
+function buildTypeSelectOptions(selectedType) {
+  // Parse "VARCHAR(255)" -> base="VARCHAR"
+  const base = selectedType ? selectedType.replace(/\(.*/, '').toUpperCase() : 'VARCHAR';
+  let html = '';
+  for (const g of COL_TYPES) {
+    html += `<optgroup label="${g.group}">`;
+    for (const t of g.items) {
+      html += `<option value="${t}" ${t === base ? 'selected' : ''}>${t}</option>`;
+    }
+    html += '</optgroup>';
+  }
+  html += `<option value="CUSTOM" ${!COL_TYPES.some(g => g.items.includes(base)) ? 'selected' : ''}>自定义...</option>`;
+  return html;
+}
+
+function parseLengthFromType(typeStr) {
+  const m = typeStr && typeStr.match(/\((.+)\)/);
+  return m ? m[1] : '';
+}
+
+function typeNeedsLength(t) { return TYPES_NEED_LENGTH.includes(t) || TYPES_NEED_PRECISION.includes(t); }
+
+// ── Create Table (visual column builder) ──
+let _createTableRows = [];
+
+function showCreateTableModal(db) {
+  // Seed with an id column
+  _createTableRows = [
+    { name: 'id', type: 'BIGINT', length: '', nullable: false, defaultVal: '', autoInc: true, pk: true },
+  ];
+
+  showModal({
+    title: `新建表 — ${db}`,
+    width: '720px',
+    body: buildCreateTableBody(),
+    confirmText: '创建',
+    onConfirm: async () => {
+      const name = document.getElementById('modalTableName').value.trim();
+      const engine = document.getElementById('modalTableEngine').value;
+      if (!name) { showToast('请输入表名'); return false; }
+      if (_createTableRows.length === 0) { showToast('请至少添加一个字段'); return false; }
+
+      const colDefs = [];
+      const pks = [];
+      for (const r of _createTableRows) {
+        if (!r.name.trim()) { showToast('字段名不能为空'); return false; }
+        let def = `\`${sanitizeId(r.name)}\` ${buildTypeStr(r)}`;
+        def += r.nullable ? ' NULL' : ' NOT NULL';
+        if (r.autoInc) def += ' AUTO_INCREMENT';
+        if (r.defaultVal) def += ` DEFAULT ${r.defaultVal === 'NULL' ? 'NULL' : `'${sqlEsc(r.defaultVal)}'`}`;
+        colDefs.push(def);
+        if (r.pk) pks.push(`\`${sanitizeId(r.name)}\``);
+      }
+      if (pks.length) colDefs.push(`PRIMARY KEY (${pks.join(', ')})`);
+
+      const sql = `CREATE TABLE \`${sanitizeId(db)}\`.\`${sanitizeId(name)}\` (\n  ${colDefs.join(',\n  ')}\n) ENGINE=${engine} DEFAULT CHARSET=utf8mb4`;
+      const ok = await execSQL(sql, db);
+      if (ok) {
+        showToast('表创建成功');
+        await loadTables(db);
+        renderTree();
+      }
+      return ok;
+    }
+  });
+}
+
+function buildTypeStr(row) {
+  const t = row.type;
+  if (t === 'CUSTOM') return row.customType || 'TEXT';
+  if (typeNeedsLength(t) && row.length) return `${t}(${row.length})`;
+  return t;
+}
+
+function buildCreateTableBody() {
+  let rowsHtml = '';
+  for (let i = 0; i < _createTableRows.length; i++) {
+    rowsHtml += buildCreateTableRowHtml(i);
+  }
+
+  return `
+    <div class="form-row" style="margin-bottom:12px">
+      <div class="form-field" style="flex:2"><label>表名</label><input type="text" id="modalTableName" placeholder="my_table" autofocus></div>
+      <div class="form-field" style="flex:1"><label>引擎</label>
+        <select id="modalTableEngine"><option value="InnoDB" selected>InnoDB</option><option value="MyISAM">MyISAM</option></select>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <label style="font-size:12px;font-weight:600;color:var(--text2)">字段列表</label>
+      <button class="btn btn-sm btn-secondary" onclick="addCreateTableRow()">+ 添加字段</button>
+    </div>
+    <div id="createTableRows" style="border:1px solid var(--border);border-radius:6px;overflow:hidden">
+      <div style="display:flex;background:var(--bg2);border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text2);padding:6px 0">
+        <span style="width:28px;text-align:center">PK</span>
+        <span style="flex:2;padding:0 4px">字段名</span>
+        <span style="flex:2;padding:0 4px">类型</span>
+        <span style="flex:1;padding:0 4px">长度</span>
+        <span style="width:44px;text-align:center">NULL</span>
+        <span style="width:44px;text-align:center">自增</span>
+        <span style="flex:1;padding:0 4px">默认值</span>
+        <span style="width:32px"></span>
+      </div>
+      ${rowsHtml}
+    </div>
+  `;
+}
+
+function buildCreateTableRowHtml(i) {
+  const r = _createTableRows[i];
+  const showLen = typeNeedsLength(r.type);
+  return `<div class="ct-row" style="display:flex;align-items:center;border-bottom:1px solid var(--border);padding:4px 0;font-size:12px${i % 2 === 1 ? ';background:var(--bg2)' : ''}" data-idx="${i}">
+    <span style="width:28px;text-align:center"><input type="checkbox" ${r.pk ? 'checked' : ''} onchange="ctRowChange(${i},'pk',this.checked)"></span>
+    <span style="flex:2;padding:0 3px"><input style="width:100%;padding:4px 6px;border:1px solid var(--border);border-radius:3px;font-size:12px;font-family:monospace" value="${escAttr(r.name)}" onchange="ctRowChange(${i},'name',this.value)" placeholder="column"></span>
+    <span style="flex:2;padding:0 3px"><select style="width:100%;padding:4px 4px;border:1px solid var(--border);border-radius:3px;font-size:12px" onchange="ctRowChange(${i},'type',this.value)">${buildTypeSelectOptions(r.type)}</select></span>
+    <span style="flex:1;padding:0 3px"><input style="width:100%;padding:4px 6px;border:1px solid var(--border);border-radius:3px;font-size:12px;${showLen ? '' : 'opacity:0.3'}" value="${escAttr(r.length)}" onchange="ctRowChange(${i},'length',this.value)" placeholder="${LENGTH_DEFAULTS[r.type]||''}" ${showLen ? '' : 'disabled'}></span>
+    <span style="width:44px;text-align:center"><input type="checkbox" ${r.nullable ? 'checked' : ''} onchange="ctRowChange(${i},'nullable',this.checked)"></span>
+    <span style="width:44px;text-align:center"><input type="checkbox" ${r.autoInc ? 'checked' : ''} onchange="ctRowChange(${i},'autoInc',this.checked)"></span>
+    <span style="flex:1;padding:0 3px"><input style="width:100%;padding:4px 6px;border:1px solid var(--border);border-radius:3px;font-size:12px" value="${escAttr(r.defaultVal)}" onchange="ctRowChange(${i},'defaultVal',this.value)" placeholder="无"></span>
+    <span style="width:32px;text-align:center"><button class="node-action-btn danger" onclick="removeCreateTableRow(${i})" title="删除" style="font-size:14px">&#10005;</button></span>
+  </div>`;
+}
+
+function ctRowChange(i, field, value) {
+  _createTableRows[i][field] = value;
+  // If type changed, re-render this row to update length field state
+  if (field === 'type') {
+    _createTableRows[i].length = LENGTH_DEFAULTS[value] || '';
+    refreshCreateTableRows();
+  }
+}
+
+function addCreateTableRow() {
+  _createTableRows.push({ name: '', type: 'VARCHAR', length: '255', nullable: true, defaultVal: '', autoInc: false, pk: false });
+  refreshCreateTableRows();
+}
+
+function removeCreateTableRow(i) {
+  _createTableRows.splice(i, 1);
+  refreshCreateTableRows();
+}
+
+function refreshCreateTableRows() {
+  const container = document.getElementById('createTableRows');
+  if (!container) return;
+  // Preserve table name & engine values
+  const tableName = document.getElementById('modalTableName')?.value || '';
+  const engine = document.getElementById('modalTableEngine')?.value || 'InnoDB';
+  // Rebuild only the rows portion
+  let rowsHtml = '';
+  for (let i = 0; i < _createTableRows.length; i++) {
+    rowsHtml += buildCreateTableRowHtml(i);
+  }
+  // Keep the header, replace rows
+  const header = container.firstElementChild;
+  container.innerHTML = '';
+  container.appendChild(header);
+  container.insertAdjacentHTML('beforeend', rowsHtml);
+  // Restore preserved values
+  const nameInput = document.getElementById('modalTableName');
+  const engineSelect = document.getElementById('modalTableEngine');
+  if (nameInput) nameInput.value = tableName;
+  if (engineSelect) engineSelect.value = engine;
+}
+
+function dropTable(db, table) {
+  showDangerConfirm({
+    title: '删除表',
+    message: `确定要删除表 <strong>${esc(db)}.${esc(table)}</strong> 吗？`,
+    detail: '此操作不可撤销，表中的所有数据将被永久删除。',
+    confirmWord: table,
+    onConfirm: async () => {
+      const sql = `DROP TABLE \`${sanitizeId(db)}\`.\`${sanitizeId(table)}\``;
+      const ok = await execSQL(sql, db);
+      if (ok) {
+        showToast('表已删除');
+        await loadTables(db);
+        renderTree();
+      }
+      return ok;
+    }
+  });
+}
+
+function renameTable(db, table) {
+  showModal({
+    title: '重命名表',
+    body: `
+      <div class="form-field">
+        <label>当前表名</label>
+        <input type="text" value="${escAttr(table)}" readonly>
+      </div>
+      <div class="form-field">
+        <label>新表名</label>
+        <input type="text" id="modalNewTableName" value="${escAttr(table)}" autofocus>
+      </div>
+    `,
+    confirmText: '重命名',
+    onConfirm: async () => {
+      const newName = document.getElementById('modalNewTableName').value.trim();
+      if (!newName) { showToast('请输入新表名'); return false; }
+      if (newName === table) { showToast('表名未变更'); return true; }
+      const sql = `RENAME TABLE \`${sanitizeId(db)}\`.\`${sanitizeId(table)}\` TO \`${sanitizeId(db)}\`.\`${sanitizeId(newName)}\``;
+      const ok = await execSQL(sql, db);
+      if (ok) {
+        showToast('表已重命名');
+        // Clear old cache
+        delete schemaCache[`${db}.${table}`];
+        await loadTables(db);
+        renderTree();
+      }
+      return ok;
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+//  View Table Data
+// ══════════════════════════════════════════════
+async function viewTableData(db, table) {
+  currentDB = db;
+  openOrFocusTab(`${table}`, '&#9776;', `data:${db}.${table}`, async (tab) => {
+    // Load schema for PK info
+    const key = `${db}.${table}`;
+    if (!schemaCache[key]) {
+      const resp = await fetch(`/api/schema?db=${encodeURIComponent(db)}&table=${encodeURIComponent(table)}`);
+      const data = await resp.json();
+      if (data.code === 200) schemaCache[key] = data.data;
+    }
+    const schema = schemaCache[key] || [];
+    tab.currentTableContext = {
+      db, table,
+      primaryKeys: schema.filter(c => c.key === 'PRI').map(c => c.field),
+      columns: schema.map(c => c.field)
+    };
+    tab.sql = `SELECT * FROM \`${db}\`.\`${table}\` LIMIT 100;`;
+    document.getElementById('sqlInput').value = tab.sql;
+    document.getElementById('resultArea').innerHTML = '';
+    await executeQuery();
+  });
+}
+
+// ══════════════════════════════════════════════
+//  Schema Panel (Columns + Indexes tabs)
+// ══════════════════════════════════════════════
+async function showSchemaPanel(db, table) {
+  currentDB = db;
+  openOrFocusTab(`${table} [结构]`, '&#9881;', `schema:${db}.${table}`, async () => {
+    const area = document.getElementById('resultArea');
+    area.innerHTML = '<div class="result-toolbar"><div class="result-toolbar-left"><span class="loading"></span> 加载中...</div></div>';
+
+    const [schemaResp, indexResp] = await Promise.all([
+      fetch(`/api/schema?db=${encodeURIComponent(db)}&table=${encodeURIComponent(table)}`),
+      fetch(`/api/indexes?db=${encodeURIComponent(db)}&table=${encodeURIComponent(table)}`)
+    ]);
+    const schemaData = await schemaResp.json();
+    const indexData = await indexResp.json();
+
+    const columns = schemaData.code === 200 ? schemaData.data : [];
+    const indexes = indexData.code === 200 ? indexData.data : [];
+
+    schemaCache[`${db}.${table}`] = columns;
+
+    if (treeData[db]?.tables?.[table]) {
+      treeData[db].tables[table].schema = columns;
+      treeData[db].tables[table].indexes = indexes;
+    }
+
+    renderSchemaPanel(db, table, columns, indexes, 'columns');
+  });
+}
+
+function renderSchemaPanel(db, table, columns, indexes, activeTab) {
+  const area = document.getElementById('resultArea');
+  const idxGroups = groupIndexes(indexes);
+
+  let html = `<div class="result-scroll"><div class="schema-panel">
+    <h3>${esc(db)}.${esc(table)}</h3>
+    <div class="schema-tabs">
+      <div class="schema-tab ${activeTab === 'columns' ? 'active' : ''}" onclick="switchSchemaTab('columns')">字段 (${columns.length})</div>
+      <div class="schema-tab ${activeTab === 'indexes' ? 'active' : ''}" onclick="switchSchemaTab('indexes')">索引 (${idxGroups.length})</div>
+    </div>`;
+
+  if (activeTab === 'columns') {
+    html += `<div class="schema-tab-content">
+      <div class="schema-actions-bar">
+        <span style="font-size:12px;color:var(--text3)">${columns.length} 个字段</span>
+        <button class="btn btn-sm btn-primary write-action" onclick="showAddColumnModal('${escAttr(db)}','${escAttr(table)}')">+ 添加字段</button>
+      </div>
+      <table class="schema-table"><thead><tr>
+        <th>字段名</th><th>类型</th><th>Null</th><th>键</th><th>默认值</th><th>其他</th>
+        <th class="write-action" style="width:1%">操作</th>
+      </tr></thead><tbody>`;
+
+    for (const col of columns) {
+      let keyBadge = '';
+      if (col.key === 'PRI') keyBadge = '<span class="badge badge-pri">PRI</span>';
+      else if (col.key === 'UNI') keyBadge = '<span class="badge badge-uni">UNI</span>';
+      else if (col.key === 'MUL') keyBadge = '<span class="badge badge-mul">MUL</span>';
+
+      html += `<tr>
+        <td><strong>${esc(col.field)}</strong></td>
+        <td>${esc(col.type)}</td>
+        <td>${esc(col.null)}</td>
+        <td>${keyBadge}</td>
+        <td>${col.default !== null ? esc(String(col.default)) : '<span class="null-value">NULL</span>'}</td>
+        <td>${esc(col.extra)}</td>
+        <td class="write-action"><div class="col-actions">
+          <button class="col-action-btn" onclick="showEditColumnModal('${escAttr(db)}','${escAttr(table)}','${escAttr(col.field)}')" title="编辑">&#9998;</button>
+          <button class="col-action-btn danger" onclick="dropColumn('${escAttr(db)}','${escAttr(table)}','${escAttr(col.field)}')" title="删除">&#10005;</button>
+        </div></td>
+      </tr>`;
+    }
+    html += '</tbody></table></div>';
+  } else {
+    html += `<div class="schema-tab-content">
+      <div class="schema-actions-bar">
+        <span style="font-size:12px;color:var(--text3)">${idxGroups.length} 个索引</span>
+        <button class="btn btn-sm btn-primary write-action" onclick="showCreateIndexModal('${escAttr(db)}','${escAttr(table)}')">+ 创建索引</button>
+      </div>
+      <table class="schema-table"><thead><tr>
+        <th>索引名</th><th>类型</th><th>唯一</th><th>字段</th>
+        <th class="write-action" style="width:1%">操作</th>
+      </tr></thead><tbody>`;
+
+    if (idxGroups.length === 0) {
+      html += '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">无索引</td></tr>';
+    }
+    for (const idx of idxGroups) {
+      const isPrimary = idx.name === 'PRIMARY';
+      html += `<tr>
+        <td><strong>${esc(idx.name)}</strong></td>
+        <td><span class="badge badge-idx">${esc(idx.type)}</span></td>
+        <td>${idx.unique ? '<span class="badge badge-uni">UNIQUE</span>' : 'NO'}</td>
+        <td>${esc(idx.columns.join(', '))}</td>
+        <td class="write-action"><div class="col-actions">
+          ${isPrimary ? '' : `<button class="col-action-btn danger" onclick="dropIndex('${escAttr(db)}','${escAttr(table)}','${escAttr(idx.name)}')" title="删除索引">&#10005;</button>`}
+        </div></td>
+      </tr>`;
+    }
+    html += '</tbody></table></div>';
+  }
+
+  html += '</div></div>'; // close schema-panel + result-scroll
+  area.innerHTML = html;
+
+  // Store for tab switching
+  window._schemaState = { db, table, columns, indexes };
+}
+
+function switchSchemaTab(tab) {
+  if (!window._schemaState) return;
+  const s = window._schemaState;
+  renderSchemaPanel(s.db, s.table, s.columns, s.indexes, tab);
+}
+
+// ══════════════════════════════════════════════
+//  Column Management
+// ══════════════════════════════════════════════
+function showAddColumnModal(db, table) {
+  const schema = schemaCache[`${db}.${table}`] || [];
+  const afterOptions = schema.map(c => `<option value="${escAttr(c.field)}">AFTER ${esc(c.field)}</option>`).join('');
+
+  showModal({
+    title: `添加字段 — ${table}`,
+    body: `
+      <div class="form-row">
+        <div class="form-field" style="flex:2"><label>字段名</label><input type="text" id="modalColName" placeholder="column_name"></div>
+        <div class="form-field" style="flex:2"><label>类型</label>
+          <select id="modalColType" onchange="onColModalTypeChange()">${buildTypeSelectOptions('VARCHAR')}</select>
+        </div>
+        <div class="form-field" style="flex:1" id="colLengthField">
+          <label>长度</label>
+          <input type="text" id="modalColLength" value="255" placeholder="255">
+        </div>
+      </div>
+      <div class="form-field" id="colCustomField" style="display:none">
+        <label>自定义类型</label>
+        <input type="text" id="modalColCustom" placeholder="如: ENUM('a','b','c')">
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>允许 NULL</label>
+          <select id="modalColNull"><option value="YES">YES</option><option value="NO" selected>NO</option></select>
+        </div>
+        <div class="form-field">
+          <label>默认值</label>
+          <input type="text" id="modalColDefault" placeholder="无">
+          <div class="hint">CURRENT_TIMESTAMP, NULL, 或具体值</div>
+        </div>
+      </div>
+      <div class="form-field">
+        <label>位置</label>
+        <select id="modalColPosition">
+          <option value="">末尾 (默认)</option>
+          <option value="FIRST">首位 (FIRST)</option>
+          ${afterOptions}
+        </select>
+      </div>
+    `,
+    confirmText: '添加',
+    onConfirm: async () => {
+      const name = document.getElementById('modalColName').value.trim();
+      if (!name) { showToast('请输入字段名'); return false; }
+      const typeDef = getColModalType();
+      const nullable = document.getElementById('modalColNull').value === 'YES' ? 'NULL' : 'NOT NULL';
+      const def = document.getElementById('modalColDefault').value.trim();
+      const posVal = document.getElementById('modalColPosition').value;
+      const pos = posVal === 'FIRST' ? 'FIRST' : (posVal ? `AFTER \`${sanitizeId(posVal)}\`` : '');
+
+      let sql = `ALTER TABLE \`${sanitizeId(db)}\`.\`${sanitizeId(table)}\` ADD COLUMN \`${sanitizeId(name)}\` ${typeDef} ${nullable}`;
+      if (def) sql += ` DEFAULT ${def.toUpperCase() === 'NULL' || def.toUpperCase() === 'CURRENT_TIMESTAMP' ? def : `'${sqlEsc(def)}'`}`;
+      if (pos) sql += ` ${pos}`;
+
+      const ok = await execSQL(sql, db);
+      if (ok) {
+        showToast('字段添加成功');
+        await showSchemaPanel(db, table);
+        refreshTreeTable(db, table);
+      }
+      return ok;
+    }
+  });
+}
+
+function onColModalTypeChange() {
+  const t = document.getElementById('modalColType').value;
+  const lenField = document.getElementById('colLengthField');
+  const customField = document.getElementById('colCustomField');
+  const lenInput = document.getElementById('modalColLength');
+  if (t === 'CUSTOM') {
+    lenField.style.display = 'none';
+    customField.style.display = '';
+  } else if (typeNeedsLength(t)) {
+    lenField.style.display = '';
+    customField.style.display = 'none';
+    lenInput.placeholder = LENGTH_DEFAULTS[t] || '';
+    if (!lenInput.value) lenInput.value = LENGTH_DEFAULTS[t] || '';
+  } else {
+    lenField.style.display = 'none';
+    customField.style.display = 'none';
+  }
+}
+
+function getColModalType() {
+  const t = document.getElementById('modalColType').value;
+  if (t === 'CUSTOM') return document.getElementById('modalColCustom').value.trim() || 'TEXT';
+  if (typeNeedsLength(t)) {
+    const len = document.getElementById('modalColLength').value.trim();
+    return len ? `${t}(${len})` : t;
+  }
+  return t;
+}
+
+function showEditColumnModal(db, table, fieldName) {
+  const schema = schemaCache[`${db}.${table}`] || [];
+  const col = schema.find(c => c.field === fieldName);
+  if (!col) { showToast('字段未找到'); return; }
+
+  // Parse existing type: "varchar(255)" -> base=VARCHAR, length=255
+  const existingBase = col.type.replace(/\(.*/, '').toUpperCase();
+  const existingLength = parseLengthFromType(col.type);
+  const showLen = typeNeedsLength(existingBase);
+  const isCustomType = !COL_TYPES.some(g => g.items.includes(existingBase));
+
+  showModal({
+    title: `编辑字段 — ${col.field}`,
+    body: `
+      <div class="form-row">
+        <div class="form-field" style="flex:2">
+          <label>字段名</label>
+          <input type="text" id="modalEditColName" value="${escAttr(col.field)}">
+        </div>
+        <div class="form-field" style="flex:2">
+          <label>类型</label>
+          <select id="modalColType" onchange="onColModalTypeChange()">
+            ${buildTypeSelectOptions(isCustomType ? 'CUSTOM' : existingBase)}
+          </select>
+        </div>
+        <div class="form-field" id="colLengthField" style="flex:1${showLen && !isCustomType ? '' : ';display:none'}">
+          <label>长度</label>
+          <input type="text" id="modalColLength" value="${escAttr(existingLength)}" placeholder="${LENGTH_DEFAULTS[existingBase] || ''}">
+        </div>
+      </div>
+      <div class="form-field" id="colCustomField" style="${isCustomType ? '' : 'display:none'}">
+        <label>自定义类型</label>
+        <input type="text" id="modalColCustom" value="${isCustomType ? escAttr(col.type) : ''}" placeholder="如: ENUM('a','b','c')">
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>允许 NULL</label>
+          <select id="modalEditColNull">
+            <option value="YES" ${col.null === 'YES' ? 'selected' : ''}>YES</option>
+            <option value="NO" ${col.null !== 'YES' ? 'selected' : ''}>NO</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label>默认值</label>
+          <input type="text" id="modalEditColDefault" value="${col.default !== null ? escAttr(String(col.default)) : ''}" placeholder="无">
+          <label class="null-toggle"><input type="checkbox" id="modalEditColDefNull" ${col.default === null ? 'checked' : ''}> 设为 NULL</label>
+          <div class="hint">CURRENT_TIMESTAMP, NULL, 或具体值</div>
+        </div>
+      </div>
+    `,
+    confirmText: '保存',
+    onConfirm: async () => {
+      const newName = document.getElementById('modalEditColName').value.trim();
+      const newType = getColModalType();
+      const newNull = document.getElementById('modalEditColNull').value === 'YES' ? 'NULL' : 'NOT NULL';
+      const defIsNull = document.getElementById('modalEditColDefNull').checked;
+      const defVal = document.getElementById('modalEditColDefault').value.trim();
+
+      if (!newName || !newType) { showToast('字段名和类型不能为空'); return false; }
+
+      let sql;
+      if (newName !== col.field) {
+        sql = `ALTER TABLE \`${sanitizeId(db)}\`.\`${sanitizeId(table)}\` CHANGE COLUMN \`${sanitizeId(col.field)}\` \`${sanitizeId(newName)}\` ${newType} ${newNull}`;
+      } else {
+        sql = `ALTER TABLE \`${sanitizeId(db)}\`.\`${sanitizeId(table)}\` MODIFY COLUMN \`${sanitizeId(col.field)}\` ${newType} ${newNull}`;
+      }
+
+      if (defIsNull) sql += ' DEFAULT NULL';
+      else if (defVal) sql += ` DEFAULT ${defVal.toUpperCase() === 'CURRENT_TIMESTAMP' ? defVal : `'${sqlEsc(defVal)}'`}`;
+
+      const ok = await execSQL(sql, db);
+      if (ok) {
+        showToast('字段修改成功');
+        await showSchemaPanel(db, table);
+        refreshTreeTable(db, table);
+      }
+      return ok;
+    }
+  });
+}
+
+function dropColumn(db, table, column) {
+  showDangerConfirm({
+    title: '删除字段',
+    message: `确定要删除字段 <strong>${esc(column)}</strong> 吗？`,
+    detail: `表 ${esc(db)}.${esc(table)} 中该字段的所有数据将被永久删除。`,
+    confirmWord: column,
+    onConfirm: async () => {
+      const sql = `ALTER TABLE \`${sanitizeId(db)}\`.\`${sanitizeId(table)}\` DROP COLUMN \`${sanitizeId(column)}\``;
+      const ok = await execSQL(sql, db);
+      if (ok) {
+        showToast('字段已删除');
+        await showSchemaPanel(db, table);
+        refreshTreeTable(db, table);
+      }
+      return ok;
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+//  Index Management
+// ══════════════════════════════════════════════
+function showCreateIndexModal(db, table) {
+  const schema = schemaCache[`${db}.${table}`] || [];
+  const colCheckboxes = schema.map(c =>
+    `<label style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:13px;cursor:pointer">
+      <input type="checkbox" name="idxCol" value="${escAttr(c.field)}"> ${esc(c.field)} <span style="color:var(--text3);font-size:11px">${esc(c.type)}</span>
+    </label>`
+  ).join('');
+
+  showModal({
+    title: `创建索引 — ${table}`,
+    body: `
+      <div class="form-field">
+        <label>索引名称</label>
+        <input type="text" id="modalIdxName" placeholder="idx_column_name">
+      </div>
+      <div class="form-field">
+        <label>类型</label>
+        <select id="modalIdxType">
+          <option value="INDEX">普通索引 (INDEX)</option>
+          <option value="UNIQUE">唯一索引 (UNIQUE)</option>
+          <option value="FULLTEXT">全文索引 (FULLTEXT)</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>选择字段 (按勾选顺序)</label>
+        <div style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:5px;padding:6px 10px">
+          ${colCheckboxes}
+        </div>
+      </div>
+    `,
+    confirmText: '创建',
+    onConfirm: async () => {
+      const name = document.getElementById('modalIdxName').value.trim();
+      const type = document.getElementById('modalIdxType').value;
+      const checks = document.querySelectorAll('#activeModal input[name="idxCol"]:checked');
+      const cols = Array.from(checks).map(c => c.value);
+
+      if (!name) { showToast('请输入索引名称'); return false; }
+      if (cols.length === 0) { showToast('请至少选择一个字段'); return false; }
+
+      const colList = cols.map(c => `\`${sanitizeId(c)}\``).join(', ');
+      const sql = `ALTER TABLE \`${sanitizeId(db)}\`.\`${sanitizeId(table)}\` ADD ${type} \`${sanitizeId(name)}\` (${colList})`;
+
+      const ok = await execSQL(sql, db);
+      if (ok) {
+        showToast('索引创建成功');
+        await showSchemaPanel(db, table);
+        switchSchemaTab('indexes');
+        refreshTreeTable(db, table);
+      }
+      return ok;
+    }
+  });
+}
+
+function dropIndex(db, table, indexName) {
+  const isPrimary = indexName === 'PRIMARY';
+  showDangerConfirm({
+    title: '删除索引',
+    message: `确定要删除索引 <strong>${esc(indexName)}</strong> 吗？`,
+    detail: `表 ${esc(db)}.${esc(table)}`,
+    confirmWord: indexName,
+    onConfirm: async () => {
+      const sql = isPrimary
+        ? `ALTER TABLE \`${sanitizeId(db)}\`.\`${sanitizeId(table)}\` DROP PRIMARY KEY`
+        : `ALTER TABLE \`${sanitizeId(db)}\`.\`${sanitizeId(table)}\` DROP INDEX \`${sanitizeId(indexName)}\``;
+      const ok = await execSQL(sql, db);
+      if (ok) {
+        showToast('索引已删除');
+        await showSchemaPanel(db, table);
+        switchSchemaTab('indexes');
+        refreshTreeTable(db, table);
+      }
+      return ok;
+    }
+  });
+}
+
+// Refresh tree for a specific table (invalidate cache)
+async function refreshTreeTable(db, table) {
+  const node = treeData[db]?.tables?.[table];
+  if (node && node.expanded) {
+    node.schema = null;
+    node.indexes = null;
+    await loadTableDetails(db, table);
+    renderTree();
+  }
+}
+
+// ══════════════════════════════════════════════
+//  Query Execution
+// ══════════════════════════════════════════════
 function isWriteQuery(sql) {
   const t = sql.trim().toUpperCase();
-  const writeKeywords = ['INSERT','UPDATE','DELETE','DROP','ALTER','CREATE','TRUNCATE','RENAME','REPLACE','GRANT','REVOKE'];
-  return writeKeywords.some(k => t.startsWith(k));
+  const w = ['INSERT','UPDATE','DELETE','DROP','ALTER','CREATE','TRUNCATE','RENAME','REPLACE','GRANT','REVOKE'];
+  return w.some(k => t.startsWith(k));
 }
 
-// ── Execute Query ──
 async function executeQuery() {
   const sql = document.getElementById('sqlInput').value.trim();
   if (!sql) return;
 
   if (readOnly && isWriteQuery(sql)) {
-    showToast('Blocked: Read-Only mode is enabled');
+    showToast('只读模式下不可执行写操作');
     return;
   }
 
@@ -799,10 +1575,27 @@ async function executeQuery() {
   btn.innerHTML = '<span class="loading"></span> Running...';
 
   const area = document.getElementById('resultArea');
-  area.innerHTML = '<div class="result-toolbar"><div class="result-toolbar-left"><span class="loading"></span> Executing...</div></div>';
+  area.innerHTML = '<div class="result-toolbar"><div class="result-toolbar-left"><span class="loading"></span> 执行中...</div></div>';
 
-  lastResult = null;
-  sortCol = null;
+  setLastResult(null);
+  setSortCol(null);
+
+  // If user manually edited SQL, clear table context
+  const ctx = getTableCtx();
+  const expectedSQL = ctx
+    ? `SELECT * FROM \`${ctx.db}\`.\`${ctx.table}\` LIMIT 100;`
+    : null;
+  if (!expectedSQL || sql !== expectedSQL) {
+    setTableCtx(null);
+  }
+
+  // Auto-create a tab if none exists
+  if (!getActiveTab()) {
+    const tab = createTab('查询', '&#9654;', 'query');
+    activeTabId = tab.id;
+    tab.sql = sql;
+    renderTabBar();
+  }
 
   try {
     const resp = await fetch('/api/query', {
@@ -818,7 +1611,6 @@ async function executeQuery() {
     }
 
     const result = data.data;
-
     if (result.affected_rows !== undefined) {
       area.innerHTML = `<div class="result-toolbar"><div class="result-toolbar-left">
         <span class="count">${result.affected_rows} rows affected</span>
@@ -827,7 +1619,7 @@ async function executeQuery() {
       return;
     }
 
-    lastResult = result;
+    setLastResult(result);
     renderResult();
   } catch (e) {
     area.innerHTML = `<div class="result-toolbar"><div class="result-toolbar-left"><span class="error">${esc(e.message)}</span></div></div>`;
@@ -837,108 +1629,312 @@ async function executeQuery() {
   }
 }
 
-// ── Render Result (with sort) ──
+// ══════════════════════════════════════════════
+//  Render Data Result
+// ══════════════════════════════════════════════
+// SVG icons (14x14)
+const ICON = {
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  clipboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>',
+};
+
 function renderResult() {
-  if (!lastResult) return;
-  const result = lastResult;
+  const result = getLastResult();
+  if (!result) return;
   const area = document.getElementById('resultArea');
+  const _sortCol = getSortCol();
+  const _sortAsc = getSortAsc();
 
   let rows = result.rows || [];
-  if (sortCol !== null && result.columns) {
-    const col = result.columns[sortCol];
+  if (_sortCol !== null && result.columns) {
+    const col = result.columns[_sortCol];
     rows = [...rows].sort((a, b) => {
       let va = a[col], vb = b[col];
-      if (va === null || va === undefined) va = '';
-      if (vb === null || vb === undefined) vb = '';
-      if (typeof va === 'number' && typeof vb === 'number') return sortAsc ? va - vb : vb - va;
+      if (va == null) va = '';
+      if (vb == null) vb = '';
+      if (typeof va === 'number' && typeof vb === 'number') return _sortAsc ? va - vb : vb - va;
       va = String(va); vb = String(vb);
-      return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+      return _sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     });
   }
 
-  let html = `<div class="result-toolbar">
+  const _ctx = getTableCtx();
+  const canEdit = !readOnly && _ctx && _ctx.primaryKeys.length > 0;
+
+  // Toolbar (fixed, never scrolls)
+  let toolbar = `<div class="result-toolbar">
     <div class="result-toolbar-left">
       <span class="count">${result.count} rows</span>
       <span class="duration">${esc(result.duration)}</span>
+      <span style="color:var(--text3);font-size:11px">点击单元格复制</span>
     </div>
     <div class="result-toolbar-right">
-      <button class="btn btn-secondary btn-sm" onclick="copyResults()">&#128203; Copy</button>
-      <button class="btn btn-secondary btn-sm" onclick="exportCSV()">&#11015; Export CSV</button>
+      ${canEdit ? `<button class="btn btn-sm btn-primary write-action" onclick="addNewRow()" style="gap:3px"><span style="display:inline-flex;width:14px;height:14px">${ICON.plus}</span> 新增</button>` : ''}
+      <button class="btn btn-secondary btn-sm" onclick="copyAllResults()" style="gap:3px"><span style="display:inline-flex;width:13px;height:13px">${ICON.clipboard}</span> 复制全部</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportCSV()" style="gap:3px"><span style="display:inline-flex;width:13px;height:13px">${ICON.download}</span> CSV</button>
     </div>
   </div>`;
 
+  // Table (scrollable)
+  let table = '';
   if (result.columns && result.columns.length > 0) {
-    html += '<table class="result-table"><thead><tr>';
+    table += '<div class="result-scroll"><table class="result-table"><thead><tr>';
     result.columns.forEach((col, i) => {
-      let icon = '&#8597;';
-      let cls = '';
-      if (sortCol === i) {
-        icon = sortAsc ? '&#9650;' : '&#9660;';
-        cls = ' active';
-      }
-      html += `<th onclick="sortByCol(${i})">${esc(col)} <span class="sort-icon${cls}">${icon}</span></th>`;
+      let icon = '&#8597;', cls = '';
+      if (_sortCol === i) { icon = _sortAsc ? '&#9650;' : '&#9660;'; cls = ' active'; }
+      table += `<th onclick="sortByCol(${i})">${esc(col)} <span class="sort-icon${cls}">${icon}</span></th>`;
     });
-    html += '</tr></thead><tbody>';
+    if (canEdit) table += '<th class="th-actions">操作</th>';
+    table += '</tr></thead><tbody>';
 
-    for (const row of rows) {
-      html += '<tr>';
-      for (const col of result.columns) {
-        const val = row[col];
-        if (val === null || val === undefined) {
-          html += '<td><span class="null-value">NULL</span></td>';
+    window._displayRows = rows;
+
+    for (let ri = 0; ri < rows.length; ri++) {
+      const row = rows[ri];
+      table += '<tr>';
+      for (let ci = 0; ci < result.columns.length; ci++) {
+        const val = row[result.columns[ci]];
+        if (val == null) {
+          table += `<td onclick="copyCellFromRow(this,${ri},${ci})"><span class="null-value">NULL</span></td>`;
         } else {
-          html += `<td>${esc(String(val))}</td>`;
+          table += `<td onclick="copyCellFromRow(this,${ri},${ci})">${esc(String(val))}</td>`;
         }
       }
-      html += '</tr>';
+      if (canEdit) {
+        table += `<td class="td-actions"><div class="row-actions">
+          <button class="row-action-btn btn-copy-row" title="复制行" onclick="copyRow(${ri})">${ICON.copy}</button>
+          <button class="row-action-btn btn-edit" title="编辑" onclick="editRow(${ri})">${ICON.edit}</button>
+          <button class="row-action-btn btn-delete" title="删除" onclick="deleteRow(${ri})">${ICON.trash}</button>
+        </div></td>`;
+      }
+      table += '</tr>';
     }
-    html += '</tbody></table>';
+    table += '</tbody></table></div>';
   }
 
-  area.innerHTML = html;
+  area.innerHTML = toolbar + table;
 }
 
 function sortByCol(idx) {
-  if (sortCol === idx) {
-    sortAsc = !sortAsc;
-  } else {
-    sortCol = idx;
-    sortAsc = true;
-  }
+  if (getSortCol() === idx) setSortAsc(!getSortAsc());
+  else { setSortCol(idx); setSortAsc(true); }
   renderResult();
 }
 
-// ── Copy ──
-function copyResults() {
-  if (!lastResult || !lastResult.columns) return;
-  const rows = lastResult.rows || [];
-  const cols = lastResult.columns;
-  let text = cols.join('\t') + '\n';
-  for (const row of rows) {
-    text += cols.map(c => {
-      const v = row[c];
-      return (v === null || v === undefined) ? 'NULL' : String(v);
-    }).join('\t') + '\n';
-  }
-  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
+// ══════════════════════════════════════════════
+//  Data Copy
+// ══════════════════════════════════════════════
+function copyCellFromRow(td, rowIdx, colIdx) {
+  const r = getLastResult();
+  if (!r || !window._displayRows) return;
+  const row = window._displayRows[rowIdx];
+  const col = r.columns[colIdx];
+  const val = row[col];
+  const text = val == null ? 'NULL' : String(val);
+  navigator.clipboard.writeText(text).then(() => {
+    td.classList.add('cell-copied');
+    setTimeout(() => td.classList.remove('cell-copied'), 300);
+    showToast('已复制');
+  });
 }
 
-// ── Export CSV ──
-function exportCSV() {
-  if (!lastResult || !lastResult.columns) return;
-  const rows = lastResult.rows || [];
-  const cols = lastResult.columns;
+function copyRow(rowIdx) {
+  const r = getLastResult();
+  if (!r || !window._displayRows) return;
+  const row = window._displayRows[rowIdx];
+  const cols = r.columns;
+  const text = cols.map(c => { const v = row[c]; return v == null ? 'NULL' : String(v); }).join('\t');
+  navigator.clipboard.writeText(text).then(() => showToast('已复制该行'));
+}
 
-  const csvEscape = (v) => {
-    if (v === null || v === undefined) return '';
+function copyAllResults() {
+  const r = getLastResult();
+  if (!r || !r.columns) return;
+  const rows = r.rows || [];
+  const cols = r.columns;
+  let text = cols.join('\t') + '\n';
+  for (const row of rows) {
+    text += cols.map(c => { const v = row[c]; return v == null ? 'NULL' : String(v); }).join('\t') + '\n';
+  }
+  navigator.clipboard.writeText(text).then(() => showToast('已复制全部数据'));
+}
+
+// ══════════════════════════════════════════════
+//  Row Edit / Delete
+// ══════════════════════════════════════════════
+// ── Add New Row ──
+function addNewRow() {
+  const ctx = getTableCtx();
+  if (!ctx) return;
+  const schema = schemaCache[`${ctx.db}.${ctx.table}`] || [];
+
+  let fieldsHtml = '';
+  for (const col of schema) {
+    const isAuto = col.extra && col.extra.toLowerCase().includes('auto_increment');
+    const isPK = col.key === 'PRI';
+    fieldsHtml += `
+      <div class="form-field">
+        <label>${esc(col.field)} <span style="color:var(--text3);font-weight:400">${esc(col.type)}${isPK ? ' · PRI' : ''}${isAuto ? ' · 自增' : ''}</span></label>
+        <input type="text" name="${esc(col.field)}" value="" placeholder="${isAuto ? '自动生成' : ''}"
+          ${isAuto ? 'disabled style="background:var(--bg3)"' : ''} data-auto="${isAuto}">
+        ${col.null === 'YES' ? `<label class="null-toggle"><input type="checkbox" onchange="toggleNullField(this)"> NULL</label>` : ''}
+      </div>`;
+  }
+
+  showModal({
+    title: `新增记录 — ${ctx.table}`,
+    body: fieldsHtml,
+    confirmText: '插入',
+    onConfirm: async () => {
+      const modal = document.getElementById('activeModal');
+      const inputs = modal.querySelectorAll('.form-field input[type="text"]');
+
+      const fields = [];
+      const values = [];
+      for (const input of inputs) {
+        if (input.dataset.auto === 'true') continue; // skip auto-increment
+        const nullCb = input.closest('.form-field').querySelector('.null-toggle input[type="checkbox"]');
+        const isNull = nullCb && nullCb.checked;
+        const val = input.value;
+        if (isNull) {
+          fields.push(`\`${sanitizeId(input.name)}\``);
+          values.push('NULL');
+        } else if (val !== '') {
+          fields.push(`\`${sanitizeId(input.name)}\``);
+          values.push(`'${sqlEsc(val)}'`);
+        }
+        // skip empty fields (use MySQL default)
+      }
+
+      if (fields.length === 0) { showToast('请至少填写一个字段'); return false; }
+
+      const sql = `INSERT INTO \`${sanitizeId(ctx.db)}\`.\`${sanitizeId(ctx.table)}\` (${fields.join(', ')}) VALUES (${values.join(', ')})`;
+      const ok = await execSQL(sql, ctx.db);
+      if (ok) {
+        showToast('记录已插入');
+        viewTableData(ctx.db, ctx.table);
+      }
+      return ok;
+    }
+  });
+}
+
+function editRow(rowIdx) {
+  const ctx = getTableCtx();
+  if (!ctx || !window._displayRows) return;
+  const row = window._displayRows[rowIdx];
+  const schema = schemaCache[`${ctx.db}.${ctx.table}`] || [];
+
+  let fieldsHtml = '';
+  for (const col of schema) {
+    const val = row[col.field];
+    const isNull = val == null;
+    const isPK = col.key === 'PRI';
+    const displayVal = isNull ? '' : String(val);
+    fieldsHtml += `
+      <div class="form-field">
+        <label>${esc(col.field)} <span style="color:var(--text3);font-weight:400">${esc(col.type)}${isPK ? ' · PRI' : ''}</span></label>
+        <input type="text" name="${esc(col.field)}" value="${escAttr(displayVal)}"
+          ${isPK ? 'readonly' : ''}
+          data-original="${escAttr(displayVal)}" data-null="${isNull}">
+        ${!isPK && col.null === 'YES' ? `<label class="null-toggle"><input type="checkbox" ${isNull ? 'checked' : ''} onchange="toggleNullField(this)"> NULL</label>` : ''}
+      </div>`;
+  }
+
+  showModal({
+    title: `编辑记录 — ${ctx.table}`,
+    body: fieldsHtml,
+    confirmText: '保存',
+    onConfirm: async () => {
+      const modal = document.getElementById('activeModal');
+      const inputs = modal.querySelectorAll('.form-field input[type="text"]');
+
+      const setClauses = [];
+      for (const input of inputs) {
+        const field = input.name;
+        const colSchema = schema.find(c => c.field === field);
+        if (colSchema && colSchema.key === 'PRI') continue;
+
+        const nullCb = input.closest('.form-field').querySelector('.null-toggle input[type="checkbox"]');
+        const isNull = nullCb && nullCb.checked;
+        const newVal = isNull ? null : input.value;
+        const origNull = input.dataset.null === 'true';
+        const origVal = origNull ? null : input.dataset.original;
+
+        if (newVal !== origVal) {
+          if (isNull) setClauses.push(`\`${sanitizeId(field)}\` = NULL`);
+          else setClauses.push(`\`${sanitizeId(field)}\` = '${sqlEsc(newVal)}'`);
+        }
+      }
+
+      if (setClauses.length === 0) { showToast('没有修改'); return true; }
+
+      const whereClause = ctx.primaryKeys.map(pk => {
+        const val = row[pk];
+        if (val == null) return `\`${sanitizeId(pk)}\` IS NULL`;
+        return `\`${sanitizeId(pk)}\` = '${sqlEsc(String(val))}'`;
+      }).join(' AND ');
+
+      const sql = `UPDATE \`${sanitizeId(ctx.db)}\`.\`${sanitizeId(ctx.table)}\` SET ${setClauses.join(', ')} WHERE ${whereClause} LIMIT 1`;
+      const ok = await execSQL(sql, ctx.db);
+      if (ok) { showToast('更新成功'); viewTableData(ctx.db, ctx.table); }
+      return ok;
+    }
+  });
+}
+
+function toggleNullField(checkbox) {
+  const input = checkbox.closest('.form-field').querySelector('input[type="text"]');
+  if (checkbox.checked) { input.disabled = true; input.value = ''; input.style.background = 'var(--bg3)'; }
+  else { input.disabled = false; input.style.background = ''; }
+}
+
+function deleteRow(rowIdx) {
+  const ctx = getTableCtx();
+  if (!ctx || !window._displayRows) return;
+  const row = window._displayRows[rowIdx];
+  const pkInfo = ctx.primaryKeys.map(pk => `${pk} = ${row[pk]}`).join(', ');
+
+  showDangerConfirm({
+    title: '确认删除',
+    message: '确定要删除这条记录吗？',
+    detail: `${esc(ctx.table)} · ${esc(pkInfo)}`,
+    confirmWord: null, // no typed confirm for single row
+    onConfirm: async () => {
+      const whereClause = ctx.primaryKeys.map(pk => {
+        const val = row[pk];
+        if (val == null) return `\`${sanitizeId(pk)}\` IS NULL`;
+        return `\`${sanitizeId(pk)}\` = '${sqlEsc(String(val))}'`;
+      }).join(' AND ');
+      const sql = `DELETE FROM \`${sanitizeId(ctx.db)}\`.\`${sanitizeId(ctx.table)}\` WHERE ${whereClause} LIMIT 1`;
+      const ok = await execSQL(sql, ctx.db);
+      if (ok) { showToast('删除成功'); viewTableData(ctx.db, ctx.table); }
+      return ok;
+    }
+  });
+}
+
+// ══════════════════════════════════════════════
+//  Export CSV
+// ══════════════════════════════════════════════
+function exportCSV() {
+  const _r = getLastResult();
+  if (!_r || !_r.columns) return;
+  const rows = _r.rows || [];
+  const cols = _r.columns;
+
+  const csvEsc = (v) => {
+    if (v == null) return '';
     const s = String(v);
     return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
 
-  let csv = cols.map(csvEscape).join(',') + '\n';
-  for (const row of rows) {
-    csv += cols.map(c => csvEscape(row[c])).join(',') + '\n';
-  }
+  let csv = cols.map(csvEsc).join(',') + '\n';
+  for (const row of rows) csv += cols.map(c => csvEsc(row[c])).join(',') + '\n';
 
   const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
   const a = document.createElement('a');
@@ -946,36 +1942,154 @@ function exportCSV() {
   a.download = `query_result_${new Date().toISOString().slice(0,19).replace(/[:-]/g,'')}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
-  showToast('CSV exported');
+  showToast('CSV 已导出');
 }
 
-// ── Toast ──
+// ══════════════════════════════════════════════
+//  Reusable Modal System
+// ══════════════════════════════════════════════
+function showModal({title, body, confirmText = '确定', onConfirm, width}) {
+  closeModal();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'activeModal';
+  overlay.innerHTML = `
+    <div class="modal" ${width ? `style="width:${width}"` : ''}>
+      <div class="modal-header">
+        <span>${title}</span>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">${body}</div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-primary" id="modalConfirmBtn">${confirmText}</button>
+      </div>
+    </div>
+  `;
+  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+  document.body.appendChild(overlay);
+
+  document.getElementById('modalConfirmBtn').onclick = async () => {
+    const btn = document.getElementById('modalConfirmBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="loading"></span>';
+    const ok = await onConfirm();
+    if (ok !== false) closeModal();
+    else { btn.disabled = false; btn.textContent = confirmText; }
+  };
+
+  // Focus first input
+  const firstInput = overlay.querySelector('input:not([readonly]),textarea,select');
+  if (firstInput) setTimeout(() => firstInput.focus(), 50);
+}
+
+function showDangerConfirm({title, message, detail, confirmWord, onConfirm}) {
+  const needsInput = confirmWord && confirmWord.length > 0;
+  const inputHtml = needsInput
+    ? `<div style="margin-top:12px"><div style="font-size:12px;color:var(--text2);margin-bottom:4px">输入 <strong>${esc(confirmWord)}</strong> 以确认</div><input class="confirm-input" id="dangerConfirmInput" type="text" placeholder="${escAttr(confirmWord)}"></div>`
+    : '';
+
+  closeModal();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'activeModal';
+  overlay.innerHTML = `
+    <div class="modal" style="width:420px">
+      <div class="modal-header">
+        <span>${title}</span>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="text-align:center;padding:20px 18px">
+        <p style="font-size:14px;margin-bottom:6px">${message}</p>
+        <p style="font-size:12px;color:var(--text2)">${detail}</p>
+        ${inputHtml}
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+        <button class="btn btn-danger" id="dangerConfirmBtn" ${needsInput ? 'disabled' : ''}>删除</button>
+      </div>
+    </div>
+  `;
+  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+  document.body.appendChild(overlay);
+
+  if (needsInput) {
+    const input = document.getElementById('dangerConfirmInput');
+    const btn = document.getElementById('dangerConfirmBtn');
+    input.oninput = () => { btn.disabled = input.value !== confirmWord; };
+    setTimeout(() => input.focus(), 50);
+  }
+
+  document.getElementById('dangerConfirmBtn').onclick = async () => {
+    const btn = document.getElementById('dangerConfirmBtn');
+    btn.disabled = true; btn.innerHTML = '<span class="loading"></span>';
+    const ok = await onConfirm();
+    if (ok !== false) closeModal();
+    else { btn.disabled = false; btn.textContent = '删除'; }
+  };
+}
+
+function closeModal() {
+  const m = document.getElementById('activeModal');
+  if (m) m.remove();
+}
+
+// ══════════════════════════════════════════════
+//  SQL Execution Helper
+// ══════════════════════════════════════════════
+async function execSQL(sql, db) {
+  try {
+    const resp = await fetch('/api/query', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({sql, db: db || currentDB})
+    });
+    const data = await resp.json();
+    if (data.code !== 200) {
+      showToast('Error: ' + data.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    showToast('Error: ' + e.message);
+    return false;
+  }
+}
+
+// ══════════════════════════════════════════════
+//  Utilities
+// ══════════════════════════════════════════════
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// ── Clear ──
 function clearResults() {
-  lastResult = null;
-  sortCol = null;
+  setLastResult(null); setSortCol(null); setTableCtx(null);
   document.getElementById('resultArea').innerHTML = `
-    <div class="empty-state">
-      <div class="empty-icon">&#9741;</div>
-      <p>Run a query to see results</p>
-    </div>`;
+    <div class="empty-state"><div class="empty-icon">&#9741;</div><p>运行查询查看结果</p></div>`;
 }
 
-// ── Utils ──
 function esc(str) {
+  if (str == null) return '';
   const d = document.createElement('div');
-  d.textContent = str;
+  d.textContent = String(str);
   return d.innerHTML;
 }
 
-// ── Keyboard shortcuts ──
+function escAttr(str) {
+  if (str == null) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function sanitizeId(s) { return String(s).replace(/`/g, ''); }
+
+function sqlEsc(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+
+// ══════════════════════════════════════════════
+//  Keyboard Shortcuts
+// ══════════════════════════════════════════════
 document.getElementById('sqlInput').addEventListener('keydown', function(e) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
     e.preventDefault();
@@ -987,6 +2101,11 @@ document.getElementById('sqlInput').addEventListener('keydown', function(e) {
     this.value = this.value.substring(0, start) + '  ' + this.value.substring(this.selectionEnd);
     this.selectionStart = this.selectionEnd = start + 2;
   }
+});
+
+// Close modal on Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
 });
 
 init();

@@ -127,6 +127,50 @@ func schemaHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
+// indexesHandler returns index info for a table.
+// Query params: db, table
+// Uses generic row scanning to handle varying SHOW INDEX columns across MySQL versions.
+func indexesHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		dbName := r.URL.Query().Get("db")
+		tableName := r.URL.Query().Get("table")
+		if dbName == "" || tableName == "" {
+			writeError(w, 400, "db and table parameters are required")
+			return
+		}
+
+		rows, err := db.Query(fmt.Sprintf("SHOW INDEX FROM `%s`.`%s`",
+			sanitizeIdentifier(dbName), sanitizeIdentifier(tableName)))
+		if err != nil {
+			writeError(w, 500, err.Error())
+			return
+		}
+		defer rows.Close()
+
+		columns, _ := rows.Columns()
+		var results []map[string]interface{}
+		for rows.Next() {
+			values := make([]interface{}, len(columns))
+			valuePtrs := make([]interface{}, len(columns))
+			for i := range values {
+				valuePtrs[i] = &values[i]
+			}
+			rows.Scan(valuePtrs...)
+			row := make(map[string]interface{})
+			for i, col := range columns {
+				val := values[i]
+				if b, ok := val.([]byte); ok {
+					row[col] = string(b)
+				} else {
+					row[col] = val
+				}
+			}
+			results = append(results, row)
+		}
+		writeJSON(w, 200, results)
+	}
+}
+
 // queryHandler executes a SQL query and returns results.
 // POST body: {"sql": "SELECT ...", "db": "mydb"}
 func queryHandler(db *sql.DB, readOnly bool) http.HandlerFunc {

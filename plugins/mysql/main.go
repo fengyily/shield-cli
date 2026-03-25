@@ -105,6 +105,7 @@ func handleStart(cfg PluginConfig) {
 	mux.HandleFunc("/api/databases", databasesHandler(db))
 	mux.HandleFunc("/api/tables", tablesHandler(db))
 	mux.HandleFunc("/api/schema", schemaHandler(db))
+	mux.HandleFunc("/api/indexes", indexesHandler(db))
 	mux.HandleFunc("/api/query", queryHandler(db, cfg.ReadOnly))
 	mux.HandleFunc("/api/info", infoHandler(db, cfg))
 
