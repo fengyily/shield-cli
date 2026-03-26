@@ -179,7 +179,7 @@ docker run -d --name shield-postgres \
   fengyily/shield-postgres
 ```
 
-打开 http://localhost:8080 — pgAdmin 的轻量替代（~9 MB vs ~400 MB）。
+打开 `http://localhost:8080` — pgAdmin 的轻量替代（~9 MB vs ~400 MB）。
 
 | 环境变量 | 默认值 | 说明 |
 |----------|--------|------|
