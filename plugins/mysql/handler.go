@@ -292,3 +292,98 @@ func isWriteSQL(sql string) bool {
 func sanitizeIdentifier(s string) string {
 	return strings.ReplaceAll(s, "`", "")
 }
+
+// erHandler returns all tables with columns and foreign key relationships for ER diagram.
+// Query param: db (database name)
+func erHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		dbName := r.URL.Query().Get("db")
+		if dbName == "" {
+			writeError(w, 400, "db parameter is required")
+			return
+		}
+
+		// Get all tables with their columns
+		colRows, err := db.Query(`
+			SELECT c.TABLE_NAME, c.COLUMN_NAME, c.COLUMN_TYPE,
+				CASE WHEN c.COLUMN_KEY = 'PRI' THEN 1 ELSE 0 END AS is_pk
+			FROM INFORMATION_SCHEMA.COLUMNS c
+			WHERE c.TABLE_SCHEMA = ?
+			ORDER BY c.TABLE_NAME, c.ORDINAL_POSITION`, dbName)
+		if err != nil {
+			writeError(w, 500, err.Error())
+			return
+		}
+		defer colRows.Close()
+
+		type ERColumn struct {
+			Name string `json:"name"`
+			Type string `json:"type"`
+			PK   bool   `json:"pk"`
+		}
+		type ERTable struct {
+			Name    string     `json:"name"`
+			Columns []ERColumn `json:"columns"`
+		}
+
+		tableMap := make(map[string]*ERTable)
+		var tableOrder []string
+
+		for colRows.Next() {
+			var tbl, col, dtype string
+			var pk bool
+			colRows.Scan(&tbl, &col, &dtype, &pk)
+
+			t, ok := tableMap[tbl]
+			if !ok {
+				t = &ERTable{Name: tbl}
+				tableMap[tbl] = t
+				tableOrder = append(tableOrder, tbl)
+			}
+			t.Columns = append(t.Columns, ERColumn{Name: col, Type: dtype, PK: pk})
+		}
+
+		var tables []ERTable
+		for _, name := range tableOrder {
+			tables = append(tables, *tableMap[name])
+		}
+
+		// Get foreign key relationships
+		fkRows, err := db.Query(`
+			SELECT
+				kcu.CONSTRAINT_NAME,
+				kcu.TABLE_NAME AS from_table,
+				kcu.COLUMN_NAME AS from_column,
+				kcu.REFERENCED_TABLE_NAME AS to_table,
+				kcu.REFERENCED_COLUMN_NAME AS to_column
+			FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
+			WHERE kcu.TABLE_SCHEMA = ?
+				AND kcu.REFERENCED_TABLE_NAME IS NOT NULL
+			ORDER BY kcu.TABLE_NAME, kcu.COLUMN_NAME`, dbName)
+		if err != nil {
+			writeError(w, 500, err.Error())
+			return
+		}
+		defer fkRows.Close()
+
+		type ERRelation struct {
+			Constraint string `json:"constraint"`
+			FromTable  string `json:"from_table"`
+			FromColumn string `json:"from_column"`
+			ToTable    string `json:"to_table"`
+			ToColumn   string `json:"to_column"`
+		}
+
+		var relations []ERRelation
+		for fkRows.Next() {
+			var rel ERRelation
+			fkRows.Scan(&rel.Constraint, &rel.FromTable, &rel.FromColumn, &rel.ToTable, &rel.ToColumn)
+			relations = append(relations, rel)
+		}
+
+		writeJSON(w, 200, map[string]interface{}{
+			"tables":    tables,
+			"relations": relations,
+		})
+	}
+}

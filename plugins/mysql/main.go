@@ -79,7 +79,7 @@ func respondError(msg string) {
 }
 
 // setupHTTP creates the HTTP mux with all API routes and static files.
-func setupHTTP(db *sql.DB, cfg PluginConfig) http.Handler {
+func setupHTTP(db *sql.DB, cfg PluginConfig, hub *CollabHub) http.Handler {
 	mux := http.NewServeMux()
 
 	// API routes
@@ -89,6 +89,10 @@ func setupHTTP(db *sql.DB, cfg PluginConfig) http.Handler {
 	mux.HandleFunc("/api/indexes", indexesHandler(db))
 	mux.HandleFunc("/api/query", queryHandler(db, cfg.ReadOnly))
 	mux.HandleFunc("/api/info", infoHandler(db, cfg))
+	mux.HandleFunc("/api/er", erHandler(db))
+
+	// WebSocket for ER collaboration
+	mux.HandleFunc("/ws/er", collabHandler(hub))
 
 	// Static files
 	staticSub, _ := fs.Sub(staticFS, "static")
@@ -139,9 +143,12 @@ func handleStart(cfg PluginConfig) {
 		Version: "0.1.0",
 	})
 
+	hub := newCollabHub()
+	go hub.run()
+
 	// Start HTTP server in background
 	go func() {
-		if err := http.Serve(listener, setupHTTP(db, cfg)); err != nil {
+		if err := http.Serve(listener, setupHTTP(db, cfg, hub)); err != nil {
 			log.Fatalf("HTTP server error: %v", err)
 		}
 	}()
@@ -196,8 +203,11 @@ func standaloneMode() {
 
 	log.Printf("MySQL Web Client listening on http://%s", addr)
 
+	hub := newCollabHub()
+	go hub.run()
+
 	go func() {
-		if err := http.Serve(listener, setupHTTP(db, cfg)); err != nil {
+		if err := http.Serve(listener, setupHTTP(db, cfg, hub)); err != nil {
 			log.Fatalf("HTTP server error: %v", err)
 		}
 	}()

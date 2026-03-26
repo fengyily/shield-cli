@@ -268,6 +268,32 @@ table.result-table td.td-actions:hover { outline: none; }
 
 .null-value { color: var(--text3); font-style: italic; }
 
+/* Cell detail viewer */
+.cell-viewer-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.35); z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+}
+.cell-viewer {
+  background: var(--bg); border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  width: 640px; max-width: 90vw; max-height: 80vh;
+  display: flex; flex-direction: column;
+}
+.cell-viewer-header {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-shrink: 0;
+}
+.cell-viewer-header .cv-title { font-weight: 600; font-size: 13px; color: var(--text2); }
+.cell-viewer-header .cv-actions { display: flex; gap: 6px; align-items: center; }
+.cell-viewer-body {
+  padding: 16px; overflow: auto; flex: 1;
+  font-family: 'SF Mono','Fira Code','JetBrains Mono','Menlo',monospace;
+  font-size: 13px; line-height: 1.6; white-space: pre-wrap;
+  word-break: break-all; color: var(--text); tab-size: 2;
+}
+
 /* Row actions */
 .row-actions { display: flex; gap: 3px; align-items: center; }
 .row-action-btn {
@@ -428,6 +454,57 @@ table.schema-table tbody tr:hover td { background: var(--accent-light); }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+.er-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--bg); z-index: 300;
+  display: flex; flex-direction: column;
+}
+.er-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  background: var(--bg); flex-shrink: 0;
+}
+.er-toolbar-left, .er-toolbar-right { display: flex; align-items: center; gap: 8px; }
+.er-db-select {
+  padding: 5px 10px; border: 1px solid var(--border); border-radius: 4px;
+  font-size: 13px; background: var(--bg); color: var(--text); outline: none;
+}
+.er-db-select:focus { border-color: var(--accent); }
+.er-info { font-size: 13px; color: var(--text2); }
+.er-collab-bar { display: flex; align-items: center; gap: 6px; margin: 0 4px; }
+.collab-avatar {
+  width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; color: white; font-size: 12px; font-weight: 600;
+  border: 2px solid var(--bg); box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+  cursor: default; user-select: none;
+}
+.collab-avatar + .collab-avatar { margin-left: -8px; }
+.collab-count { font-size: 11px; color: var(--text2); margin-left: 4px; white-space: nowrap; }
+.er-canvas {
+  flex: 1; overflow: hidden; position: relative; cursor: grab;
+  background: var(--bg2);
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.er-canvas:active { cursor: grabbing; }
+.er-canvas svg { position: absolute; top: 0; left: 0; }
+.er-ctx {
+  position: fixed; z-index: 500; min-width: 180px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  padding: 4px 0; font-size: 13px; user-select: none;
+}
+.er-ctx-item {
+  padding: 7px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  color: var(--text); white-space: nowrap;
+}
+.er-ctx-item:hover { background: var(--bg2); }
+.er-ctx-item.danger { color: #ef4444; }
+.er-ctx-item.danger:hover { background: #fef2f2; }
+.er-ctx-item.disabled { color: var(--text2); opacity: 0.5; pointer-events: none; }
+.er-ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
+.er-canvas [data-action]:hover { opacity: 1 !important; }
 </style>
 </head>
 <body>
@@ -473,6 +550,31 @@ table.schema-table tbody tr:hover td { background: var(--accent-light); }
       </div>
     </div>
   </div>
+</div>
+
+<div id="erOverlay" class="er-overlay" style="display:none;">
+  <div class="er-toolbar">
+    <div class="er-toolbar-left">
+      <select id="erDbSelect" class="er-db-select" onchange="loadER(); if(window._collabSwitchDB) window._collabSwitchDB(this.value);"></select>
+      <select id="erLayoutSelect" class="er-db-select" onchange="erSetLayout(this.value)">
+        <option value="grid">Grid</option>
+        <option value="horizontal">Horizontal</option>
+        <option value="vertical">Vertical</option>
+        <option value="center">Center</option>
+      </select>
+      <span class="er-info" id="erInfo"></span>
+    </div>
+    <div id="erCollabBar" class="er-collab-bar"></div>
+    <div class="er-toolbar-right">
+      <button class="btn btn-sm btn-secondary" onclick="erZoom(1.2)" title="Zoom In">&#43;</button>
+      <button class="btn btn-sm btn-secondary" onclick="erZoom(1/1.2)" title="Zoom Out">&#8722;</button>
+      <button class="btn btn-sm btn-secondary" onclick="erResetView()" title="Fit View">&#8634; Fit</button>
+      <button class="btn btn-sm btn-secondary" onclick="erClearLayout()" title="Clear saved layout and re-arrange">&#8635; Reset</button>
+      <button class="btn btn-sm btn-secondary" onclick="exportERSvg()" title="Export SVG">&#8615; SVG</button>
+      <button class="btn btn-sm btn-secondary" onclick="toggleER()">&#10005; Close</button>
+    </div>
+  </div>
+  <div class="er-canvas" id="erCanvas"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -562,9 +664,9 @@ function closeTab(id) {
 }
 
 function openOrFocusTab(title, icon, type, setupFn) {
-  // If a tab with same title+type exists, focus it
+  // If a tab with same title+type exists, focus it and re-run setup to refresh data
   const existing = tabs.find(t => t.title === title && t.type === type);
-  if (existing) { switchTab(existing.id); return existing; }
+  if (existing) { switchTab(existing.id); if (setupFn) setupFn(existing); return existing; }
   // Otherwise create and switch
   saveActiveTabState();
   const tab = createTab(title, icon, type);
@@ -607,6 +709,7 @@ async function init() {
       const info = data.data;
       document.getElementById('serverInfo').innerHTML =
         `<span class="host">${esc(info.host)}</span> &middot; ${esc(info.version)} &middot; ${esc(info.user)}`;
+      window._mysqlInfo = info;
       if (info.database) currentDB = info.database;
       readOnly = !!info.readonly;
       const badge = document.getElementById('readonlyBadge');
@@ -708,6 +811,7 @@ function renderTree() {
       <span class="node-label">${esc(db)}</span>
       ${tableNames.length ? `<span class="node-badge">${tableNames.length}</span>` : ''}
       <span class="node-actions">
+        <button class="node-action-btn" onclick="event.stopPropagation();openER('${escAttr(db)}')" title="ER Diagram">&#9701;</button>
         <button class="node-action-btn write-action" onclick="event.stopPropagation();showCreateTableModal('${escAttr(db)}')" title="新建表">+</button>
         <button class="node-action-btn danger write-action" onclick="event.stopPropagation();dropDatabase('${escAttr(db)}')" title="删除数据库">&#10005;</button>
       </span>
@@ -1670,7 +1774,7 @@ function renderResult() {
     <div class="result-toolbar-left">
       <span class="count">${result.count} rows</span>
       <span class="duration">${esc(result.duration)}</span>
-      <span style="color:var(--text3);font-size:11px">点击单元格复制</span>
+      <span style="color:var(--text3);font-size:11px">单击复制 · 双击查看</span>
     </div>
     <div class="result-toolbar-right">
       ${canEdit ? `<button class="btn btn-sm btn-primary write-action" onclick="addNewRow()" style="gap:3px"><span style="display:inline-flex;width:14px;height:14px">${ICON.plus}</span> 新增</button>` : ''}
@@ -1699,9 +1803,9 @@ function renderResult() {
       for (let ci = 0; ci < result.columns.length; ci++) {
         const val = row[result.columns[ci]];
         if (val == null) {
-          table += `<td onclick="copyCellFromRow(this,${ri},${ci})"><span class="null-value">NULL</span></td>`;
+          table += `<td onclick="copyCellFromRow(this,${ri},${ci})" ondblclick="viewCellDetail(${ri},${ci})"><span class="null-value">NULL</span></td>`;
         } else {
-          table += `<td onclick="copyCellFromRow(this,${ri},${ci})">${esc(String(val))}</td>`;
+          table += `<td onclick="copyCellFromRow(this,${ri},${ci})" ondblclick="viewCellDetail(${ri},${ci})">${esc(String(val))}</td>`;
         }
       }
       if (canEdit) {
@@ -1740,6 +1844,49 @@ function copyCellFromRow(td, rowIdx, colIdx) {
     setTimeout(() => td.classList.remove('cell-copied'), 300);
     showToast('已复制');
   });
+}
+
+function viewCellDetail(rowIdx, colIdx) {
+  const r = getLastResult();
+  if (!r || !window._displayRows) return;
+  const row = window._displayRows[rowIdx];
+  const colName = r.columns[colIdx];
+  const val = row[colName];
+  const text = val == null ? 'NULL' : String(val);
+
+  // Try to pretty-print JSON
+  let display = text;
+  let isJson = false;
+  if (val != null) {
+    try {
+      const parsed = JSON.parse(text);
+      display = JSON.stringify(parsed, null, 2);
+      isJson = true;
+    } catch (e) {}
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'cell-viewer-overlay';
+  overlay.id = 'cellViewer';
+  overlay.innerHTML = `
+    <div class="cell-viewer">
+      <div class="cell-viewer-header">
+        <span class="cv-title">${esc(colName)}${isJson ? ' <span style="color:var(--success);font-weight:400;font-size:11px">JSON</span>' : ''} <span style="color:var(--text3);font-weight:400;font-size:11px">${text.length.toLocaleString()} chars</span></span>
+        <div class="cv-actions">
+          <button class="btn btn-sm btn-secondary" onclick="navigator.clipboard.writeText(document.getElementById('cvContent').textContent).then(()=>showToast('已复制'))">复制</button>
+          <button class="btn btn-sm btn-secondary" onclick="closeCellViewer()">关闭</button>
+        </div>
+      </div>
+      <div class="cell-viewer-body" id="cvContent">${val == null ? '<span class="null-value">NULL</span>' : esc(display)}</div>
+    </div>
+  `;
+  overlay.onclick = (e) => { if (e.target === overlay) closeCellViewer(); };
+  document.body.appendChild(overlay);
+}
+
+function closeCellViewer() {
+  const v = document.getElementById('cellViewer');
+  if (v) v.remove();
 }
 
 function copyRow(rowIdx) {
@@ -2105,10 +2252,11 @@ document.getElementById('sqlInput').addEventListener('keydown', function(e) {
 
 // Close modal on Escape
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Escape') { closeCellViewer(); closeModal(); }
 });
 
 init();
 </script>
+<script src="er.js"></script>
 </body>
 </html>
