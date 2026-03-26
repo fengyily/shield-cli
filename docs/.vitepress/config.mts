@@ -122,6 +122,7 @@ export default defineConfig({
               items: [
                 { text: '插件系统', link: '/plugins/' },
                 { text: 'MySQL 插件', link: '/plugins/mysql' },
+                { text: 'PostgreSQL 插件', link: '/plugins/postgres' },
                 { text: '插件开发指南', link: '/plugins/development' },
               ],
             },
@@ -220,6 +221,7 @@ export default defineConfig({
               items: [
                 { text: 'Plugin System', link: '/en/plugins/' },
                 { text: 'MySQL Plugin', link: '/en/plugins/mysql' },
+                { text: 'PostgreSQL Plugin', link: '/en/plugins/postgres' },
                 { text: 'Plugin Development', link: '/en/plugins/development' },
               ],
             },
