@@ -885,9 +885,15 @@
         scheduleRender();
       }
 
-      // If table is selected → drag from anywhere on the table body
-      // Only start FK colDrag if clicking an unselected table's column area
-      if (selectedTables.has(tableHit)) {
+      // Column area → FK drag (always, regardless of selection)
+      if (colHit && !ro()) {
+        colDrag = { fromTable: colHit.table, fromCol: colHit.column, curX: pt.x, curY: pt.y };
+        canvas.style.cursor = 'crosshair';
+        return;
+      }
+
+      // Header area → table drag (moves all selected)
+      if (pt.y < tpos.y + HEADER_HEIGHT) {
         multiDragOffsets = {};
         selectedTables.forEach(name => {
           const p = tablePositions[name];
@@ -897,9 +903,6 @@
         });
         tableDrag = { name: tableHit, ox: pt.x - tpos.x, oy: pt.y - tpos.y };
         canvas.style.cursor = 'grabbing';
-      } else if (colHit && !ro()) {
-        colDrag = { fromTable: colHit.table, fromCol: colHit.column, curX: pt.x, curY: pt.y };
-        canvas.style.cursor = 'crosshair';
       }
       return;
     }
