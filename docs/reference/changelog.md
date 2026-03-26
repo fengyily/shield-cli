@@ -13,7 +13,7 @@ Shield CLI 所有版本的变更记录。
 
 ## v0.3.x <Badge type="tip" text="最新" />
 
-### v0.3.2 — PostgreSQL 插件 ER 图 {#v0.3.2}
+### v0.3.5 — PostgreSQL 插件 ER 图 {#v0.3.5}
 
 **发布日期：2026-03-26**
 
