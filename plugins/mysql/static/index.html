@@ -472,6 +472,9 @@ table.schema-table tbody tr:hover td { background: var(--accent-light); }
 }
 .er-db-select:focus { border-color: var(--accent); }
 .er-info { font-size: 13px; color: var(--text2); }
+.er-mode-btn { padding: 4px 7px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); cursor: pointer; font-size: 14px; line-height: 1; color: var(--text2); }
+.er-mode-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.er-mode-btn:hover:not(.active) { background: var(--bg2); }
 .er-collab-bar { display: flex; align-items: center; gap: 6px; margin: 0 4px; }
 .collab-avatar {
   width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center;
@@ -555,6 +558,8 @@ table.schema-table tbody tr:hover td { background: var(--accent-light); }
 <div id="erOverlay" class="er-overlay" style="display:none;">
   <div class="er-toolbar">
     <div class="er-toolbar-left">
+      <button class="er-mode-btn active" data-mode="select" onclick="erSetMode('select')" title="Select (V)">&#9099;</button>
+      <button class="er-mode-btn" data-mode="move" onclick="erSetMode('move')" title="Move (H / Space)">&#9995;</button>
       <select id="erDbSelect" class="er-db-select" onchange="loadER(); if(window._collabSwitchDB) window._collabSwitchDB(this.value);"></select>
       <select id="erLayoutSelect" class="er-db-select" onchange="erSetLayout(this.value)">
         <option value="grid">Grid</option>

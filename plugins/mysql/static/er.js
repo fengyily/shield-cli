@@ -32,6 +32,10 @@
   let dragStartX = 0, dragStartY = 0, dragViewX = 0, dragViewY = 0;
   let rafId = null;
 
+  // Tool mode: 'select' (pointer) or 'move' (hand/pan)
+  let erMode = 'select';
+  let spaceHeld = false; // Space key temporary move mode
+
   // Multi-select
   let selectedTables = new Set();  // set of table names
   let multiDragOffsets = {};       // { tableName: { dx, dy } } relative to drag anchor
@@ -78,6 +82,15 @@
       collabConnect();
       collabStartCleanup();
     });
+  };
+
+  function isMoving() { return erMode === 'move' || spaceHeld; }
+
+  window.erSetMode = function(mode) {
+    erMode = mode;
+    const canvas = document.getElementById('erCanvas');
+    canvas.style.cursor = isMoving() ? 'grab' : 'default';
+    document.querySelectorAll('.er-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   };
 
   window.loadER = async function() {
@@ -861,6 +874,20 @@
 
     e.preventDefault();
 
+    // Move mode (or Space held): pan from anywhere
+    if (isMoving()) {
+      panActive = true;
+      dragStartX = e.clientX; dragStartY = e.clientY;
+      dragViewX = viewX; dragViewY = viewY;
+      canvas.style.cursor = 'grabbing';
+      return;
+    }
+
+    // ── Select mode ──
+
+    // Skip selection logic when clicking on a relation line
+    if (e.target.closest('[data-rel-idx]')) return;
+
     const tableHit = hitTestTable(pt.x, pt.y);
     const colHit = hitTestColumn(pt.x, pt.y);
 
@@ -1084,14 +1111,35 @@
   });
 
   document.addEventListener('keydown', e => {
-    if (!erVisible || selectedRel === null) return;
-    if (typeof readOnly !== 'undefined' && readOnly) return;
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (!erVisible) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+    // Space held → temporary move mode
+    if (e.key === ' ' && !spaceHeld) {
       e.preventDefault();
-      const rels = (erData && erData.relations) || [];
-      const rel = rels[selectedRel];
-      if (rel) showFkDeleteDialog(rel);
+      spaceHeld = true;
+      canvas.style.cursor = 'grab';
+      return;
+    }
+    // V → select mode, H → move mode
+    if (e.key === 'v' || e.key === 'V') { erSetMode('select'); return; }
+    if (e.key === 'h' || e.key === 'H') { erSetMode('move'); return; }
+
+    // Delete/Backspace → delete selected relation
+    if (selectedRel !== null && !ro()) {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        const rels = (erData && erData.relations) || [];
+        const rel = rels[selectedRel];
+        if (rel) showFkDeleteDialog(rel);
+      }
+    }
+  });
+
+  document.addEventListener('keyup', e => {
+    if (e.key === ' ' && spaceHeld) {
+      spaceHeld = false;
+      if (!panActive) canvas.style.cursor = erMode === 'move' ? 'grab' : 'default';
     }
   });
 
