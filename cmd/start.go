@@ -99,7 +99,7 @@ func startForeground(port int) error {
 		fmt.Printf("  \033[90m  Use \"shield start\" (without port) to start the background service\033[0m\n\n")
 	}
 
-	srv, err := web.NewServer(port)
+	srv, err := web.NewServer(port, Version)
 	if err != nil {
 		return err
 	}

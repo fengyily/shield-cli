@@ -20,18 +20,20 @@ var staticFiles embed.FS
 // Server represents the web management server
 type Server struct {
 	port    int
+	version string
 	store   *config.AppStore
 	connMgr *ConnectionManager
 }
 
 // NewServer creates a new web server, pre-loading credentials at startup
-func NewServer(port int) (*Server, error) {
+func NewServer(port int, version string) (*Server, error) {
 	creds, err := config.GetOrCreateCredentials()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load credentials: %w", err)
 	}
 	return &Server{
 		port:    port,
+		version: version,
 		store:   config.NewAppStore(),
 		connMgr: NewConnectionManager(creds),
 	}, nil
@@ -54,6 +56,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/plugins", s.handlePlugins)
 	mux.HandleFunc("/api/plugins/", s.handlePluginAction)
 	mux.HandleFunc("/api/protocols", s.handleProtocols)
+	mux.HandleFunc("/api/version", s.handleVersion)
 
 	// Static files
 	staticFS, err := fs.Sub(staticFiles, "static")
@@ -85,6 +88,11 @@ func (s *Server) Start() error {
 // Shutdown cleanly stops all connections
 func (s *Server) Shutdown() {
 	s.connMgr.DisconnectAll()
+}
+
+func (s *Server) handleVersion(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"version": s.version})
 }
 
 // handleApps handles GET (list) and POST (create) for /api/apps

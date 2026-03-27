@@ -58,6 +58,8 @@ body {
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   transition: background 0.3s, color 0.3s;
 }
 
@@ -1778,7 +1780,7 @@ async function loadPluginList() {
       <div class="plugin-item">
         <div class="plugin-item-info">
           <div class="plugin-item-name">${p.name} ${p.installed ? '<span class="plugin-installed-badge">Installed</span>' : ''}</div>
-          <div class="plugin-item-meta">Protocols: ${p.protocols.join(', ')} &middot; Port: ${p.default_port}${p.version ? ' &middot; v' + p.version : ''}</div>
+          <div class="plugin-item-meta">Protocols: ${p.protocols.join(', ')} &middot; Port: ${p.default_port}${p.version ? ' &middot; ' + p.version : ''}</div>
         </div>
         ${p.installed
           ? `<button class="btn btn-sm btn-uninstall" onclick="uninstallPlugin('${p.name}')">Remove</button>`
@@ -1837,6 +1839,30 @@ async function installPluginFromWarning() {
 loadProtocols();
 loadApps();
 setInterval(loadApps, 5000);
+</script>
+
+<footer style="text-align:center;padding:32px 16px 20px;color:var(--text3);font-size:13px;line-height:1.8;border-top:1px solid var(--border);margin-top:auto;">
+  <div style="display:flex;justify-content:center;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:10px;">
+    <a href="https://docs.yishield.com" target="_blank" style="color:var(--text2);text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      帮助文档
+    </a>
+    <a href="https://github.com/fengyily/shield-cli" target="_blank" style="color:var(--text2);text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      GitHub
+    </a>
+    <span style="display:inline-flex;align-items:center;gap:5px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      微信: fengyily
+    </span>
+  </div>
+  <div style="margin-bottom:6px;">如果觉得好用，去 GitHub 给个 Star 支持一下吧 ~</div>
+  <div id="footer-version" style="color:var(--text3);font-size:12px;"></div>
+</footer>
+<script>
+fetch('/api/version').then(r=>r.json()).then(d=>{
+  document.getElementById('footer-version').textContent='Shield CLI '+d.version;
+}).catch(()=>{});
 </script>
 </body>
 </html>
