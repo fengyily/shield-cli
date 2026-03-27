@@ -42,7 +42,7 @@ docker run -d -e DB_HOST=host.docker.internal -e DB_USER=postgres -e DB_PASS=myp
   -p 8080:8080 fengyily/shield-postgres
 ```
 
-打开 http://localhost:8080 ，浏览器里直接查数据。
+打开 `http://localhost:8080` ，浏览器里直接查数据。
 
 不需要配置文件，不需要 PHP 环境，不需要注册服务器。环境变量传入数据库地址和凭证，启动即连接。
 
@@ -113,7 +113,7 @@ services:
       - mysql
 ```
 
-`docker compose up -d`，http://localhost:8080 查数据。开发环境重建也是秒级。
+`docker compose up -d`，`http://localhost:8080` 查数据。开发环境重建也是秒级。
 
 ### 临时用完就删
 

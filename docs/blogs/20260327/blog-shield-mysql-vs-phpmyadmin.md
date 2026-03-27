@@ -240,7 +240,7 @@ docker run -d -e DB_HOST=host.docker.internal -e DB_USER=root -e DB_PASS=mypass 
 shield plugin add mysql
 ```
 
-打开 http://localhost:8080 即可使用。
+打开 `http://localhost:8080` 即可使用。
 
 - GitHub：[github.com/fengyily/shield-cli](https://github.com/fengyily/shield-cli)
 - 文档：[docs.yishield.com](https://docs.yishield.com)
