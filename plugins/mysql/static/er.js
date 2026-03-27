@@ -51,6 +51,11 @@
   let collabReconnectTimer = null;
   let collabCursorCleanTimer = null;
 
+  // ── Follow mode ──
+  let followTarget = null;       // user_id being followed, or null
+  let followAnimFrame = null;    // animation frame for smooth viewport lerp
+  let lastViewportSend = 0;
+
   // ════════════════════════════════════════════
   //  Public API
   // ════════════════════════════════════════════
@@ -122,15 +127,18 @@
   };
 
   window.erClearLayout = function() {
+    stopFollow();
     clearSavedPositions();
     document.getElementById('erLayoutSelect').value = currentLayout;
     computeAllWidths();
     runLayout();
     fitToView();
     renderSvg();
+    collabSendViewport();
   };
 
   window.erZoom = function(factor) {
+    stopFollow();
     const canvas = document.getElementById('erCanvas');
     const cx = canvas.clientWidth / 2, cy = canvas.clientHeight / 2;
     const ns = clamp(scale * factor);
@@ -138,10 +146,12 @@
     viewY = cy - (cy - viewY) * (ns / scale);
     scale = ns;
     applySvgTransform();
+    collabSendViewport();
   };
 
   window.erResetView = function() {
-    if (erData) { fitToView(); applySvgTransform(); }
+    stopFollow();
+    if (erData) { fitToView(); applySvgTransform(); collabSendViewport(); }
   };
 
   window.exportERSvg = function() {
@@ -978,13 +988,16 @@
       scheduleRender();
     } else if (panActive) {
       dragMoved = true;
+      stopFollow();
       viewX = dragViewX + (e.clientX - dragStartX);
       viewY = dragViewY + (e.clientY - dragStartY);
       applySvgTransform();
+      collabSendViewport();
     } else if (rightPanPending) {
       const dx = e.clientX - rightPanPending.sx, dy = e.clientY - rightPanPending.sy;
       if (!rightPanned && dx * dx + dy * dy >= 16) {
         rightPanned = true;
+        stopFollow();
         dragStartX = rightPanPending.sx; dragStartY = rightPanPending.sy;
         canvas.style.cursor = 'grabbing';
       }
@@ -992,6 +1005,7 @@
         viewX = dragViewX + (e.clientX - dragStartX);
         viewY = dragViewY + (e.clientY - dragStartY);
         applySvgTransform();
+        collabSendViewport();
       }
     }
   });
@@ -1135,6 +1149,7 @@
 
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
+    stopFollow();
     if (e.ctrlKey || e.metaKey) {
       const r = canvas.getBoundingClientRect();
       const mx = e.clientX - r.left, my = e.clientY - r.top;
@@ -1148,6 +1163,7 @@
       viewY -= e.deltaY;
     }
     applySvgTransform();
+    collabSendViewport();
     debounceSave();
   }, { passive: false });
 
@@ -2146,6 +2162,11 @@
       case 'presence':
         if (msg.data) {
           collabUsers = msg.data;
+          // Stop following if target left
+          if (followTarget && !collabUsers.some(u => u.user_id === followTarget)) {
+            followTarget = null;
+            if (followAnimFrame) { cancelAnimationFrame(followAnimFrame); followAnimFrame = null; }
+          }
           collabRenderPresence();
         }
         break;
@@ -2181,6 +2202,15 @@
               }
             }
             scheduleRender();
+          }
+        }
+        break;
+
+      case 'viewport':
+        if (msg.user_id && msg.user_id !== (collabMe && collabMe.user_id)) {
+          const d = msg.data ? JSON.parse(msg.data) : null;
+          if (d && followTarget === msg.user_id) {
+            animateViewportTo(d.viewX, d.viewY, d.scale);
           }
         }
         break;
@@ -2234,7 +2264,12 @@
         + escXml(collabMe.name.charAt(0)) + '</div>';
     }
     others.forEach(u => {
-      html += '<div class="collab-avatar" style="background:' + u.color + '" title="' + escXml(u.name) + '">'
+      const isFollowing = followTarget === u.user_id;
+      const cls = 'collab-avatar collab-avatar-other' + (isFollowing ? ' collab-following' : '');
+      const ring = isFollowing ? 'box-shadow:0 0 0 2px ' + u.color + ',0 0 0 4px var(--bg);' : '';
+      const tip = isFollowing ? 'Following ' + escXml(u.name) + ' (click to stop)' : 'Click to follow ' + escXml(u.name);
+      html += '<div class="' + cls + '" style="background:' + u.color + ';' + ring + '" '
+        + 'title="' + tip + '" data-follow-uid="' + escXml(u.user_id) + '">'
         + escXml(u.name.charAt(0)) + '</div>';
     });
     const total = collabUsers.length;
@@ -2242,6 +2277,11 @@
       html += '<span class="collab-count">' + total + ' online</span>';
     }
     bar.innerHTML = html;
+
+    // Bind click handlers for follow
+    bar.querySelectorAll('[data-follow-uid]').forEach(el => {
+      el.addEventListener('click', () => { startFollow(el.getAttribute('data-follow-uid')); });
+    });
   }
 
   function renderCollabOverlays() {
@@ -2277,6 +2317,53 @@
     }
 
     return s;
+  }
+
+  // ── Follow mode ──
+
+  function collabSendViewport() {
+    const now = Date.now();
+    if (now - lastViewportSend < 50) return;
+    lastViewportSend = now;
+    collabSend({ type: 'viewport', data: JSON.stringify({ viewX: viewX, viewY: viewY, scale: scale }) });
+  }
+
+  function animateViewportTo(targetVX, targetVY, targetScale) {
+    if (followAnimFrame) cancelAnimationFrame(followAnimFrame);
+    const startVX = viewX, startVY = viewY, startScale = scale;
+    const startTime = performance.now();
+    const duration = 120; // ms — short for responsive feel
+
+    function step(now) {
+      const t = Math.min((now - startTime) / duration, 1);
+      const ease = t * (2 - t); // ease-out quad
+      viewX = startVX + (targetVX - startVX) * ease;
+      viewY = startVY + (targetVY - startVY) * ease;
+      scale = startScale + (targetScale - startScale) * ease;
+      applySvgTransform();
+      if (t < 1) {
+        followAnimFrame = requestAnimationFrame(step);
+      } else {
+        followAnimFrame = null;
+      }
+    }
+    followAnimFrame = requestAnimationFrame(step);
+  }
+
+  function startFollow(userId) {
+    if (followTarget === userId) {
+      stopFollow();
+      return;
+    }
+    followTarget = userId;
+    collabRenderPresence();
+  }
+
+  function stopFollow() {
+    if (!followTarget) return;
+    followTarget = null;
+    if (followAnimFrame) { cancelAnimationFrame(followAnimFrame); followAnimFrame = null; }
+    collabRenderPresence();
   }
 
   function collabStartCleanup() {

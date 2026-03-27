@@ -260,7 +260,7 @@ func (c *Client) readPump() {
 		msg.DB = c.db
 
 		switch msg.Type {
-		case "cursor", "drag":
+		case "cursor", "drag", "viewport":
 			// Forward to other clients in the same database
 			stamped, _ := json.Marshal(msg)
 			c.hub.broadcastToDB(c.db, c, stamped)

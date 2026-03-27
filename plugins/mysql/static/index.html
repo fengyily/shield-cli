@@ -480,6 +480,13 @@ table.schema-table tbody tr:hover td { background: var(--accent-light); }
   cursor: default; user-select: none;
 }
 .collab-avatar + .collab-avatar { margin-left: -8px; }
+.collab-avatar-other { cursor: pointer; transition: transform 0.15s; }
+.collab-avatar-other:hover { transform: scale(1.15); z-index: 1; }
+.collab-following { animation: collab-follow-pulse 2s ease-in-out infinite; }
+@keyframes collab-follow-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px var(--bg); }
+  50% { box-shadow: 0 0 0 3px var(--accent), 0 0 6px 2px var(--accent); }
+}
 .collab-count { font-size: 11px; color: var(--text2); margin-left: 4px; white-space: nowrap; }
 .er-canvas {
   flex: 1; overflow: hidden; position: relative; cursor: default;
