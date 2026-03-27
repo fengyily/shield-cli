@@ -51,6 +51,7 @@
 <p align="center">
   <img src="docs/demo/demo-postgres.gif" alt="Shield CLI SSH Demo" width="600" height="400">
 </p>
+
 ---
 
 ## Why Shield CLI?
