@@ -16,12 +16,17 @@ var validProtocols = []string{"ssh", "http", "https", "rdp", "vnc", "telnet", "t
 // defaultPorts maps each protocol to its standard port.
 // tcp/udp have no default port — the user must specify one.
 var defaultPorts = map[string]int{
-	"ssh":    22,
-	"http":   80,
-	"https":  443,
-	"rdp":    3389,
-	"vnc":    5900,
-	"telnet": 23,
+	"ssh":       22,
+	"http":      80,
+	"https":     443,
+	"rdp":       3389,
+	"vnc":       5900,
+	"telnet":    23,
+	"mysql":     3306,
+	"postgres":  5432,
+	"redis":     6379,
+	"mongodb":   27017,
+	"sqlserver": 1433,
 }
 
 var (

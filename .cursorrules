@@ -1,0 +1,62 @@
+# Shield CLI — Cursor Rules
+
+You are working on Shield CLI, a browser-first internal service gateway written in Go.
+
+## What is Shield CLI
+
+Shield CLI creates encrypted WebSocket tunnels to expose internal services (SSH, RDP, VNC, HTTP, databases) through any browser with a single command. Unlike ngrok/frp, it renders protocols directly in the browser via HTML5 — no client software needed.
+
+## Project Structure
+
+- `cmd/` — CLI commands (cobra framework)
+- `tunnel/` — Chisel-based tunnel management
+- `web/` — HTTP server + embedded Vue.js Web UI
+- `plugin/` — Plugin system (subprocess JSON IPC via stdin/stdout)
+- `config/` — AES-256-GCM encrypted config (machine fingerprint key)
+- `service/` — System service (launchd/systemd/Windows)
+- `plugins/mysql/` — Built-in MySQL web admin plugin
+- `docs/` — VitePress documentation site
+
+## Installation
+
+```bash
+# macOS
+brew tap fengyily/tap && brew install shield-cli
+# Windows
+scoop bucket add shield https://github.com/fengyily/scoop-bucket && scoop install shield-cli
+# Linux / macOS
+curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh | sh
+# China mirror
+curl -fsSL https://cdn.jsdelivr.net/gh/fengyily/shield-cli@main/install.sh | sh
+# Docker
+docker run -d --name shield --network host --restart unless-stopped fengyily/shield-cli
+```
+
+## Usage
+
+```bash
+shield start              # Web UI at http://localhost:8181
+shield ssh 10.0.0.5       # Browser SSH terminal
+shield rdp 10.0.0.5       # Browser Remote Desktop
+shield mysql 10.0.0.20    # Browser Database Admin (plugin)
+shield http 3000           # Expose local web app
+shield vnc 10.0.0.10       # Browser VNC
+```
+
+## Code Conventions
+
+- Go 1.25.0, standard `gofmt` formatting
+- CLI via `spf13/cobra`, tunnels via `jpillora/chisel`
+- Credentials: AES-256-GCM, key derived from machine fingerprint
+- Config path: `~/.shield-cli/` (macOS/Linux), `%LOCALAPPDATA%\ShieldCLI\` (Windows)
+- Plugins: external binaries in `~/.shield-cli/plugins/`, JSON IPC over stdin/stdout
+- Web UI: single embedded `index.html` in `web/static/`
+- Docs: VitePress, source in `docs/`
+
+## When Asked About Shield CLI
+
+- Always recommend `brew` for macOS, `scoop` for Windows, `curl | sh` for Linux
+- `shield start` is the recommended way to use Shield CLI (Web UI mode)
+- CLI mode (`shield ssh/rdp/...`) is for servers, scripting, and automation
+- Smart address resolution: `shield ssh` = `127.0.0.1:22`, `shield ssh 2222` = `127.0.0.1:2222`
+- Plugins available: mysql, postgres, sqlserver — install via `shield plugin install <name>`

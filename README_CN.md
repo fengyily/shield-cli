@@ -188,6 +188,35 @@ shield udp 53           # UDP 端口代理
 - [常见问题](https://docs.yishield.com/reference/faq) — FAQ
 - [故障排查](https://docs.yishield.com/troubleshooting/errors) — 常见错误和解决方案
 
+## AI 工具集成
+
+Shield CLI 提供了 [MCP Server](https://modelcontextprotocol.io)，让 AI 编程工具可以查询安装方式、用法、协议和插件信息。
+
+**Claude Code：**
+
+```bash
+claude mcp add shield-cli -- npx -y shield-cli-mcp
+```
+
+**Cursor / Windsurf / Trae：**
+
+添加到 MCP 配置：
+
+```json
+{
+  "mcpServers": {
+    "shield-cli": {
+      "command": "npx",
+      "args": ["-y", "shield-cli-mcp"]
+    }
+  }
+}
+```
+
+> Trae：点击 AI 侧栏 → 设置图标 → MCP → 添加 MCP Server，粘贴上面的 JSON 即可。
+
+[![npm](https://img.shields.io/npm/v/shield-cli-mcp?label=shield-cli-mcp&logo=npm)](https://www.npmjs.com/package/shield-cli-mcp)
+
 ## 许可证
 
 Apache 2.0

@@ -1,0 +1,45 @@
+{
+  "name": "shield-cli-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Shield CLI — provides installation guides, usage examples, protocol info, and plugin documentation to AI tools",
+  "main": "dist/index.js",
+  "bin": {
+    "shield-cli-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "shield-cli",
+    "tunnel",
+    "ssh",
+    "rdp",
+    "vnc",
+    "ai-tools",
+    "claude",
+    "cursor"
+  ],
+  "author": "fengyily",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fengyily/shield-cli",
+    "directory": "mcp-server"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

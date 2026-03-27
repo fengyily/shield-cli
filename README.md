@@ -191,6 +191,35 @@ Full documentation is available at **[docs.yishield.com](https://docs.yishield.c
 - [FAQ](https://docs.yishield.com/en/reference/faq) — frequently asked questions
 - [Troubleshooting](https://docs.yishield.com/en/troubleshooting/errors) — common errors and fixes
 
+## AI Tools Integration
+
+Shield CLI provides an [MCP Server](https://modelcontextprotocol.io) so that AI coding tools can look up installation, usage, protocol, and plugin information.
+
+**Claude Code:**
+
+```bash
+claude mcp add shield-cli -- npx -y shield-cli-mcp
+```
+
+**Cursor / Windsurf / Trae:**
+
+Add to MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "shield-cli": {
+      "command": "npx",
+      "args": ["-y", "shield-cli-mcp"]
+    }
+  }
+}
+```
+
+> Trae: Click the AI sidebar → Settings icon → MCP → Add MCP Server, then paste the JSON above.
+
+[![npm](https://img.shields.io/npm/v/shield-cli-mcp?label=shield-cli-mcp&logo=npm)](https://www.npmjs.com/package/shield-cli-mcp)
+
 ## License
 
 Apache 2.0
