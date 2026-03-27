@@ -37,15 +37,20 @@
 ### RDP — Browser Remote Desktop
 
 <p align="center">
-  <img src="docs/demo/demo-rdp.gif" alt="Shield CLI RDP Demo" width="960">
+  <img src="docs/demo/demo-rdp.gif" alt="Shield CLI RDP Demo" width="600" height="400">
 </p>
 
 ### SSH — Browser Terminal
 
 <p align="center">
-  <img src="docs/demo/demo-ssh.gif" alt="Shield CLI SSH Demo" width="960">
+  <img src="docs/demo/demo-ssh.gif" alt="Shield CLI SSH Demo" width="600" height="400">
 </p>
 
+### Postgres — Browser Terminal
+
+<p align="center">
+  <img src="docs/demo/demo-postgres.gif" alt="Shield CLI SSH Demo" width="600" height="400">
+</p>
 ---
 
 ## Why Shield CLI?
@@ -119,8 +124,6 @@ shield start
 Open `http://localhost:8181`, add your services, and connect with one click. On macOS and Windows, a system tray icon provides quick access to the Dashboard.
 
 ![Web UI Dashboard](docs/images/shieldcli-webui-001.jpg)
-
-![RDP via Web UI](docs/images/shieldcli-rdp-web-001.jpg)
 
 ### System Service (Auto-Start on Boot)
 
