@@ -32,9 +32,9 @@
   let dragStartX = 0, dragStartY = 0, dragViewX = 0, dragViewY = 0;
   let rafId = null;
 
-  // Tool mode: 'select' (pointer) or 'move' (hand/pan)
-  let erMode = 'select';
-  let spaceHeld = false; // Space key temporary move mode
+  // Right-click pan
+  let rightPanPending = null; // { sx, sy } screen coords at mousedown
+  let rightPanned = false;    // true if right-drag exceeded threshold
 
   // Multi-select
   let selectedTables = new Set();  // set of table names
@@ -82,15 +82,6 @@
       collabConnect();
       collabStartCleanup();
     });
-  };
-
-  function isMoving() { return erMode === 'move' || spaceHeld; }
-
-  window.erSetMode = function(mode) {
-    erMode = mode;
-    const canvas = document.getElementById('erCanvas');
-    canvas.style.cursor = isMoving() ? 'grab' : 'default';
-    document.querySelectorAll('.er-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
   };
 
   window.loadER = async function() {
@@ -846,13 +837,20 @@
   let pendingIcon = null;
 
   canvas.addEventListener('mousedown', e => {
-    // Middle mouse button → pan
+    // Middle mouse button or right mouse button → pan (right uses threshold)
     if (e.button === 1) {
       e.preventDefault();
       panActive = true;
       dragStartX = e.clientX; dragStartY = e.clientY;
       dragViewX = viewX; dragViewY = viewY;
       canvas.style.cursor = 'grabbing';
+      return;
+    }
+    if (e.button === 2) {
+      rightPanPending = { sx: e.clientX, sy: e.clientY };
+      rightPanned = false;
+      dragViewX = viewX; dragViewY = viewY;
+      canvas.style.cursor = 'grab';
       return;
     }
     if (e.button !== 0) return;
@@ -873,17 +871,6 @@
     }
 
     e.preventDefault();
-
-    // Move mode (or Space held): pan from anywhere
-    if (isMoving()) {
-      panActive = true;
-      dragStartX = e.clientX; dragStartY = e.clientY;
-      dragViewX = viewX; dragViewY = viewY;
-      canvas.style.cursor = 'grabbing';
-      return;
-    }
-
-    // ── Select mode ──
 
     // Skip selection logic when clicking on a relation line
     if (e.target.closest('[data-rel-idx]')) return;
@@ -994,6 +981,18 @@
       viewX = dragViewX + (e.clientX - dragStartX);
       viewY = dragViewY + (e.clientY - dragStartY);
       applySvgTransform();
+    } else if (rightPanPending) {
+      const dx = e.clientX - rightPanPending.sx, dy = e.clientY - rightPanPending.sy;
+      if (!rightPanned && dx * dx + dy * dy >= 16) {
+        rightPanned = true;
+        dragStartX = rightPanPending.sx; dragStartY = rightPanPending.sy;
+        canvas.style.cursor = 'grabbing';
+      }
+      if (rightPanned) {
+        viewX = dragViewX + (e.clientX - dragStartX);
+        viewY = dragViewY + (e.clientY - dragStartY);
+        applySvgTransform();
+      }
     }
   });
 
@@ -1062,7 +1061,7 @@
         }
       }
       colDrag = null;
-      canvas.style.cursor = 'grab';
+      canvas.style.cursor = 'default';
       scheduleRender();
     } else if (tableDrag) {
       if (dragMoved) {
@@ -1081,16 +1080,25 @@
       }
       multiDragOffsets = {};
       tableDrag = null;
-      canvas.style.cursor = 'grab';
+      canvas.style.cursor = 'default';
     } else if (marquee || marqueePending) {
       marquee = null;
       marqueePending = null;
-      canvas.style.cursor = 'grab';
+      canvas.style.cursor = 'default';
       scheduleRender();
     } else if (panActive) {
       savePositions();
       panActive = false;
-      canvas.style.cursor = 'grab';
+      canvas.style.cursor = 'default';
+    } else if (rightPanPending) {
+      const wasDrag = rightPanned;
+      const sx = rightPanPending.sx, sy = rightPanPending.sy;
+      if (wasDrag) savePositions();
+      rightPanPending = null;
+      rightPanned = false;
+      canvas.style.cursor = 'default';
+      // Right-click without drag → show context menu
+      if (!wasDrag) showErContextMenu(sx, sy);
     }
   });
 
@@ -1114,17 +1122,6 @@
     if (!erVisible) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
 
-    // Space held → temporary move mode
-    if (e.key === ' ' && !spaceHeld) {
-      e.preventDefault();
-      spaceHeld = true;
-      canvas.style.cursor = 'grab';
-      return;
-    }
-    // V → select mode, H → move mode
-    if (e.key === 'v' || e.key === 'V') { erSetMode('select'); return; }
-    if (e.key === 'h' || e.key === 'H') { erSetMode('move'); return; }
-
     // Delete/Backspace → delete selected relation
     if (selectedRel !== null && !ro()) {
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -1133,13 +1130,6 @@
         const rel = rels[selectedRel];
         if (rel) showFkDeleteDialog(rel);
       }
-    }
-  });
-
-  document.addEventListener('keyup', e => {
-    if (e.key === ' ' && spaceHeld) {
-      spaceHeld = false;
-      if (!panActive) canvas.style.cursor = erMode === 'move' ? 'grab' : 'default';
     }
   });
 
@@ -1168,7 +1158,7 @@
   }
 
   canvas.addEventListener('mousemove', function hoverCursor(e) {
-    if (tableDrag || marquee || colDrag) return;
+    if (tableDrag || marquee || colDrag || rightPanPending) return;
     const pt = screenToSvg(e.clientX, e.clientY);
     collabSendCursor(pt.x, pt.y);
     const col = hitTestColumn(pt.x, pt.y);
@@ -1181,7 +1171,7 @@
     } else {
       hoveredCol = null;
       if (hitTestTable(pt.x, pt.y)) canvas.style.cursor = 'move';
-      else canvas.style.cursor = 'grab';
+      else canvas.style.cursor = 'default';
     }
 
     if (!ro()) {
@@ -1470,14 +1460,18 @@
   document.addEventListener('mousedown', e => { if (ctxMenu && !ctxMenu.contains(e.target)) hideCtxMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') hideCtxMenu(); });
 
+  // Always suppress browser context menu on ER canvas; our custom menu is triggered from mouseup
   canvas.addEventListener('contextmenu', e => {
     if (!erVisible || !erData) return;
     e.preventDefault();
-    const pt = screenToSvg(e.clientX, e.clientY);
+  });
+
+  function showErContextMenu(clientX, clientY) {
+    const pt = screenToSvg(clientX, clientY);
     const isRo = typeof readOnly !== 'undefined' && readOnly;
 
     if (isRo) {
-      showCtxMenu(e.clientX, e.clientY, [{ label: 'Read-only mode', disabled: true, icon: '&#128274;' }]);
+      showCtxMenu(clientX, clientY, [{ label: 'Read-only mode', disabled: true, icon: '&#128274;' }]);
       return;
     }
 
@@ -1487,7 +1481,7 @@
     if (colHit && tableHit) {
       const tbl = (erData.tables || []).find(t => t.name === colHit.table);
       const col = tbl && tbl.columns[colHit.idx];
-      showCtxMenu(e.clientX, e.clientY, [
+      showCtxMenu(clientX, clientY, [
         { label: 'Edit Column...', icon: '&#9998;', action: () => showEditColumnDialog(colHit.table, col) },
         { label: 'Delete Column', icon: '&#128465;', danger: true, action: () => showDeleteColumnDialog(colHit.table, col) },
         '---',
@@ -1497,18 +1491,18 @@
         { label: 'Delete Table', icon: '&#128465;', danger: true, action: () => showDeleteTableDialog(colHit.table) },
       ]);
     } else if (tableHit) {
-      showCtxMenu(e.clientX, e.clientY, [
+      showCtxMenu(clientX, clientY, [
         { label: 'Rename Table...', icon: '&#9998;', action: () => showRenameTableDialog(tableHit) },
         { label: 'Add Column...', icon: '&#10010;', action: () => showAddColumnDialog(tableHit) },
         '---',
         { label: 'Delete Table', icon: '&#128465;', danger: true, action: () => showDeleteTableDialog(tableHit) },
       ]);
     } else {
-      showCtxMenu(e.clientX, e.clientY, [
+      showCtxMenu(clientX, clientY, [
         { label: 'Create Table...', icon: '&#10010;', action: () => showCreateTableDialog(pt) },
       ]);
     }
-  });
+  }
 
   // ══════════════════════════════════════════════
   //  Table Structure Editor
