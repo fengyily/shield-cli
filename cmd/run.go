@@ -269,6 +269,11 @@ func runShield(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid target address: %w", err)
 	}
 
+	if len(siteName) > 0 && !config.IsValidSiteName(siteName) {
+		restoreStderr()
+		return fmt.Errorf("invalid site name: %q", siteName)
+	}
+
 	// Print banner while API call happens
 	PrintBanner()
 	fmt.Fprintf(os.Stdout, "  \033[90mConnecting...\033[0m")
@@ -343,8 +348,8 @@ func runShield(cmd *cobra.Command, args []string) error {
 		ExternalIP:    resp.Data.Connector.ExternalIP,
 		APIPort:       resp.Data.Connector.APIPort,
 		TunnelPort:    tunnelPort,
-		ConnUsername:   resp.Data.Connector.Username,
-		ConnPassword:   resp.Data.Connector.Password,
+		ConnUsername:  resp.Data.Connector.Username,
+		ConnPassword:  resp.Data.Connector.Password,
 	}
 
 	// Reuse saved local port or find a new one

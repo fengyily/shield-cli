@@ -153,6 +153,12 @@ func (s *Server) handleApps(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
+		if app.SiteName != "" && !config.IsValidSiteName(app.SiteName) {
+			writeJSON(w, http.StatusBadRequest, map[string]interface{}{
+				"code": 400, "message": "site_name must contain only lowercase letters and digits, start with a letter, be 3-63 characters long, and must not contain hyphens",
+			})
+			return
+		}
 		if app.IP == "" {
 			app.IP = "127.0.0.1"
 		}
@@ -205,6 +211,12 @@ func (s *Server) handleAppByID(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewDecoder(r.Body).Decode(&app); err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]interface{}{
 				"code": 400, "message": "Invalid request body",
+			})
+			return
+		}
+		if app.SiteName != "" && !config.IsValidSiteName(app.SiteName) {
+			writeJSON(w, http.StatusBadRequest, map[string]interface{}{
+				"code": 400, "message": "site_name must contain only lowercase letters and digits, start with a letter, be 3-63 characters long, and must not contain hyphens",
 			})
 			return
 		}

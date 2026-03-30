@@ -6,37 +6,46 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
+	"strings"
 	"time"
 )
+
+var siteNameRegexp = regexp.MustCompile(`^[a-z][a-z0-9]{2,62}$`)
+
+// IsValidSiteName checks that a site name contains only lowercase letters and digits,
+// starts with a letter, is 3-63 characters long, and contains no hyphens.
+func IsValidSiteName(name string) bool {
+	return siteNameRegexp.MatchString(name)
+}
 
 const maxApps = 10
 
 // AppConfig represents a saved application configuration
 type AppConfig struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Protocol    string    `json:"protocol"`
-	IP          string    `json:"ip"`
-	Port        int       `json:"port"`
-	Server      string    `json:"server"`
-	TunnelPort  int       `json:"tunnel_port"`
-	Visable     string    `json:"visable"`
-	Invisible   bool      `json:"invisible"`
-	Username    string    `json:"username,omitempty"`
-	AuthPass    string    `json:"auth_pass,omitempty"`
-	PrivateKey  string    `json:"private_key,omitempty"`
-	Passphrase  string    `json:"passphrase,omitempty"`
-	EnableSftp  bool      `json:"enable_sftp,omitempty"`
-	DisplayName string    `json:"display_name,omitempty"`
-	SiteName    string    `json:"site_name,omitempty"`
-	DBUser      string    `json:"db_user,omitempty"`
-	DBPass      string    `json:"db_pass,omitempty"`
-	DBName      string    `json:"db_name,omitempty"`
-	DBReadOnly  bool      `json:"db_readonly"`
+	ID              string     `json:"id"`
+	Name            string     `json:"name"`
+	Protocol        string     `json:"protocol"`
+	IP              string     `json:"ip"`
+	Port            int        `json:"port"`
+	Server          string     `json:"server"`
+	TunnelPort      int        `json:"tunnel_port"`
+	Visable         string     `json:"visable"`
+	Invisible       bool       `json:"invisible"`
+	Username        string     `json:"username,omitempty"`
+	AuthPass        string     `json:"auth_pass,omitempty"`
+	PrivateKey      string     `json:"private_key,omitempty"`
+	Passphrase      string     `json:"passphrase,omitempty"`
+	EnableSftp      bool       `json:"enable_sftp,omitempty"`
+	DisplayName     string     `json:"display_name,omitempty"`
+	SiteName        string     `json:"site_name,omitempty"`
+	DBUser          string     `json:"db_user,omitempty"`
+	DBPass          string     `json:"db_pass,omitempty"`
+	DBName          string     `json:"db_name,omitempty"`
+	DBReadOnly      bool       `json:"db_readonly"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
 	LastConnectedAt *time.Time `json:"last_connected_at,omitempty"`
@@ -108,6 +117,9 @@ func (s *AppStore) Add(app AppConfig) (*AppConfig, error) {
 	}
 
 	app.ID = generateID()
+	if len(app.SiteName) == 0 {
+		app.SiteName = app.ID
+	}
 	app.CreatedAt = time.Now()
 	app.UpdatedAt = time.Now()
 
