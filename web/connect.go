@@ -45,6 +45,7 @@ type ConnectResult struct {
 	SiteURL      string `json:"site_url,omitempty"`
 	LocalURL     string `json:"local_url,omitempty"` // local plugin web UI URL (e.g. http://127.0.0.1:port)
 	AuthURL      string `json:"auth_url,omitempty"`
+	ConnectHost  string `json:"connect_host,omitempty"` // TCP/UDP: gateway host:port for client connections
 	Error        string `json:"error,omitempty"`
 	AppID        string `json:"app_id,omitempty"`
 	ResourcePort int    `json:"resource_port,omitempty"` // remote resource port for app tunnel
@@ -526,7 +527,11 @@ func (cm *ConnectionManager) doConnect(appID string, params ConnectParams, conn 
 	resource := resp.Data.App.Resource
 	rport := fmt.Sprintf("%d", resource.Port)
 	slog.Info("Creating app tunnel", "remote_port", rport, "target", fmt.Sprintf("%s:%d", params.IP, params.Port))
-	if err := cm.mainMgr.CreateDynamicTunnel(rport, params.IP, fmt.Sprintf("%d", params.Port)); err != nil {
+	lport := fmt.Sprintf("%d", params.Port)
+	if origProtocol == "udp" {
+		lport += "/udp"
+	}
+	if err := cm.mainMgr.CreateDynamicTunnel(rport, params.IP, lport); err != nil {
 		slog.Error("Failed to create app tunnel", "appID", appID, "error", err)
 		cm.setError(appID, fmt.Sprintf("Failed to create app tunnel: %v", err))
 		return
@@ -554,6 +559,12 @@ func (cm *ConnectionManager) doConnect(appID string, params ConnectParams, conn 
 		}
 	}
 
+	// Build connect host for TCP/UDP (gateway address for client connections)
+	var connectHost string
+	if origProtocol == "tcp" || origProtocol == "udp" {
+		connectHost = fmt.Sprintf("%s:%d", resp.Data.Connector.ExternalIP, resource.Port)
+	}
+
 	// Update status — only now is the tunnel truly ready
 	cm.mu.Lock()
 	if c, ok := cm.connections[appID]; ok && c == conn {
@@ -563,6 +574,7 @@ func (cm *ConnectionManager) doConnect(appID string, params ConnectParams, conn 
 			SiteURL:      siteURL,
 			LocalURL:     localURL,
 			AuthURL:      authURL,
+			ConnectHost:  connectHost,
 			AppID:        resp.Data.App.AppID,
 			ResourcePort: resource.Port,
 		}

@@ -746,6 +746,23 @@ body {
 .conn-row.local-row { background: var(--surface2); color: var(--text2); }
 .conn-row.local-row a { color: var(--text1); }
 
+/* ── TCP/UDP connection guide ── */
+.conn-row.tcp-udp-guide { display: block; padding: 10px 12px; min-height: auto; }
+.tcp-udp-info { display: flex; flex-direction: column; gap: 6px; }
+.tcp-udp-header { display: flex; align-items: center; justify-content: space-between; }
+.tcp-udp-badge { font-size: 11px; font-weight: 600; color: var(--accent); background: var(--accent-bg); padding: 2px 8px; border-radius: 4px; }
+.tcp-udp-mapping { font-size: 13px; }
+.tcp-udp-mapping code { font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 12px; color: var(--text); background: var(--surface2); padding: 2px 6px; border-radius: 3px; }
+.tcp-udp-examples { margin-top: 2px; }
+.tcp-udp-cmd { display: block; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 11px; color: var(--text2); background: var(--surface2); padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: background 0.15s; word-break: break-all; }
+.tcp-udp-cmd:hover { background: var(--accent-bg); }
+
+/* TCP/UDP proto icon colors */
+.proto-icon.tcp { color: #e67e22; background: #fef3e6; }
+.proto-icon.udp { color: #9b59b6; background: #f5eef8; }
+[data-theme="dark"] .proto-icon.tcp { color: #f0a050; background: #3d2e1a; }
+[data-theme="dark"] .proto-icon.udp { color: #c39bd3; background: #2d1f3d; }
+
 /* ── Confirm dialog ── */
 .confirm-overlay {
   display: none;
@@ -978,6 +995,8 @@ body {
             <option value="rdp">RDP</option>
             <option value="vnc">VNC</option>
             <option value="telnet">Telnet</option>
+            <option value="tcp">TCP</option>
+            <option value="udp">UDP</option>
           </select>
         </div>
         <div class="form-group">
@@ -1153,6 +1172,8 @@ const protoIcons = {
   rdp: `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.25A2.25 2.25 0 014.25 2h11.5A2.25 2.25 0 0118 4.25v8.5A2.25 2.25 0 0115.75 15H4.25A2.25 2.25 0 012 12.75v-8.5zm2.25-.75a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h11.5a.75.75 0 00.75-.75v-8.5a.75.75 0 00-.75-.75H4.25z" clip-rule="evenodd"/><path d="M5 17.25a.75.75 0 01.75-.75h8.5a.75.75 0 010 1.5h-8.5a.75.75 0 01-.75-.75z"/></svg>`,
   vnc: `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-7.893-2.66-9.336-6.41zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>`,
   telnet: `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 5A.75.75 0 012.75 9h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 9.75zm0 5a.75.75 0 01.75-.75h8.5a.75.75 0 010 1.5h-8.5a.75.75 0 01-.75-.75z" clip-rule="evenodd"/></svg>`,
+  tcp: `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 1zM5.05 3.05a.75.75 0 011.06 0l1.062 1.06a.75.75 0 11-1.06 1.062L5.05 4.11a.75.75 0 010-1.06zm9.9 0a.75.75 0 010 1.06l-1.06 1.062a.75.75 0 01-1.062-1.061l1.061-1.06a.75.75 0 011.06 0zM10 7a3 3 0 100 6 3 3 0 000-6zm-7 3a.75.75 0 01.75-.75h1.5a.75.75 0 010 1.5h-1.5A.75.75 0 013 10zm11.25-.75a.75.75 0 000 1.5h1.5a.75.75 0 000-1.5h-1.5zm-6.312 4.888a.75.75 0 011.061 0l1.06 1.061a.75.75 0 01-1.06 1.061l-1.06-1.06a.75.75 0 010-1.062zm4.563 0a.75.75 0 010 1.061l-1.06 1.06a.75.75 0 01-1.062-1.06l1.061-1.06a.75.75 0 011.06 0zM10 16a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 16z" clip-rule="evenodd"/></svg>`,
+  udp: `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h6.115a.75.75 0 010 1.5H5.135a1.5 1.5 0 00-1.442 1.086l-1.414 4.926a.75.75 0 00.826.95 28.896 28.896 0 0015.293-7.154.75.75 0 000-1.115A28.897 28.897 0 003.105 2.289z"/></svg>`,
 };
 
 // ── Load protocols dynamically ──
@@ -1173,7 +1194,6 @@ async function loadProtocols() {
       const builtins = res.data.filter(p => p.type === 'builtin');
       const plugins = res.data.filter(p => p.type === 'plugin');
       builtins.forEach(p => {
-        if (p.name === 'tcp' || p.name === 'udp') return; // skip tcp/udp from web form
         const opt = document.createElement('option');
         opt.value = p.name;
         opt.textContent = p.label;
@@ -1213,6 +1233,24 @@ function getProtocolInfo(name) {
 function isPluginProtocol(name) {
   const p = getProtocolInfo(name);
   return p && p.type === 'plugin';
+}
+
+function buildTcpUdpGuide(connectHost, targetIP, targetPort, proto) {
+  const [host, port] = connectHost.split(':');
+  const protoLabel = proto.toUpperCase();
+  return `<div class="tcp-udp-info">
+    <div class="tcp-udp-header">
+      <span class="tcp-udp-badge">${protoLabel} Port Forwarding</span>
+      <button class="copy-btn" onclick="copyUrl(event,'${connectHost}')" title="Copy address">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/></svg>
+      </button>
+    </div>
+    <div class="tcp-udp-mapping"><code>${connectHost}</code> <span style="color:var(--text3)">&rarr;</span> <code>${targetIP}:${targetPort}</code></div>
+    <div class="tcp-udp-examples">
+      <div style="color:var(--text3);font-size:11px;margin-bottom:4px">Connect with:</div>
+      <code class="tcp-udp-cmd" onclick="copyUrl(event,'telnet ${host} ${port}')" title="Click to copy">telnet ${host} ${port}</code>
+    </div>
+  </div>`;
 }
 
 // ── Theme ──
@@ -1328,10 +1366,14 @@ function renderApps(apps) {
 
     // Fixed-height connection status row — always present, content changes per state
     const extIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H3v10h10v-3M9 2h5v5M14 2L7 9"/></svg>`;
+    const copyIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/></svg>`;
+    const isTcpUdp = proto === 'tcp' || proto === 'udp';
     let connRow = '';
-    if (status === 'connected' && cs.site_url) {
+    if (status === 'connected' && isTcpUdp && cs.connect_host) {
+      const connGuide = buildTcpUdpGuide(cs.connect_host, app.ip, app.port, proto);
+      connRow = `<div class="conn-row connected tcp-udp-guide">${connGuide}</div>`;
+    } else if (status === 'connected' && cs.site_url) {
       const shortUrl = cs.site_url.replace(/^https?:\/\//, '');
-      const copyIcon = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/></svg>`;
       const authPart = cs.auth_url ? `<span style="color:var(--text3);margin:0 4px">&middot;</span><a href="${cs.auth_url}" target="_blank">Auth</a>` : '';
       const localRow = cs.local_url ? `<div class="conn-row local-row">${extIcon} <a href="${cs.local_url}" target="_blank" title="${cs.local_url}">${cs.local_url}</a><button class="copy-btn" onclick="copyUrl(event,'${cs.local_url}')" title="Copy URL">${copyIcon}</button></div>` : '';
       connRow = `<div class="conn-row connected">${extIcon} <a href="${cs.site_url}" target="_blank" title="${cs.site_url}">${shortUrl}</a>${authPart}<button class="copy-btn" onclick="copyUrl(event,'${cs.site_url}')" title="Copy URL">${copyIcon}</button></div>${localRow}`;
@@ -1475,6 +1517,8 @@ async function connectApp(id) {
 
 function startPolling(id) {
   if (pollingTimers[id]) clearInterval(pollingTimers[id]);
+  const app = cachedApps.find(a => a.id === id);
+  const appProto = app ? (app.protocol || '').toLowerCase() : '';
   pollingTimers[id] = setInterval(async () => {
     const res = await api(`/api/status/${id}`);
     const status = res.data?.status;
@@ -1482,7 +1526,9 @@ function startPolling(id) {
       clearInterval(pollingTimers[id]);
       delete pollingTimers[id];
       loadApps();
-      if (res.data.site_url) {
+      if (appProto === 'tcp' || appProto === 'udp') {
+        toast('Connected! Port forwarding is active.', 'success');
+      } else if (res.data.site_url) {
         toast('Connected! Opening access URL...', 'success');
         setTimeout(() => window.open(res.data.site_url, '_blank'), 500);
       }
@@ -1687,12 +1733,16 @@ function closeModal() {
 function onProtocolChange() {
   const proto = document.getElementById('fProtocol').value;
   const isPlugin = isPluginProtocol(proto);
+  const isTcpUdp = proto === 'tcp' || proto === 'udp';
   const needsAuth = ['ssh', 'rdp', 'vnc'].includes(proto);
   const isSSH = proto === 'ssh';
-  document.getElementById('authSection').style.display = (needsAuth && !isPlugin) ? '' : 'none';
+  document.getElementById('authSection').style.display = (needsAuth && !isPlugin && !isTcpUdp) ? '' : 'none';
   document.getElementById('sshSection').style.display = isSSH ? '' : 'none';
   document.getElementById('dbSection').style.display = isPlugin ? '' : 'none';
-  document.getElementById('fPort').placeholder = defaultPorts[proto] || '80';
+  const portInput = document.getElementById('fPort');
+  portInput.placeholder = defaultPorts[proto] || (isTcpUdp ? '' : '80');
+  portInput.required = isTcpUdp;
+  document.querySelector('#fPort + .hint').textContent = isTcpUdp ? 'Required for TCP/UDP' : 'Leave empty for protocol default';
 
   // Plugin warning
   const warning = document.getElementById('pluginWarning');
@@ -1713,13 +1763,20 @@ async function saveApp(e) {
   e.preventDefault();
   const id = document.getElementById('editId').value;
   const proto = document.getElementById('fProtocol').value;
+  const portVal = parseInt(document.getElementById('fPort').value);
+  const isTcpUdp = proto === 'tcp' || proto === 'udp';
+  if (isTcpUdp && !portVal) {
+    toast('Port is required for TCP/UDP', 'error');
+    return;
+  }
+  const resolvedPort = portVal || defaultPorts[proto] || 80;
   const nameVal = document.getElementById('fName').value.trim();
-  const autoName = proto.toUpperCase() + ' ' + (document.getElementById('fIP').value || '127.0.0.1') + ':' + (parseInt(document.getElementById('fPort').value) || defaultPorts[proto] || 80);
+  const autoName = proto.toUpperCase() + ' ' + (document.getElementById('fIP').value || '127.0.0.1') + ':' + resolvedPort;
   const body = {
     name: nameVal || autoName,
     protocol: proto,
     ip: document.getElementById('fIP').value || '127.0.0.1',
-    port: parseInt(document.getElementById('fPort').value) || defaultPorts[proto] || 80,
+    port: resolvedPort,
     tunnel_port: parseInt(document.getElementById('fTunnelPort').value) || 62888,
     server: document.getElementById('fServer').value || '',
     display_name: document.getElementById('fDisplayName').value,
