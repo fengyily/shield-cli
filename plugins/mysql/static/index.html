@@ -511,6 +511,57 @@ table.schema-table tbody tr:hover td { background: var(--accent-light); }
 .er-ctx-item.disabled { color: var(--text2); opacity: 0.5; pointer-events: none; }
 .er-ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
 .er-canvas [data-action]:hover { opacity: 1 !important; }
+.export-dropdown {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.12); overflow: hidden; min-width: 160px;
+}
+.export-dropdown-item {
+  padding: 7px 12px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+  color: var(--text);
+}
+.export-dropdown-item:hover { background: var(--bg-hover); }
+.er-icon-group {
+  display: flex; gap: 1px; background: var(--border); border-radius: 5px; overflow: hidden;
+}
+.er-icon-btn {
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  height: 26px; border: none; background: var(--bg);
+  color: var(--text3); cursor: pointer; transition: all 0.15s;
+  padding: 0 8px; font-size: 11px; font-family: -apple-system,BlinkMacSystemFont,sans-serif;
+  white-space: nowrap;
+}
+.er-icon-btn svg { flex-shrink: 0; }
+.er-icon-btn:hover { background: var(--bg2); color: var(--text); }
+.er-icon-btn.active { background: var(--accent); color: white; }
+.er-sep { width: 1px; height: 18px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+.er-group-label {
+  font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px;
+  font-weight: 600; font-family: -apple-system,BlinkMacSystemFont,sans-serif; flex-shrink: 0;
+}
+.er-search-wrap {
+  position: relative; display: flex; align-items: center; gap: 5px;
+  padding: 3px 8px; border: 1px solid var(--border); border-radius: 5px;
+  background: var(--bg); color: var(--text3); transition: border-color 0.15s;
+}
+.er-search-wrap:focus-within { border-color: var(--accent); color: var(--text); }
+.er-search-wrap input {
+  border: none; outline: none; background: transparent; font-size: 12px;
+  color: var(--text); width: 110px; font-family: -apple-system,BlinkMacSystemFont,sans-serif;
+}
+.er-search-wrap input::placeholder { color: var(--text3); }
+.er-search-results {
+  display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12); max-height: 200px; overflow-y: auto;
+  z-index: 510;
+}
+.er-search-results.open { display: block; }
+.er-search-item {
+  padding: 6px 10px; font-size: 12px; cursor: pointer; font-family: monospace;
+  color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.er-search-item:hover, .er-search-item.active { background: var(--bg2); }
+.er-search-item mark { background: #fef08a; color: inherit; border-radius: 2px; }
 </style>
 </head>
 <body>
@@ -562,21 +613,57 @@ table.schema-table tbody tr:hover td { background: var(--accent-light); }
   <div class="er-toolbar">
     <div class="er-toolbar-left">
       <select id="erDbSelect" class="er-db-select" onchange="loadER(); if(window._collabSwitchDB) window._collabSwitchDB(this.value);"></select>
-      <select id="erLayoutSelect" class="er-db-select" onchange="erSetLayout(this.value)">
-        <option value="grid">Grid</option>
-        <option value="horizontal">Horizontal</option>
-        <option value="vertical">Vertical</option>
-        <option value="center">Center</option>
-      </select>
+      <span class="er-group-label">Layout</span>
+      <div class="er-icon-group" id="erLayoutGroup">
+        <button class="er-icon-btn" data-layout="grid" onclick="erSetLayout('grid')" title="Grid layout">
+          <svg width="14" height="14" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="9" y="1" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="1" y="9" width="6" height="6" rx="1.5" fill="currentColor"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="currentColor"/></svg>
+          <span>Grid</span>
+        </button>
+        <button class="er-icon-btn" data-layout="horizontal" onclick="erSetLayout('horizontal')" title="Horizontal layers (left → right)">
+          <svg width="14" height="14" viewBox="0 0 16 16"><rect x="1" y="3" width="3.5" height="10" rx="1" fill="currentColor"/><rect x="6.25" y="3" width="3.5" height="10" rx="1" fill="currentColor"/><rect x="11.5" y="3" width="3.5" height="10" rx="1" fill="currentColor"/></svg>
+          <span>LR</span>
+        </button>
+        <button class="er-icon-btn" data-layout="vertical" onclick="erSetLayout('vertical')" title="Vertical layers (top → bottom)">
+          <svg width="14" height="14" viewBox="0 0 16 16"><rect x="3" y="1" width="10" height="3.5" rx="1" fill="currentColor"/><rect x="3" y="6.25" width="10" height="3.5" rx="1" fill="currentColor"/><rect x="3" y="11.5" width="10" height="3.5" rx="1" fill="currentColor"/></svg>
+          <span>TB</span>
+        </button>
+        <button class="er-icon-btn" data-layout="center" onclick="erSetLayout('center')" title="Radial layout from center hub">
+          <svg width="14" height="14" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.5" fill="currentColor"/><circle cx="8" cy="2" r="1.5" fill="currentColor" opacity=".5"/><circle cx="13" cy="5.5" r="1.5" fill="currentColor" opacity=".5"/><circle cx="13" cy="11.5" r="1.5" fill="currentColor" opacity=".5"/><circle cx="8" cy="14" r="1.5" fill="currentColor" opacity=".5"/><circle cx="3" cy="11.5" r="1.5" fill="currentColor" opacity=".5"/><circle cx="3" cy="5.5" r="1.5" fill="currentColor" opacity=".5"/></svg>
+          <span>Radial</span>
+        </button>
+        <button class="er-icon-btn active" data-layout="relations" onclick="erSetLayout('relations')" title="FK-aligned layout (minimize crossings)">
+          <svg width="14" height="14" viewBox="0 0 16 16"><rect x="5.5" y="1" width="5" height="14" rx="1.2" fill="currentColor"/><rect x="0" y="2" width="4" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="12" y="2" width="4" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="0" y="9" width="4" height="5" rx="1" fill="currentColor" opacity=".5"/><rect x="12" y="9" width="4" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+          <span>FK</span>
+        </button>
+      </div>
+      <span class="er-sep"></span>
+      <span class="er-group-label">Detail</span>
+      <div class="er-icon-group" id="erDisplayToggle">
+        <button class="er-icon-btn active" data-mode="compact" onclick="erSetDisplayMode('compact')" title="Compact — show key columns">
+          <svg width="14" height="14" viewBox="0 0 16 16"><rect x="2" y="1" width="12" height="3.5" rx="1.2" fill="currentColor"/><line x1="3.5" y1="6.5" x2="12.5" y2="6.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="3.5" y1="9" x2="12.5" y2="9" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><line x1="3.5" y1="11.5" x2="12.5" y2="11.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" opacity=".4"/><circle cx="8" cy="14" r=".8" fill="currentColor" opacity=".5"/><circle cx="10" cy="14" r=".8" fill="currentColor" opacity=".5"/><circle cx="6" cy="14" r=".8" fill="currentColor" opacity=".5"/></svg>
+          <span>Compact</span>
+        </button>
+        <button class="er-icon-btn" data-mode="name-only" onclick="erSetDisplayMode('name-only')" title="Name only — table headers">
+          <svg width="14" height="14" viewBox="0 0 16 16"><rect x="2" y="6" width="12" height="4" rx="1.2" fill="currentColor"/></svg>
+          <span>Minimal</span>
+        </button>
+      </div>
       <span class="er-info" id="erInfo"></span>
     </div>
     <div id="erCollabBar" class="er-collab-bar"></div>
     <div class="er-toolbar-right">
+      <div class="er-search-wrap" id="erSearchWrap">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5"/><line x1="10.5" y1="10.5" x2="14" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <input type="text" id="erSearchInput" placeholder="Find table..." spellcheck="false"
+          oninput="erSearchTable(this.value)" onkeydown="erSearchKey(event)">
+        <div class="er-search-results" id="erSearchResults"></div>
+      </div>
       <button class="btn btn-sm btn-secondary" onclick="erZoom(1.2)" title="Zoom In">&#43;</button>
       <button class="btn btn-sm btn-secondary" onclick="erZoom(1/1.2)" title="Zoom Out">&#8722;</button>
       <button class="btn btn-sm btn-secondary" onclick="erResetView()" title="Fit View">&#8634; Fit</button>
       <button class="btn btn-sm btn-secondary" onclick="erClearLayout()" title="Clear saved layout and re-arrange">&#8635; Reset</button>
       <button class="btn btn-sm btn-secondary" onclick="exportERSvg()" title="Export SVG">&#8615; SVG</button>
+      <button class="btn btn-sm btn-secondary" onclick="showExportMenu(document.getElementById('erDbSelect').value,null,this)" title="Export SQL">&#8615; SQL</button>
       <button class="btn btn-sm btn-secondary" onclick="toggleER()">&#10005; Close</button>
     </div>
   </div>
@@ -818,6 +905,7 @@ function renderTree() {
       ${tableNames.length ? `<span class="node-badge">${tableNames.length}</span>` : ''}
       <span class="node-actions">
         <button class="node-action-btn" onclick="event.stopPropagation();openER('${escAttr(db)}')" title="ER Diagram">&#9701;</button>
+        <button class="node-action-btn" onclick="event.stopPropagation();showExportMenu('${escAttr(db)}',null,this)" title="Export SQL"><span style="display:inline-flex;width:14px;height:14px">${ICON.exportSql}</span></button>
         <button class="node-action-btn write-action" onclick="event.stopPropagation();showCreateTableModal('${escAttr(db)}')" title="新建表">+</button>
         <button class="node-action-btn danger write-action" onclick="event.stopPropagation();dropDatabase('${escAttr(db)}')" title="删除数据库">&#10005;</button>
       </span>
@@ -843,6 +931,7 @@ function renderTree() {
           <span class="node-actions">
             <button class="node-action-btn" onclick="event.stopPropagation();viewTableData('${escAttr(db)}','${escAttr(table)}')" title="查看数据">&#9776;</button>
             <button class="node-action-btn" onclick="event.stopPropagation();showSchemaPanel('${escAttr(db)}','${escAttr(table)}')" title="查看结构">&#9881;</button>
+            <button class="node-action-btn" onclick="event.stopPropagation();showExportMenu('${escAttr(db)}','${escAttr(table)}',this)" title="Export SQL"><span style="display:inline-flex;width:13px;height:13px">${ICON.exportSql}</span></button>
             <button class="node-action-btn write-action" onclick="event.stopPropagation();renameTable('${escAttr(db)}','${escAttr(table)}')" title="重命名">&#9998;</button>
             <button class="node-action-btn danger write-action" onclick="event.stopPropagation();dropTable('${escAttr(db)}','${escAttr(table)}')" title="删除表">&#10005;</button>
           </span>
@@ -1750,6 +1839,7 @@ const ICON = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
   download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
   clipboard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>',
+  exportSql: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16"/><path d="M6 10l6 6 6-6"/></svg>',
 };
 
 function renderResult() {
@@ -1786,6 +1876,7 @@ function renderResult() {
       ${canEdit ? `<button class="btn btn-sm btn-primary write-action" onclick="addNewRow()" style="gap:3px"><span style="display:inline-flex;width:14px;height:14px">${ICON.plus}</span> 新增</button>` : ''}
       <button class="btn btn-secondary btn-sm" onclick="copyAllResults()" style="gap:3px"><span style="display:inline-flex;width:13px;height:13px">${ICON.clipboard}</span> 复制全部</button>
       <button class="btn btn-secondary btn-sm" onclick="exportCSV()" style="gap:3px"><span style="display:inline-flex;width:13px;height:13px">${ICON.download}</span> CSV</button>
+      ${_ctx ? `<button class="btn btn-secondary btn-sm" onclick="showExportMenu('${escAttr(_ctx.db)}','${escAttr(_ctx.table)}',this)" style="gap:3px"><span style="display:inline-flex;width:13px;height:13px">${ICON.exportSql}</span> SQL</button>` : ''}
     </div>
   </div>`;
 
@@ -2069,6 +2160,63 @@ function deleteRow(rowIdx) {
       return ok;
     }
   });
+}
+
+// ══════════════════════════════════════════════
+//  Export SQL
+// ══════════════════════════════════════════════
+async function exportSQL(db, table, mode) {
+  let url = `/api/export?db=${encodeURIComponent(db)}&mode=${encodeURIComponent(mode)}`;
+  if (table) url += `&table=${encodeURIComponent(table)}`;
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({message: resp.statusText}));
+      showToast('Export failed: ' + (err.message || resp.statusText), true);
+      return;
+    }
+    const sql = await resp.text();
+    const blob = new Blob([sql], {type: 'text/sql;charset=utf-8;'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const suffix = mode === 'all' ? 'structure_data' : 'structure';
+    const name = table ? `${db}_${table}_${suffix}` : `${db}_${suffix}`;
+    a.download = `${name}.sql`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('SQL exported');
+  } catch (e) {
+    showToast('Export failed: ' + e.message, true);
+  }
+}
+
+function showExportMenu(db, table, btn) {
+  closeExportMenu();
+  const menu = document.createElement('div');
+  menu.className = 'export-dropdown';
+  menu.id = 'exportDropdown';
+  const label = table ? 'Table' : 'Database';
+  const tArg = table ? `'${escAttr(table)}'` : 'null';
+  menu.innerHTML = `
+    <div class="export-dropdown-item" onclick="closeExportMenu();exportSQL('${escAttr(db)}',${tArg},'structure')">
+      <span style="width:16px;display:inline-flex;opacity:.6">&#9638;</span> ${label} Structure
+    </div>
+    <div class="export-dropdown-item" onclick="closeExportMenu();exportSQL('${escAttr(db)}',${tArg},'all')">
+      <span style="width:16px;display:inline-flex;opacity:.6">&#9776;</span> ${label} Structure + Data
+    </div>
+  `;
+  const rect = btn.getBoundingClientRect();
+  menu.style.position = 'fixed';
+  menu.style.top = (rect.bottom + 2) + 'px';
+  menu.style.left = rect.left + 'px';
+  menu.style.zIndex = '9999';
+  document.body.appendChild(menu);
+  setTimeout(() => document.addEventListener('click', closeExportMenu, {once: true}), 0);
+}
+
+function closeExportMenu() {
+  const m = document.getElementById('exportDropdown');
+  if (m) m.remove();
 }
 
 // ══════════════════════════════════════════════

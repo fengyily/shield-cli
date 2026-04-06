@@ -20,7 +20,7 @@
   let viewX = 0, viewY = 0, scale = 1;
   let tablePositions = {};
   let tableWidths = {};
-  let currentLayout = 'grid';
+  let currentLayout = 'relations';
 
   // Interaction
   let panActive = false;
@@ -55,6 +55,17 @@
   let followTarget = null;       // user_id being followed, or null
   let followAnimFrame = null;    // animation frame for smooth viewport lerp
   let lastViewportSend = 0;
+
+  // ── Focus mode ──
+  let focusTable = null;
+  let focusDepth = 1;
+  let focusSet = null;
+  let hoveredTable = null;
+
+  // ── Display mode ──
+  let displayMode = 'compact';
+  const COMPACT_MAX_COLS = 8;
+  let expandedTables = new Set();
 
   // ════════════════════════════════════════════
   //  Public API
@@ -102,6 +113,9 @@
 
       erData = data.data;
       computeAllWidths();
+      focusTable = null; focusSet = null; hoveredTable = null;
+      preFocusPositions = null; preFocusView = null;
+      updateFocusBadge();
       const tables = erData.tables || [];
       const rels = erData.relations || [];
       info.textContent = tables.length + ' tables, ' + rels.length + ' relations';
@@ -120,6 +134,11 @@
   window.erSetLayout = function(mode) {
     currentLayout = mode;
     clearSavedPositions();
+    focusTable = null; focusSet = null;
+    preFocusPositions = null; preFocusView = null;
+    updateFocusBadge();
+    document.querySelectorAll('#erLayoutGroup .er-icon-btn').forEach(b =>
+      b.classList.toggle('active', b.getAttribute('data-layout') === mode));
     computeAllWidths();
     runLayout();
     fitToView();
@@ -129,7 +148,8 @@
   window.erClearLayout = function() {
     stopFollow();
     clearSavedPositions();
-    document.getElementById('erLayoutSelect').value = currentLayout;
+    document.querySelectorAll('#erLayoutGroup .er-icon-btn').forEach(b =>
+      b.classList.toggle('active', b.getAttribute('data-layout') === currentLayout));
     computeAllWidths();
     runLayout();
     fitToView();
@@ -241,7 +261,8 @@
 
       if (saved.layout) {
         currentLayout = saved.layout;
-        document.getElementById('erLayoutSelect').value = currentLayout;
+        document.querySelectorAll('#erLayoutGroup .er-icon-btn').forEach(b =>
+          b.classList.toggle('active', b.getAttribute('data-layout') === currentLayout));
       }
 
       tablePositions = {};
@@ -276,11 +297,9 @@
   function placeNewTables(newTables) {
     const bb = getContentBounds();
     const startY = bb.y + bb.h + GAP_Y * 2;
-    const canvas = document.getElementById('erCanvas');
-    const maxCols = Math.max(2, Math.floor(((canvas.clientWidth || 1200) - PADDING * 2 + GAP_X) / (avgTw() + GAP_X)));
     const lookup = {};
     (erData.tables || []).forEach(t => lookup[t.name] = t);
-    placeGrid(newTables.map(t => t.name), maxCols, PADDING, startY, lookup);
+    placeGrid(newTables.map(t => t.name), 0, PADDING, startY, lookup);
   }
 
   // ════════════════════════════════════════════
@@ -295,12 +314,30 @@
       case 'horizontal': layoutDirectional('h'); break;
       case 'vertical':   layoutDirectional('v'); break;
       case 'center':     layoutCenter(); break;
+      case 'relations':  layoutRelations(); break;
       default:           layoutGridMode(); break;
     }
   }
 
+  function visibleColCount(t) {
+    const total = t.columns ? t.columns.length : 0;
+    if (expandedTables.has(t.name)) return total;
+    if (displayMode === 'name-only') return 0;
+    if (total > COMPACT_MAX_COLS) return COMPACT_MAX_COLS;
+    return total;
+  }
+
+  function hasMoreCols(t) {
+    if (expandedTables.has(t.name)) return false;
+    const total = (t.columns || []).length;
+    if (displayMode === 'name-only') return total > 0;
+    return total > COMPACT_MAX_COLS;
+  }
+
   function getTableHeight(t) {
-    return HEADER_HEIGHT + (t.columns ? t.columns.length : 1) * ROW_HEIGHT;
+    const vc = visibleColCount(t);
+    const extra = hasMoreCols(t) ? ROW_HEIGHT : 0;
+    return HEADER_HEIGHT + vc * ROW_HEIGHT + extra;
   }
 
   const CHAR_W = 7;
@@ -373,20 +410,35 @@
     return { multi, orphans };
   }
 
-  function canvasMaxCols() {
+  function canvasWidth() {
     const canvas = document.getElementById('erCanvas');
-    return Math.max(2, Math.floor(((canvas.clientWidth || 1200) - PADDING * 2 + GAP_X) / (avgTw() + GAP_X)));
+    return canvas.clientWidth || 1200;
   }
 
-  function placeGrid(names, cols, startX, startY, lookup) {
+  function canvasHeight() {
+    const canvas = document.getElementById('erCanvas');
+    return canvas.clientHeight || 800;
+  }
+
+  function canvasMaxCols() {
+    return Math.max(2, Math.floor((canvasWidth() - PADDING * 2 + GAP_X) / (avgTw() + GAP_X)));
+  }
+
+  function placeGrid(names, _cols, startX, startY, lookup) {
+    const maxW = canvasWidth() - PADDING;
     let x = startX, y = startY, rowH = 0;
-    names.forEach((name, i) => {
+    names.forEach((name) => {
       const t = lookup[name];
       const h = t ? getTableHeight(t) : HEADER_HEIGHT + ROW_HEIGHT;
+      const w = tw(name);
+      if (x > startX && x + w > maxW) {
+        x = startX;
+        y += rowH + GAP_Y;
+        rowH = 0;
+      }
       tablePositions[name] = { x, y };
       rowH = Math.max(rowH, h);
-      if ((i + 1) % cols === 0) { x = startX; y += rowH + GAP_Y; rowH = 0; }
-      else x += tw(name) + GAP_X;
+      x += w + GAP_X;
     });
     return y + rowH;
   }
@@ -459,6 +511,8 @@
   }
 
   function placeLayers(layers, dir, startOffset, lookup) {
+    const cw = canvasWidth();
+    const ch = canvasHeight();
     let mainCursor = startOffset;
 
     layers.forEach(layer => {
@@ -468,19 +522,30 @@
       layer.forEach(name => {
         const t = lookup[name];
         const h = t ? getTableHeight(t) : HEADER_HEIGHT + ROW_HEIGHT;
+        const w = tw(name);
 
         if (dir === 'h') {
+          if (crossCursor + h > ch - PADDING && crossCursor > PADDING) {
+            mainCursor += mainSize + GAP_X * 2;
+            crossCursor = PADDING;
+            mainSize = 0;
+          }
           tablePositions[name] = { x: mainCursor, y: crossCursor };
           crossCursor += h + GAP_Y;
-          mainSize = tw(name);
+          mainSize = Math.max(mainSize, w);
         } else {
+          if (crossCursor + w > cw - PADDING && crossCursor > PADDING) {
+            mainCursor += mainSize + GAP_Y * 2;
+            crossCursor = PADDING;
+            mainSize = 0;
+          }
           tablePositions[name] = { x: crossCursor, y: mainCursor };
-          crossCursor += tw(name) + GAP_X;
+          crossCursor += w + GAP_X;
           mainSize = Math.max(mainSize, h);
         }
       });
 
-      mainCursor += (dir === 'h' ? avgTw() + GAP_X * 2 : mainSize + GAP_Y * 2);
+      mainCursor += (dir === 'h' ? mainSize + GAP_X * 2 : mainSize + GAP_Y * 2);
     });
 
     return mainCursor;
@@ -517,14 +582,19 @@
         frontier = next;
       }
 
-      const rBase = 0;
-      const rStep = avgTw() * 1.6;
+      const avgW = avgTw();
+      const avgH = HEADER_HEIGHT + COMPACT_MAX_COLS * ROW_HEIGHT;
+      const tableSpan = Math.max(avgW, avgH) + GAP_Y;
+
       const relPos = {};
       relPos[centerName] = { x: 0, y: 0 };
 
       for (let ri = 1; ri < rings.length; ri++) {
         const ring = rings[ri];
-        const radius = rBase + ri * rStep;
+        const circumNeeded = ring.length * tableSpan;
+        const minRadius = circumNeeded / (2 * Math.PI);
+        const baseRadius = ri * (avgW * 1.6);
+        const radius = Math.max(baseRadius, minRadius);
         const angleStep = (2 * Math.PI) / ring.length;
         ring.forEach((name, idx) => {
           const angle = -Math.PI / 2 + idx * angleStep;
@@ -563,6 +633,482 @@
       placeGrid(orphans, maxCols, PADDING, globalOffsetY, lookup);
     }
   }
+
+  // ── Layout: Relations (FK-column-aware, minimize crossings) ──
+
+  function layoutRelations() {
+    const g = buildGraph();
+    const { tables, lookup, adj } = g;
+    const { multi, orphans } = findComponents(tables, adj);
+    const rels = erData.relations || [];
+    const ch = canvasHeight();
+
+    let globalOffsetY = PADDING;
+
+    multi.forEach(comp => {
+      let hubName = comp[0], maxDeg = 0;
+      comp.forEach(name => {
+        const deg = adj[name].size;
+        if (deg > maxDeg) { maxDeg = deg; hubName = name; }
+      });
+
+      const visited = new Set([hubName]);
+      const bfsLayers = [[hubName]];
+      const parentOf = {};
+      let frontier = [hubName];
+      while (frontier.length) {
+        const next = [];
+        frontier.forEach(n => {
+          adj[n].forEach(nb => {
+            if (!visited.has(nb) && comp.includes(nb)) {
+              visited.add(nb); next.push(nb); parentOf[nb] = n;
+            }
+          });
+        });
+        if (next.length) bfsLayers.push(next);
+        frontier = next;
+      }
+
+      const hub = lookup[hubName];
+      const hubW = tw(hubName);
+      const hubH = getTableHeight(hub);
+      const compPos = {};
+      compPos[hubName] = { x: 0, y: 0 };
+
+      const sideOf = {};
+
+      for (let li = 1; li < bfsLayers.length; li++) {
+        const layer = bfsLayers[li];
+
+        const infos = layer.map(name => {
+          let parentName = null, parentColIdx = 0, childColIdx = 0;
+
+          for (const rel of rels) {
+            if (rel.from_table === name && compPos[rel.to_table]) {
+              parentName = rel.to_table;
+              const pt = lookup[parentName];
+              parentColIdx = pt ? Math.max(0, pt.columns.findIndex(c => c.name === rel.to_column)) : 0;
+              const ct = lookup[name];
+              childColIdx = ct ? Math.max(0, ct.columns.findIndex(c => c.name === rel.from_column)) : 0;
+              break;
+            }
+            if (rel.to_table === name && compPos[rel.from_table]) {
+              parentName = rel.from_table;
+              const pt = lookup[parentName];
+              parentColIdx = pt ? Math.max(0, pt.columns.findIndex(c => c.name === rel.from_column)) : 0;
+              const ct = lookup[name];
+              childColIdx = ct ? Math.max(0, ct.columns.findIndex(c => c.name === rel.to_column)) : 0;
+              break;
+            }
+          }
+
+          if (!parentName) parentName = hubName;
+          const pp = compPos[parentName];
+          const parentColY = pp
+            ? pp.y + HEADER_HEIGHT + parentColIdx * ROW_HEIGHT + ROW_HEIGHT / 2
+            : hubH / 2;
+          const targetY = parentColY - (HEADER_HEIGHT + childColIdx * ROW_HEIGHT + ROW_HEIGHT / 2);
+
+          return { name, parentName, targetY, parentColY };
+        });
+
+        infos.sort((a, b) => a.parentColY - b.parentColY);
+
+        if (li === 1) {
+          infos.forEach((info, i) => { sideOf[info.name] = (i % 2 === 0) ? 'R' : 'L'; });
+        } else {
+          infos.forEach(info => {
+            let ancestor = info.name;
+            while (parentOf[ancestor] && parentOf[ancestor] !== hubName) ancestor = parentOf[ancestor];
+            sideOf[info.name] = sideOf[ancestor] || 'R';
+          });
+        }
+
+        const rightInfos = infos.filter(i => sideOf[i.name] === 'R');
+        const leftInfos = infos.filter(i => sideOf[i.name] === 'L');
+
+        const stepX = avgTw() + GAP_X * 2;
+        const rightX = hubW + GAP_X * 2 + (li - 1) * stepX;
+        const leftEdgeX = -GAP_X * 2 - (li - 1) * stepX;
+
+        relPlaceMultiCol(rightInfos, rightX, 'R', ch, stepX, lookup, compPos);
+        relPlaceMultiCol(leftInfos, leftEdgeX, 'L', ch, stepX, lookup, compPos);
+      }
+
+      let cMinX = Infinity, cMinY = Infinity, cMaxY = -Infinity;
+      Object.entries(compPos).forEach(([name, p]) => {
+        const t = lookup[name];
+        if (!t) return;
+        cMinX = Math.min(cMinX, p.x);
+        cMinY = Math.min(cMinY, p.y);
+        cMaxY = Math.max(cMaxY, p.y + getTableHeight(t));
+      });
+      const shiftX = PADDING - cMinX;
+      const shiftY = globalOffsetY - cMinY;
+      Object.entries(compPos).forEach(([name, p]) => {
+        tablePositions[name] = { x: p.x + shiftX, y: p.y + shiftY };
+      });
+      globalOffsetY += (cMaxY - cMinY) + PADDING * 2;
+    });
+
+    if (orphans.length > 0) {
+      placeGrid(orphans, 0, PADDING, globalOffsetY, lookup);
+    }
+  }
+
+  function relPlaceMultiCol(infos, startX, side, maxH, stepX, lookup, outPos) {
+    if (!infos.length) return;
+
+    let totalH = 0;
+    infos.forEach(info => {
+      const t = lookup[info.name];
+      totalH += (t ? getTableHeight(t) : HEADER_HEIGHT + ROW_HEIGHT) + GAP_Y;
+    });
+    const targetH = Math.max(maxH - PADDING * 2, 300);
+    const numCols = Math.max(1, Math.ceil(totalH / targetH));
+    const perCol = Math.ceil(infos.length / numCols);
+
+    for (let ci = 0; ci < numCols; ci++) {
+      const colInfos = infos.slice(ci * perCol, (ci + 1) * perCol);
+      const colX = side === 'R'
+        ? startX + ci * stepX
+        : startX - ci * stepX;
+      let prevBottom = -Infinity;
+      colInfos.forEach(info => {
+        const t = lookup[info.name];
+        const h = t ? getTableHeight(t) : HEADER_HEIGHT + ROW_HEIGHT;
+        const w = tw(info.name);
+        let y = info.targetY;
+        if (y < prevBottom + GAP_Y) y = prevBottom + GAP_Y;
+        const x = side === 'L' ? (colX - w) : colX;
+        outPos[info.name] = { x, y };
+        prevBottom = y + h;
+      });
+    }
+  }
+
+  // ════════════════════════════════════════════
+  //  Focus mode — show only N-degree neighbors
+  // ════════════════════════════════════════════
+
+  function computeFocusSet(tableName, depth) {
+    if (!erData) return new Set();
+    const rels = erData.relations || [];
+    const adj = {};
+    (erData.tables || []).forEach(t => adj[t.name] = new Set());
+    rels.forEach(r => {
+      if (adj[r.from_table]) adj[r.from_table].add(r.to_table);
+      if (adj[r.to_table]) adj[r.to_table].add(r.from_table);
+    });
+    const visited = new Set([tableName]);
+    let frontier = [tableName];
+    for (let d = 0; d < depth && frontier.length; d++) {
+      const next = [];
+      frontier.forEach(n => {
+        (adj[n] || new Set()).forEach(nb => {
+          if (!visited.has(nb)) { visited.add(nb); next.push(nb); }
+        });
+      });
+      frontier = next;
+    }
+    return visited;
+  }
+
+  let preFocusPositions = null;
+  let preFocusView = null;
+
+  function setFocus(tableName, depth) {
+    if (depth !== undefined) focusDepth = depth;
+
+    if (!preFocusPositions) {
+      preFocusPositions = {};
+      Object.keys(tablePositions).forEach(k => {
+        preFocusPositions[k] = { x: tablePositions[k].x, y: tablePositions[k].y };
+      });
+      preFocusView = { x: viewX, y: viewY, s: scale };
+    }
+
+    focusTable = tableName;
+    focusSet = tableName ? computeFocusSet(tableName, focusDepth) : null;
+    updateFocusBadge();
+
+    if (tableName && focusSet) {
+      focusRelayout(tableName, focusSet);
+    } else {
+      scheduleRender();
+    }
+  }
+
+  function clearFocus() {
+    if (preFocusPositions) {
+      tablePositions = preFocusPositions;
+      preFocusPositions = null;
+    }
+    if (preFocusView) {
+      viewX = preFocusView.x; viewY = preFocusView.y; scale = preFocusView.s;
+      preFocusView = null;
+      applySvgTransform();
+    }
+    focusTable = null;
+    focusSet = null;
+    updateFocusBadge();
+    scheduleRender();
+  }
+
+  function adjustFocusDepth(delta) {
+    const nd = Math.max(1, Math.min(5, focusDepth + delta));
+    if (nd !== focusDepth) setFocus(focusTable, nd);
+  }
+
+  function focusRelayout(hubName, fSet) {
+    if (!erData) return;
+    const rels = erData.relations || [];
+    const lookup = {};
+    (erData.tables || []).forEach(t => lookup[t.name] = t);
+    const hub = lookup[hubName];
+    if (!hub) return;
+
+    const ch = canvasHeight();
+    const hubW = tw(hubName);
+    const hubH = getTableHeight(hub);
+
+    const adj = {};
+    fSet.forEach(name => adj[name] = new Set());
+    rels.forEach(r => {
+      if (fSet.has(r.from_table) && fSet.has(r.to_table)) {
+        adj[r.from_table].add(r.to_table);
+        adj[r.to_table].add(r.from_table);
+      }
+    });
+
+    const visited = new Set([hubName]);
+    const bfsLayers = [[hubName]];
+    const parentOf = {};
+    let frontier = [hubName];
+    while (frontier.length) {
+      const next = [];
+      frontier.forEach(n => {
+        (adj[n] || new Set()).forEach(nb => {
+          if (!visited.has(nb)) { visited.add(nb); next.push(nb); parentOf[nb] = n; }
+        });
+      });
+      if (next.length) bfsLayers.push(next);
+      frontier = next;
+    }
+
+    const compPos = {};
+    compPos[hubName] = { x: 0, y: 0 };
+    const sideOf = {};
+
+    for (let li = 1; li < bfsLayers.length; li++) {
+      const layer = bfsLayers[li];
+
+      const infos = layer.map(name => {
+        let parentName = null, parentColIdx = 0, childColIdx = 0;
+        for (const rel of rels) {
+          if (rel.from_table === name && compPos[rel.to_table]) {
+            parentName = rel.to_table;
+            const pt = lookup[parentName];
+            parentColIdx = pt ? Math.max(0, pt.columns.findIndex(c => c.name === rel.to_column)) : 0;
+            const ct = lookup[name];
+            childColIdx = ct ? Math.max(0, ct.columns.findIndex(c => c.name === rel.from_column)) : 0;
+            break;
+          }
+          if (rel.to_table === name && compPos[rel.from_table]) {
+            parentName = rel.from_table;
+            const pt = lookup[parentName];
+            parentColIdx = pt ? Math.max(0, pt.columns.findIndex(c => c.name === rel.from_column)) : 0;
+            const ct = lookup[name];
+            childColIdx = ct ? Math.max(0, ct.columns.findIndex(c => c.name === rel.to_column)) : 0;
+            break;
+          }
+        }
+        if (!parentName) parentName = hubName;
+        const pp = compPos[parentName];
+        const parentColY = pp
+          ? pp.y + HEADER_HEIGHT + parentColIdx * ROW_HEIGHT + ROW_HEIGHT / 2
+          : hubH / 2;
+        const targetY = parentColY - (HEADER_HEIGHT + childColIdx * ROW_HEIGHT + ROW_HEIGHT / 2);
+        return { name, parentName, targetY, parentColY };
+      });
+
+      infos.sort((a, b) => a.parentColY - b.parentColY);
+
+      if (li === 1) {
+        infos.forEach((info, i) => { sideOf[info.name] = (i % 2 === 0) ? 'R' : 'L'; });
+      } else {
+        infos.forEach(info => {
+          let ancestor = info.name;
+          while (parentOf[ancestor] && parentOf[ancestor] !== hubName) ancestor = parentOf[ancestor];
+          sideOf[info.name] = sideOf[ancestor] || 'R';
+        });
+      }
+
+      const rightInfos = infos.filter(i => sideOf[i.name] === 'R');
+      const leftInfos = infos.filter(i => sideOf[i.name] === 'L');
+
+      const stepX = avgTw() + GAP_X * 2;
+      const rightX = hubW + GAP_X * 2 + (li - 1) * stepX;
+      const leftEdgeX = -GAP_X * 2 - (li - 1) * stepX;
+
+      relPlaceMultiCol(rightInfos, rightX, 'R', ch, stepX, lookup, compPos);
+      relPlaceMultiCol(leftInfos, leftEdgeX, 'L', ch, stepX, lookup, compPos);
+    }
+
+    Object.entries(compPos).forEach(([name, p]) => {
+      tablePositions[name] = { x: p.x, y: p.y };
+    });
+
+    const canvas = document.getElementById('erCanvas');
+    const cw = canvas.clientWidth, ch2 = canvas.clientHeight;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    fSet.forEach(name => {
+      const p = tablePositions[name];
+      const t = lookup[name];
+      if (!p || !t) return;
+      minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+      maxX = Math.max(maxX, p.x + tw(name));
+      maxY = Math.max(maxY, p.y + getTableHeight(t));
+    });
+    const fw = maxX - minX, fh = maxY - minY;
+    const pad = 60;
+    const targetScale = clamp(Math.min((cw - pad * 2) / Math.max(fw, 1), (ch2 - pad * 2) / Math.max(fh, 1), 1.2));
+    const targetVX = (cw - fw * targetScale) / 2 - minX * targetScale;
+    const targetVY = (ch2 - fh * targetScale) / 2 - minY * targetScale;
+
+    renderSvg();
+    animateViewportTo(targetVX, targetVY, targetScale);
+  }
+
+  function updateFocusBadge() {
+    let badge = document.getElementById('erFocusBadge');
+    if (!focusTable) {
+      if (badge) badge.style.display = 'none';
+      return;
+    }
+    if (!badge) {
+      badge = document.createElement('div');
+      badge.id = 'erFocusBadge';
+      badge.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 10px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:6px;font-size:12px;color:#4338ca;white-space:nowrap;';
+      const toolbar = document.querySelector('.er-toolbar-left');
+      if (toolbar) toolbar.appendChild(badge);
+    }
+    badge.style.display = 'flex';
+    badge.innerHTML = '<span style="font-size:14px">&#9673;</span> '
+      + '<strong>' + escXml(focusTable) + '</strong>'
+      + ' <button onclick="adjustFocusDepth(-1)" style="border:none;background:none;cursor:pointer;font-size:13px;color:#4338ca;padding:0 2px" title="Decrease depth">&#8722;</button>'
+      + '<span title="Relationship depth">' + focusDepth + '</span>'
+      + ' <button onclick="adjustFocusDepth(1)" style="border:none;background:none;cursor:pointer;font-size:13px;color:#4338ca;padding:0 2px" title="Increase depth">&#43;</button>'
+      + ' <button onclick="clearFocus()" style="border:none;background:none;cursor:pointer;font-size:14px;color:#6366f1;padding:0 2px" title="Exit focus mode">&#10005;</button>';
+  }
+
+  window.erSetDisplayMode = function(mode) {
+    displayMode = mode;
+    expandedTables.clear();
+    document.querySelectorAll('#erDisplayToggle .er-icon-btn').forEach(b =>
+      b.classList.toggle('active', b.getAttribute('data-mode') === mode));
+    renderSvg();
+  };
+
+  function toggleTableExpand(tableName) {
+    if (expandedTables.has(tableName)) expandedTables.delete(tableName);
+    else expandedTables.add(tableName);
+    scheduleRender();
+  }
+
+  window.adjustFocusDepth = adjustFocusDepth;
+  window.clearFocus = clearFocus;
+
+  // ════════════════════════════════════════════
+  //  Table search
+  // ════════════════════════════════════════════
+
+  let searchIdx = -1;
+
+  window.erSearchTable = function(query) {
+    const wrap = document.getElementById('erSearchResults');
+    if (!query || !erData) { wrap.className = 'er-search-results'; searchIdx = -1; return; }
+    const q = query.toLowerCase();
+    const matches = (erData.tables || [])
+      .filter(t => t.name.toLowerCase().includes(q))
+      .slice(0, 12);
+    if (!matches.length) { wrap.className = 'er-search-results'; searchIdx = -1; return; }
+
+    wrap.innerHTML = matches.map((t, i) => {
+      const name = t.name;
+      const li = name.toLowerCase().indexOf(q);
+      const highlighted = escXml(name.substring(0, li))
+        + '<mark>' + escXml(name.substring(li, li + q.length)) + '</mark>'
+        + escXml(name.substring(li + q.length));
+      const cols = (t.columns || []).length;
+      return '<div class="er-search-item' + (i === 0 ? ' active' : '') + '" data-table="' + escXml(name) + '" '
+        + 'onmousedown="erGoToTable(\'' + escXml(name) + '\')">'
+        + highlighted + ' <span style="color:var(--text3);font-size:11px">(' + cols + ')</span></div>';
+    }).join('');
+    wrap.className = 'er-search-results open';
+    searchIdx = 0;
+  };
+
+  window.erSearchKey = function(e) {
+    const wrap = document.getElementById('erSearchResults');
+    const items = wrap.querySelectorAll('.er-search-item');
+    if (!items.length) {
+      if (e.key === 'Escape') { e.target.value = ''; erSearchTable(''); }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      searchIdx = Math.min(searchIdx + 1, items.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      searchIdx = Math.max(searchIdx - 1, 0);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const sel = items[searchIdx];
+      if (sel) { erGoToTable(sel.getAttribute('data-table')); e.target.value = ''; erSearchTable(''); }
+      return;
+    } else if (e.key === 'Escape') {
+      e.target.value = ''; erSearchTable('');
+      return;
+    } else {
+      return;
+    }
+    items.forEach((el, i) => el.classList.toggle('active', i === searchIdx));
+    items[searchIdx].scrollIntoView({ block: 'nearest' });
+  };
+
+  window.erGoToTable = function(tableName) {
+    const pos = tablePositions[tableName];
+    if (!pos) return;
+    const t = (erData.tables || []).find(t => t.name === tableName);
+    if (!t) return;
+
+    document.getElementById('erSearchResults').className = 'er-search-results';
+    document.getElementById('erSearchInput').value = '';
+
+    const canvas = document.getElementById('erCanvas');
+    const cw = canvas.clientWidth, ch2 = canvas.clientHeight;
+    const tw2 = tw(tableName), th = getTableHeight(t);
+    const centerX = pos.x + tw2 / 2;
+    const centerY = pos.y + th / 2;
+    const targetScale = clamp(Math.max(scale, 0.8));
+    const targetVX = cw / 2 - centerX * targetScale;
+    const targetVY = ch2 / 2 - centerY * targetScale;
+    animateViewportTo(targetVX, targetVY, targetScale);
+
+    selectedTables.clear();
+    selectedTables.add(tableName);
+    scheduleRender();
+    setTimeout(() => { selectedTables.delete(tableName); scheduleRender(); }, 1500);
+  };
+
+  document.addEventListener('mousedown', e => {
+    if (!e.target.closest('.er-search-wrap')) {
+      const wrap = document.getElementById('erSearchResults');
+      if (wrap) wrap.className = 'er-search-results';
+    }
+  });
 
   // ════════════════════════════════════════════
   //  View helpers
@@ -713,10 +1259,18 @@
       const ft = tableLookup[rel.from_table], tt = tableLookup[rel.to_table];
       if (!ft || !tt) return;
 
+      // Focus mode: skip relations where both tables are outside focus set
+      const inFocus = !focusSet || (focusSet.has(rel.from_table) && focusSet.has(rel.to_table));
+      if (focusSet && !inFocus) return;
+
       const fi = ft.columns.findIndex(c => c.name === rel.from_column);
       const ti = tt.columns.findIndex(c => c.name === rel.to_column);
-      const y1 = fp.y + HEADER_HEIGHT + Math.max(0, fi) * ROW_HEIGHT + ROW_HEIGHT / 2;
-      const y2 = tp.y + HEADER_HEIGHT + Math.max(0, ti) * ROW_HEIGHT + ROW_HEIGHT / 2;
+      // Clamp Y to visible range (for compact/name-only modes)
+      const fh = getTableHeight(ft), th = getTableHeight(tt);
+      const y1raw = fp.y + HEADER_HEIGHT + Math.max(0, fi) * ROW_HEIGHT + ROW_HEIGHT / 2;
+      const y2raw = tp.y + HEADER_HEIGHT + Math.max(0, ti) * ROW_HEIGHT + ROW_HEIGHT / 2;
+      const y1 = Math.min(y1raw, fp.y + fh - ROW_HEIGHT / 2);
+      const y2 = Math.min(y2raw, tp.y + th - ROW_HEIGHT / 2);
 
       const fw = tw(rel.from_table), tww = tw(rel.to_table);
       const fcx = fp.x + fw / 2, tcx = tp.x + tww / 2;
@@ -729,9 +1283,19 @@
       const path = 'M'+x1+','+y1+' C'+cx1+','+y1+' '+cx2+','+y2+' '+x2+','+y2;
 
       const isSel = selectedRel === idx;
-      const stroke = isSel ? '#ef4444' : '#94a3b8';
-      const width = isSel ? '2.5' : '1.5';
-      const opacity = isSel ? '1' : '0.65';
+      const relTouchesHovered = hoveredTable && (rel.from_table === hoveredTable || rel.to_table === hoveredTable);
+      const hasHover = hoveredTable && !tableDrag && !colDrag;
+
+      let stroke, width, opacity;
+      if (isSel) {
+        stroke = '#ef4444'; width = '2.5'; opacity = '1';
+      } else if (hasHover && relTouchesHovered) {
+        stroke = '#6366f1'; width = '2.2'; opacity = '0.9';
+      } else if (hasHover && !relTouchesHovered) {
+        stroke = '#94a3b8'; width = '1.5'; opacity = '0.12';
+      } else {
+        stroke = '#94a3b8'; width = '1.5'; opacity = '0.65';
+      }
       s += '<path d="'+path+'" fill="none" stroke="'+stroke+'" stroke-width="'+width+'" marker-start="url(#er-many)" marker-end="url(#er-one)" opacity="'+opacity+'"/>';
       s += '<path d="'+path+'" fill="none" stroke="transparent" stroke-width="14" data-rel-idx="'+idx+'" style="cursor:pointer"><title>'
         + escXml(rel.from_table+'.'+rel.from_column+' \u2192 '+rel.to_table+'.'+rel.to_column)+'</title></path>';
@@ -749,6 +1313,12 @@
     const cols = t.columns || [];
     const h = getTableHeight(t);
     let s = '';
+
+    // Focus mode: dim tables outside focus set
+    const dimmed = focusSet && !focusSet.has(t.name);
+    if (dimmed) {
+      s += '<g opacity="0.08">';
+    }
 
     const isSel = selectedTables.has(t.name);
     s += '<rect x="'+(pos.x+3)+'" y="'+(pos.y+3)+'" width="'+W+'" height="'+h+'" rx="6" fill="rgba(0,0,0,0.06)"/>';
@@ -770,10 +1340,15 @@
         + '</g>';
     }
 
+    const vc = visibleColCount(t);
+    const showMore = hasMoreCols(t);
+
     cols.forEach((col, i) => {
+      if (i >= vc) return;
+      const isLastVisible = showMore ? false : (i === cols.length - 1);
       const ry = pos.y + HEADER_HEIGHT + i * ROW_HEIGHT;
       if (i % 2 === 1) {
-        if (i === cols.length - 1) {
+        if (isLastVisible) {
           s += '<path d="M'+(pos.x+1)+','+ry+' h'+(W-2)+' v'+(ROW_HEIGHT-6)+' q0,5 -5,5 h-'+(W-12)+' q-5,0 -5,-5 z" fill="#f8f9fb"/>';
         } else {
           s += '<rect x="'+(pos.x+1)+'" y="'+ry+'" width="'+(W-2)+'" height="'+ROW_HEIGHT+'" fill="#f8f9fb"/>';
@@ -802,6 +1377,28 @@
       }
     });
 
+    // "show more" row
+    if (showMore) {
+      const moreY = pos.y + HEADER_HEIGHT + vc * ROW_HEIGHT;
+      const hidden = cols.length - vc;
+      s += '<path d="M'+(pos.x+1)+','+moreY+' h'+(W-2)+' v'+(ROW_HEIGHT-6)+' q0,5 -5,5 h-'+(W-12)+' q-5,0 -5,-5 z" fill="#f0f4ff"/>';
+      s += '<text x="'+(pos.x + W / 2)+'" y="'+(moreY + 16)+'" font-size="11" fill="#6366f1" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,sans-serif" style="cursor:pointer">'
+        + '&#9660; ' + hidden + ' cols</text>';
+      s += '<rect x="'+pos.x+'" y="'+moreY+'" width="'+W+'" height="'+ROW_HEIGHT+'" fill="transparent" data-action="toggle-expand" data-table="'+escXml(t.name)+'" style="cursor:pointer"/>';
+    }
+
+    // "collapse" indicator for expanded tables
+    if (expandedTables.has(t.name) && (
+      (displayMode === 'compact' && cols.length > COMPACT_MAX_COLS)
+      || (displayMode === 'name-only' && cols.length > 0)
+    )) {
+      const collapseY = pos.y + HEADER_HEIGHT + cols.length * ROW_HEIGHT - ROW_HEIGHT;
+      s += '<text x="'+(pos.x + W / 2)+'" y="'+(collapseY + 16)+'" font-size="11" fill="#6366f1" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,sans-serif" style="cursor:pointer;opacity:0.6">'
+        + '&#9650; collapse</text>';
+      s += '<rect x="'+pos.x+'" y="'+collapseY+'" width="'+W+'" height="'+ROW_HEIGHT+'" fill="transparent" data-action="toggle-expand" data-table="'+escXml(t.name)+'" style="cursor:pointer"/>';
+    }
+
+    if (dimmed) s += '</g>';
     return s;
   }
 
@@ -836,7 +1433,8 @@
       const colY = sy - pos.y - HEADER_HEIGHT;
       if (colY < 0) continue;
       const colIdx = Math.floor(colY / ROW_HEIGHT);
-      if (colIdx >= 0 && colIdx < (t.columns || []).length) {
+      const vc = visibleColCount(t);
+      if (colIdx >= 0 && colIdx < vc) {
         const col = t.columns[colIdx];
         return { table: t.name, column: col.name, pk: col.pk, idx: colIdx };
       }
@@ -1011,9 +1609,14 @@
   });
 
   window.addEventListener('mouseup', () => {
-    if (pendingIcon && !dragMoved && !ro()) {
+    if (pendingIcon && !dragMoved) {
       const info = pendingIcon;
       pendingIcon = null;
+      if (info.action === 'toggle-expand' && info.table) {
+        toggleTableExpand(info.table);
+        return;
+      }
+      if (ro()) return;
       const tbl = (erData.tables || []).find(t => t.name === info.table);
       if (tbl && info.action === 'table-edit') {
         showTableStructureDialog(info.table);
@@ -1132,8 +1735,27 @@
     }
   });
 
+  canvas.addEventListener('dblclick', e => {
+    const pt = screenToSvg(e.clientX, e.clientY);
+    const tbl = hitTestTable(pt.x, pt.y);
+    if (tbl) {
+      setFocus(tbl);
+    } else if (focusTable) {
+      clearFocus();
+    }
+  });
+
   document.addEventListener('keydown', e => {
     if (!erVisible) return;
+
+    // Cmd/Ctrl+F → focus search input
+    if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+      e.preventDefault();
+      const input = document.getElementById('erSearchInput');
+      if (input) { input.focus(); input.select(); }
+      return;
+    }
+
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
 
     // Delete/Backspace → delete selected relation
@@ -1173,6 +1795,16 @@
     saveTimer = setTimeout(savePositions, 300);
   }
 
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (!erVisible || !erData) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      fitToView();
+      applySvgTransform();
+    }, 150);
+  });
+
   canvas.addEventListener('mousemove', function hoverCursor(e) {
     if (tableDrag || marquee || colDrag || rightPanPending) return;
     const pt = screenToSvg(e.clientX, e.clientY);
@@ -1180,25 +1812,32 @@
     const col = hitTestColumn(pt.x, pt.y);
 
     const prevHover = hoveredCol;
+    const prevHoveredTable = hoveredTable;
     if (col) {
       hoveredCol = { table: col.table, idx: col.idx };
+      hoveredTable = col.table;
       const iconG = e.target.closest('[data-action]');
       canvas.style.cursor = iconG ? 'pointer' : 'crosshair';
     } else {
       hoveredCol = null;
-      if (hitTestTable(pt.x, pt.y)) canvas.style.cursor = 'move';
+      hoveredTable = hitTestTable(pt.x, pt.y);
+      if (hoveredTable) canvas.style.cursor = 'move';
       else canvas.style.cursor = 'default';
     }
 
-    if (!ro()) {
-      const changed = (!prevHover && hoveredCol) || (prevHover && !hoveredCol)
-        || (prevHover && hoveredCol && (prevHover.table !== hoveredCol.table || prevHover.idx !== hoveredCol.idx));
-      if (changed) scheduleRender();
+    const colChanged = (!prevHover && hoveredCol) || (prevHover && !hoveredCol)
+      || (prevHover && hoveredCol && (prevHover.table !== hoveredCol.table || prevHover.idx !== hoveredCol.idx));
+    const tableChanged = prevHoveredTable !== hoveredTable;
+    if (colChanged || tableChanged) {
+      scheduleRender();
     }
   });
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && erVisible) toggleER();
+    if (e.key === 'Escape' && erVisible) {
+      if (focusTable) { clearFocus(); e.preventDefault(); return; }
+      toggleER();
+    }
   });
 
   // ── Toast ──
@@ -1485,14 +2124,30 @@
   function showErContextMenu(clientX, clientY) {
     const pt = screenToSvg(clientX, clientY);
     const isRo = typeof readOnly !== 'undefined' && readOnly;
+    const tableHit = hitTestTable(pt.x, pt.y);
+
+    // Focus menu items (available in all modes including read-only)
+    const focusItems = [];
+    if (tableHit) {
+      const isFocused = focusTable === tableHit;
+      focusItems.push({
+        label: isFocused ? 'Exit Focus' : 'Focus',
+        icon: '&#9673;',
+        action: () => isFocused ? clearFocus() : setFocus(tableHit)
+      });
+    } else if (focusTable) {
+      focusItems.push({ label: 'Exit Focus', icon: '&#9673;', action: () => clearFocus() });
+    }
 
     if (isRo) {
-      showCtxMenu(clientX, clientY, [{ label: 'Read-only mode', disabled: true, icon: '&#128274;' }]);
+      const items = focusItems.length ? [...focusItems, '---', { label: 'Read-only mode', disabled: true, icon: '&#128274;' }]
+        : [{ label: 'Read-only mode', disabled: true, icon: '&#128274;' }];
+      showCtxMenu(clientX, clientY, items);
       return;
     }
 
     const colHit = hitTestColumn(pt.x, pt.y);
-    const tableHit = hitTestTable(pt.x, pt.y);
+    const focusSep = focusItems.length ? ['---', ...focusItems] : [];
 
     if (colHit && tableHit) {
       const tbl = (erData.tables || []).find(t => t.name === colHit.table);
@@ -1505,6 +2160,7 @@
         '---',
         { label: 'Rename Table...', icon: '&#9998;', action: () => showRenameTableDialog(colHit.table) },
         { label: 'Delete Table', icon: '&#128465;', danger: true, action: () => showDeleteTableDialog(colHit.table) },
+        ...focusSep,
       ]);
     } else if (tableHit) {
       showCtxMenu(clientX, clientY, [
@@ -1512,10 +2168,12 @@
         { label: 'Add Column...', icon: '&#10010;', action: () => showAddColumnDialog(tableHit) },
         '---',
         { label: 'Delete Table', icon: '&#128465;', danger: true, action: () => showDeleteTableDialog(tableHit) },
+        ...focusSep,
       ]);
     } else {
       showCtxMenu(clientX, clientY, [
         { label: 'Create Table...', icon: '&#10010;', action: () => showCreateTableDialog(pt) },
+        ...focusSep,
       ]);
     }
   }
