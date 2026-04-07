@@ -1780,7 +1780,7 @@ async function saveApp(e) {
     tunnel_port: parseInt(document.getElementById('fTunnelPort').value) || 62888,
     server: document.getElementById('fServer').value || '',
     display_name: document.getElementById('fDisplayName').value,
-    site_name: document.getElementById('fSiteName').value || (nameVal || autoName),
+    site_name: document.getElementById('fSiteName').value,
     username: document.getElementById('fUsername').value,
     auth_pass: document.getElementById('fAuthPass').value,
     private_key: document.getElementById('fPrivateKey').value,

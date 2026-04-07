@@ -14,10 +14,11 @@ import (
 	"time"
 )
 
-var siteNameRegexp = regexp.MustCompile(`^[a-z][a-z0-9]{2,62}$`)
+var siteNameRegexp = regexp.MustCompile(`^[a-z](?:[a-z0-9]|(?:-[a-z0-9])){2,62}$`)
 
-// IsValidSiteName checks that a site name contains only lowercase letters and digits,
-// starts with a letter, is 3-63 characters long, and contains no hyphens.
+// IsValidSiteName checks that a site name contains only lowercase letters, digits
+// and hyphens, starts with a letter, is 3-63 characters long, and does not start
+// or end with a hyphen or contain consecutive hyphens.
 func IsValidSiteName(name string) bool {
 	return siteNameRegexp.MatchString(name)
 }

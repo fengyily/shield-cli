@@ -155,7 +155,7 @@ func (s *Server) handleApps(w http.ResponseWriter, r *http.Request) {
 		}
 		if app.SiteName != "" && !config.IsValidSiteName(app.SiteName) {
 			writeJSON(w, http.StatusBadRequest, map[string]interface{}{
-				"code": 400, "message": "site_name must contain only lowercase letters and digits, start with a letter, be 3-63 characters long, and must not contain hyphens",
+				"code": 400, "message": "site_name must contain only lowercase letters, digits and hyphens, start with a letter, be 3-63 characters long, and must not start/end with a hyphen or contain consecutive hyphens",
 			})
 			return
 		}
@@ -216,7 +216,7 @@ func (s *Server) handleAppByID(w http.ResponseWriter, r *http.Request) {
 		}
 		if app.SiteName != "" && !config.IsValidSiteName(app.SiteName) {
 			writeJSON(w, http.StatusBadRequest, map[string]interface{}{
-				"code": 400, "message": "site_name must contain only lowercase letters and digits, start with a letter, be 3-63 characters long, and must not contain hyphens",
+				"code": 400, "message": "site_name must contain only lowercase letters, digits and hyphens, start with a letter, be 3-63 characters long, and must not start/end with a hyphen or contain consecutive hyphens",
 			})
 			return
 		}
