@@ -28,7 +28,18 @@ curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh
 
 ## Windows
 
-### Scoop（推荐）
+### 双击安装（推荐，适合新手）
+
+下载 [`install.bat`](https://raw.githubusercontent.com/fengyily/shield-cli/main/install.bat)，双击运行即可。自动完成：
+
+1. 检测系统架构（AMD64 / ARM64）
+2. 下载对应版本
+3. 安装为系统服务（开机自启）
+4. 打开浏览器访问 Web UI
+
+> 运行时会弹出 UAC 权限提示，点击「是」即可。
+
+### Scoop
 
 ```powershell
 scoop bucket add shield https://github.com/fengyily/scoop-bucket

@@ -74,7 +74,9 @@ Shield CLI is a **unified browser gateway** for all your internal services. One 
 # macOS
 brew tap fengyily/tap && brew install shield-cli
 
-# Windows
+# Windows (one-click installer — download and double-click)
+# https://raw.githubusercontent.com/fengyily/shield-cli/main/install.bat
+# Or via Scoop:
 scoop bucket add shield https://github.com/fengyily/scoop-bucket && scoop install shield-cli
 
 # Linux (apt) — Debian / Ubuntu

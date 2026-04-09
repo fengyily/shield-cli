@@ -28,7 +28,18 @@ curl -fsSL https://raw.githubusercontent.com/fengyily/shield-cli/main/install.sh
 
 ## Windows
 
-### Scoop (Recommended)
+### One-Click Installer (Recommended for beginners)
+
+Download [`install.bat`](https://raw.githubusercontent.com/fengyily/shield-cli/main/install.bat) and double-click to run. It will automatically:
+
+1. Detect your system architecture (AMD64 / ARM64)
+2. Download the correct version
+3. Install as a system service (auto-start on boot)
+4. Open the Web UI in your browser
+
+> A UAC permission prompt will appear — click "Yes" to continue.
+
+### Scoop
 
 ```powershell
 scoop bucket add shield https://github.com/fengyily/scoop-bucket
