@@ -1103,21 +1103,6 @@ body {
             </div>
           </div>
         </div>
-
-        <!-- Visibility section temporarily hidden - not working properly -->
-        <div class="form-section" style="display: none;">Visibility</div>
-        <div class="form-row" style="display: none;">
-          <div class="form-group">
-            <label>AC Node Filter</label>
-            <input type="text" id="fVisable" placeholder="visable" value="visable">
-          </div>
-          <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:2px">
-            <div class="form-check">
-              <input type="checkbox" id="fInvisible">
-              <label for="fInvisible" style="margin:0; color:var(--text)">Invisible Mode</label>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div class="modal-footer">
@@ -1426,7 +1411,6 @@ function renderApps(apps) {
             ${tunnelInfo}
             ${app.username ? `<span>User: ${app.username}</span>` : ''}
             ${app.db_user ? `<span>DB: ${app.db_user}${app.db_name ? '/' + app.db_name : ''}</span>` : ''}
-            ${app.invisible ? '<span>Invisible</span>' : ''}
           </div>
           ${connRow}
           <div class="app-meta">
@@ -1654,8 +1638,6 @@ function hasAdvancedValues() {
   const privateKey = document.getElementById('fPrivateKey').value;
   const passphrase = document.getElementById('fPassphrase').value;
   const enableSftp = document.getElementById('fEnableSftp').checked;
-  const visable = document.getElementById('fVisable').value;
-  const invisible = document.getElementById('fInvisible').checked;
 
   const dbUser = document.getElementById('fDBUser').value;
   const dbPass = document.getElementById('fDBPass').value;
@@ -1666,8 +1648,6 @@ function hasAdvancedValues() {
     server || displayName || siteName ||
     username || authPass || privateKey || passphrase ||
     enableSftp ||
-    (visable && visable !== 'visable') ||
-    invisible ||
     dbUser || dbPass || dbName
   );
 }
@@ -1688,7 +1668,6 @@ function openAddModal() {
   document.getElementById('appForm').reset();
   document.getElementById('fIP').value = '127.0.0.1';
   document.getElementById('fTunnelPort').value = '62888';
-  document.getElementById('fVisable').value = 'visable';
   onProtocolChange();
   setAdvanceOpen(false);
   updateAdvanceTag();
@@ -1714,8 +1693,6 @@ async function editApp(id) {
   document.getElementById('fPrivateKey').value = app.private_key || '';
   document.getElementById('fPassphrase').value = app.passphrase || '';
   document.getElementById('fEnableSftp').checked = !!app.enable_sftp;
-  document.getElementById('fVisable').value = app.visable || 'visable';
-  document.getElementById('fInvisible').checked = !!app.invisible;
   document.getElementById('fDBUser').value = app.db_user || '';
   document.getElementById('fDBPass').value = app.db_pass || '';
   document.getElementById('fDBName').value = app.db_name || '';
@@ -1787,8 +1764,6 @@ async function saveApp(e) {
     private_key: document.getElementById('fPrivateKey').value,
     passphrase: document.getElementById('fPassphrase').value,
     enable_sftp: document.getElementById('fEnableSftp').checked,
-    visable: document.getElementById('fVisable').value || 'visable',
-    invisible: document.getElementById('fInvisible').checked,
     db_user: document.getElementById('fDBUser').value,
     db_pass: document.getElementById('fDBPass').value,
     db_name: document.getElementById('fDBName').value,
