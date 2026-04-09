@@ -1495,17 +1495,29 @@
           selectedTables.delete(tableHit);
         } else {
           selectedTables.add(tableHit);
+          // Bring newly selected table to the top layer
+          const tables = erData.tables || [];
+          const tblIdx = tables.findIndex(t => t.name === tableHit);
+          if (tblIdx !== -1 && tblIdx !== tables.length - 1) {
+            tables.push(tables.splice(tblIdx, 1)[0]);
+          }
         }
         scheduleRender();
         return;
       }
 
-      // Single click — select this table
+      // Single click — select this table and bring it to the top layer
       if (!selectedTables.has(tableHit)) {
         selectedTables.clear();
         selectedTables.add(tableHit);
-        scheduleRender();
       }
+      // Move clicked table to end of array so it renders on top
+      const tables = erData.tables || [];
+      const tblIdx = tables.findIndex(t => t.name === tableHit);
+      if (tblIdx !== -1 && tblIdx !== tables.length - 1) {
+        tables.push(tables.splice(tblIdx, 1)[0]);
+      }
+      scheduleRender();
 
       // Column area → FK drag (always, regardless of selection)
       if (colHit && !ro()) {
