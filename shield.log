@@ -1,0 +1,26 @@
+
+   _____ __    _       __    __   ________    ____
+  / ___// /_  (_)__   / /___/ /  / ____/ /   /  _/
+  \__ \/ __ \/ // _ \/ // __  / / /   / /    / /
+ ___/ / / / / //  __/ // /_/ / / /___/ /____/ /
+/____/_/ /_/_/ \___/_/ \__,_/  \____/_____/___/
+  Shield CLI - Secure Tunnel Connector
+
+  ├─ Version:    dev
+  ├─ Go:         go1.25.0
+  └─ Platform:   linux/amd64
+
+  ──────────────────────────────────────────────────
+
+time=2026-04-09T09:50:25.417Z level=WARN msg="Failed to load credentials, regenerating" path=/home/openhands/.shield-cli/.credential error="failed to read credentials file: open /home/openhands/.shield-cli/.credential: no such file or directory"
+time=2026-04-09T09:50:25.418Z level=INFO msg="Web UI starting" url=http://127.0.0.1:52855
+
+  Shield Web UI is running at:
+
+    http://127.0.0.1:52855
+
+  Press Ctrl+C to stop
+
+time=2026-04-09T09:50:25.418Z level=INFO msg="No saved connector info, main tunnel will be established on first app connect"
+
+Shutting down...
