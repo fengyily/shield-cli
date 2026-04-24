@@ -10,6 +10,7 @@ import (
 
 	"shield-cli/service"
 	"shield-cli/tray"
+	"shield-cli/updater"
 	"shield-cli/web"
 
 	"github.com/spf13/cobra"
@@ -94,12 +95,16 @@ func startForeground(port int) error {
 
 	PrintBanner()
 
+	if exe, err := os.Executable(); err == nil {
+		updater.CleanupStale(exe)
+	}
+
 	if service.IsInstalled() {
 		fmt.Printf("  \033[1;33m⚠ Service is installed but starting in foreground mode\033[0m\n")
 		fmt.Printf("  \033[90m  Use \"shield start\" (without port) to start the background service\033[0m\n\n")
 	}
 
-	srv, err := web.NewServer(port, Version)
+	srv, err := web.NewServer(port, Version, GitCommit, BuildTime)
 	if err != nil {
 		return err
 	}
