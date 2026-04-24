@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -8,10 +9,13 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 
 	"shield-cli/config"
 	"shield-cli/plugin"
+	"shield-cli/service"
+	"shield-cli/updater"
 )
 
 //go:embed static
@@ -19,23 +23,31 @@ var staticFiles embed.FS
 
 // Server represents the web management server
 type Server struct {
-	port    int
-	version string
-	store   *config.AppStore
-	connMgr *ConnectionManager
+	port      int
+	version   string
+	gitCommit string
+	buildTime string
+	store     *config.AppStore
+	connMgr   *ConnectionManager
+	updater   *updater.Checker
+	upgradeJob *updater.Job
 }
 
 // NewServer creates a new web server, pre-loading credentials at startup
-func NewServer(port int, version string) (*Server, error) {
+func NewServer(port int, version, gitCommit, buildTime string) (*Server, error) {
 	creds, err := config.GetOrCreateCredentials()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load credentials: %w", err)
 	}
 	return &Server{
-		port:    port,
-		version: version,
-		store:   config.NewAppStore(),
-		connMgr: NewConnectionManager(creds),
+		port:      port,
+		version:   version,
+		gitCommit: gitCommit,
+		buildTime: buildTime,
+		store:      config.NewAppStore(),
+		connMgr:    NewConnectionManager(creds),
+		updater:    updater.NewChecker(version),
+		upgradeJob: &updater.Job{},
 	}, nil
 }
 
@@ -57,6 +69,10 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/plugins/", s.handlePluginAction)
 	mux.HandleFunc("/api/protocols", s.handleProtocols)
 	mux.HandleFunc("/api/version", s.handleVersion)
+	mux.HandleFunc("/api/version/latest", s.handleVersionLatest)
+	mux.HandleFunc("/api/version/source", s.handleInstallSource)
+	mux.HandleFunc("/api/version/upgrade", s.handleUpgrade)
+	mux.HandleFunc("/api/version/upgrade/status", s.handleUpgradeStatus)
 
 	// Static files
 	staticFS, err := fs.Sub(staticFiles, "static")
@@ -92,7 +108,108 @@ func (s *Server) Shutdown() {
 
 func (s *Server) handleVersion(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"version": s.version})
+	json.NewEncoder(w).Encode(map[string]string{
+		"version":    s.version,
+		"git_commit": s.gitCommit,
+		"build_time": s.buildTime,
+		"os":         runtime.GOOS,
+		"arch":       runtime.GOARCH,
+	})
+}
+
+// handleInstallSource reports how the running binary was installed so the
+// Web UI can hide the self-upgrade button for package-manager installs.
+func (s *Server) handleInstallSource(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	src := updater.DetectInstallSource()
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"code": 200, "data": src,
+	})
+}
+
+// handleUpgrade triggers an async upgrade to the latest release. Returns
+// immediately; the caller polls /api/version/upgrade/status for progress.
+func (s *Server) handleUpgrade(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	src := updater.DetectInstallSource()
+	if !src.Writable {
+		writeJSON(w, http.StatusForbidden, map[string]interface{}{
+			"code": 403, "message": "binary is not writable by the current user", "source": src,
+		})
+		return
+	}
+	if src.Kind != "binary" {
+		writeJSON(w, http.StatusForbidden, map[string]interface{}{
+			"code": 403, "message": "self-upgrade disabled for " + src.Kind + " installs; use: " + src.Hint, "source": src,
+		})
+		return
+	}
+
+	rel, err := s.updater.Check(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusBadGateway, map[string]interface{}{
+			"code": 502, "message": err.Error(),
+		})
+		return
+	}
+	if !rel.UpdateAvailable {
+		writeJSON(w, http.StatusOK, map[string]interface{}{
+			"code": 200, "data": map[string]string{"stage": "up-to-date"},
+		})
+		return
+	}
+
+	started := s.updater.Run(context.Background(), s.upgradeJob, rel.Latest, service.IsInstalled(), s.port)
+	if !started {
+		writeJSON(w, http.StatusConflict, map[string]interface{}{
+			"code": 409, "message": "an upgrade is already running",
+		})
+		return
+	}
+	writeJSON(w, http.StatusAccepted, map[string]interface{}{
+		"code": 202, "data": s.upgradeJob.Snapshot(),
+	})
+}
+
+// handleUpgradeStatus returns the current or last upgrade job snapshot.
+func (s *Server) handleUpgradeStatus(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"code": 200, "data": s.upgradeJob.Snapshot(),
+	})
+}
+
+// handleVersionLatest queries the release feed for the latest version.
+// Results are cached inside the updater for 1h.
+func (s *Server) handleVersionLatest(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	rel, err := s.updater.Check(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusBadGateway, map[string]interface{}{
+			"code": 502, "message": err.Error(),
+		})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"code": 200, "data": rel,
+	})
 }
 
 // handleApps handles GET (list) and POST (create) for /api/apps

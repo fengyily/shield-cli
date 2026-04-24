@@ -950,6 +950,32 @@ body {
   </div>
 </div>
 
+<div id="update-banner" style="display:none;background:linear-gradient(90deg,#eef6ff,#e6f0ff);border-bottom:1px solid #c7ddff;color:#1a3a66;padding:10px 20px;font-size:13px;">
+  <div style="max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <span style="font-weight:600;">发现新版本</span>
+    <span>当前 v<span id="update-current"></span> → 最新 v<span id="update-latest"></span></span>
+    <a id="update-link" href="#" target="_blank" rel="noopener" style="color:#1a6fe0;text-decoration:none;">查看更新内容 →</a>
+    <span style="flex:1"></span>
+    <button id="update-apply-btn" onclick="startUpgrade()" style="background:#1a6fe0;color:#fff;border:0;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:12px;display:none;">立即升级</button>
+    <span id="update-hint" style="color:#6b7c93;font-size:12px;"></span>
+    <button onclick="document.getElementById('update-banner').style.display='none'" style="background:transparent;border:0;color:#1a3a66;cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;" title="关闭">×</button>
+  </div>
+</div>
+
+<div id="upgrade-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:8px;padding:24px 28px;width:420px;max-width:90vw;box-shadow:0 10px 40px rgba(0,0,0,0.25);">
+    <div style="font-size:16px;font-weight:600;margin-bottom:12px;">正在升级 Shield CLI</div>
+    <div id="upgrade-stage" style="color:#6b7c93;font-size:13px;margin-bottom:10px;">准备中...</div>
+    <div style="background:#eef2f7;border-radius:4px;height:8px;overflow:hidden;">
+      <div id="upgrade-bar" style="background:#1a6fe0;height:100%;width:0;transition:width 0.3s;"></div>
+    </div>
+    <div id="upgrade-error" style="color:#c0392b;font-size:12px;margin-top:12px;display:none;"></div>
+    <div style="text-align:right;margin-top:16px;">
+      <button id="upgrade-close-btn" onclick="document.getElementById('upgrade-modal').style.display='none'" style="background:#eef2f7;border:0;border-radius:4px;padding:6px 14px;cursor:pointer;display:none;">关闭</button>
+    </div>
+  </div>
+</div>
+
 <div class="container">
   <div class="toolbar" id="toolbar" style="display:none">
     <div class="toolbar-info">
@@ -1912,6 +1938,86 @@ setInterval(loadApps, 5000);
 fetch('/api/version').then(r=>r.json()).then(d=>{
   document.getElementById('footer-version').textContent='Shield CLI '+d.version;
 }).catch(()=>{});
+
+Promise.all([
+  fetch('/api/version/latest').then(r=>r.json()).catch(()=>null),
+  fetch('/api/version/source').then(r=>r.json()).catch(()=>null),
+]).then(([latest, src])=>{
+  const rel = latest && latest.data;
+  if (!rel || !rel.update_available || !rel.latest) return;
+  document.getElementById('update-current').textContent = rel.current || 'dev';
+  document.getElementById('update-latest').textContent = rel.latest;
+  const link = document.getElementById('update-link');
+  if (rel.html_url) link.href = rel.html_url;
+
+  const source = src && src.data;
+  const applyBtn = document.getElementById('update-apply-btn');
+  const hint = document.getElementById('update-hint');
+  if (source && source.kind === 'binary' && source.writable) {
+    applyBtn.style.display = 'inline-block';
+  } else if (source && source.hint) {
+    hint.textContent = '安装方式: ' + source.kind + '，请运行：' + source.hint;
+  }
+  document.getElementById('update-banner').style.display = 'block';
+});
+
+const STAGE_LABEL = {
+  starting: '准备中', download: '下载中', verify: '校验中',
+  extract: '解压中', install: '安装中', restart: '重启中',
+  done: '完成', error: '失败',
+};
+
+async function startUpgrade() {
+  if (!confirm('升级将在后台下载并替换二进制，随后服务会自动重启。确认继续？')) return;
+  document.getElementById('upgrade-bar').style.width = '0%';
+  document.getElementById('upgrade-stage').textContent = '准备中...';
+  document.getElementById('upgrade-error').style.display = 'none';
+  document.getElementById('upgrade-close-btn').style.display = 'none';
+  document.getElementById('upgrade-modal').style.display = 'flex';
+
+  const res = await fetch('/api/version/upgrade', { method: 'POST' });
+  if (res.status === 403 || res.status === 409 || res.status === 502) {
+    const body = await res.json().catch(()=>({message:'upgrade failed'}));
+    showUpgradeError(body.message || 'upgrade failed');
+    return;
+  }
+  pollUpgrade();
+}
+
+function pollUpgrade() {
+  const timer = setInterval(async () => {
+    let job;
+    try {
+      const r = await fetch('/api/version/upgrade/status');
+      job = (await r.json()).data;
+    } catch (e) {
+      // Server may be restarting — that actually means success.
+      clearInterval(timer);
+      document.getElementById('upgrade-stage').textContent = '服务正在重启，5 秒后自动刷新...';
+      document.getElementById('upgrade-bar').style.width = '100%';
+      setTimeout(()=>location.reload(), 5000);
+      return;
+    }
+    const bar = document.getElementById('upgrade-bar');
+    bar.style.width = (job.percent || 0) + '%';
+    document.getElementById('upgrade-stage').textContent = STAGE_LABEL[job.stage] || job.stage;
+    if (!job.running && job.stage === 'error') {
+      clearInterval(timer);
+      showUpgradeError(job.error || '升级失败');
+    } else if (!job.running && job.stage === 'restart') {
+      clearInterval(timer);
+      document.getElementById('upgrade-stage').textContent = '新版本已安装，服务重启中，5 秒后自动刷新...';
+      setTimeout(()=>location.reload(), 5000);
+    }
+  }, 800);
+}
+
+function showUpgradeError(msg) {
+  const el = document.getElementById('upgrade-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+  document.getElementById('upgrade-close-btn').style.display = 'inline-block';
+}
 </script>
 </body>
 </html>
