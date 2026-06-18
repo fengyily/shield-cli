@@ -331,11 +331,17 @@ func (s *Server) handleAppByID(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
-		if app.SiteName != "" && !config.IsValidSiteName(app.SiteName) {
-			writeJSON(w, http.StatusBadRequest, map[string]interface{}{
-				"code": 400, "message": "site_name must contain only lowercase letters, digits and hyphens, start with a letter, be 3-63 characters long, and must not start/end with a hyphen or contain consecutive hyphens",
-			})
-			return
+		// Only reject a site_name the user explicitly changed to an invalid
+		// value. A blank or unchanged-but-invalid site_name (e.g. a legacy
+		// auto-generated default) is normalized in store.Update so editing an
+		// existing app without touching the field never fails. See issue #11.
+		if existing, err := s.store.Get(id); err == nil {
+			if app.SiteName != "" && app.SiteName != existing.SiteName && !config.IsValidSiteName(app.SiteName) {
+				writeJSON(w, http.StatusBadRequest, map[string]interface{}{
+					"code": 400, "message": "site_name must contain only lowercase letters, digits and hyphens, start with a letter, be 3-63 characters long, and must not start/end with a hyphen or contain consecutive hyphens",
+				})
+				return
+			}
 		}
 		updated, err := s.store.Update(id, app)
 		if err != nil {

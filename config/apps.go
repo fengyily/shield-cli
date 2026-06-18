@@ -84,6 +84,17 @@ func generateID() string {
 	return hex.EncodeToString(b)
 }
 
+// defaultSiteName derives a valid site name from an app ID. Generated IDs are
+// hex strings that may start with a digit, which would violate the site_name
+// rules (must start with a lowercase letter), so a fixed "app-" prefix is added.
+func defaultSiteName(id string) string {
+	name := "app-" + id
+	if len(name) > 63 {
+		name = name[:63]
+	}
+	return name
+}
+
 // List returns all saved apps sorted by updated time (newest first)
 func (s *AppStore) List() ([]AppConfig, error) {
 	apps, err := s.load()
@@ -119,7 +130,7 @@ func (s *AppStore) Add(app AppConfig) (*AppConfig, error) {
 
 	app.ID = generateID()
 	if len(app.SiteName) == 0 {
-		app.SiteName = app.ID
+		app.SiteName = defaultSiteName(app.ID)
 	}
 	app.CreatedAt = time.Now()
 	app.UpdatedAt = time.Now()
@@ -166,6 +177,14 @@ func (s *AppStore) Update(id string, updated AppConfig) (*AppConfig, error) {
 			updated.ID = id
 			updated.CreatedAt = apps[i].CreatedAt
 			updated.UpdatedAt = time.Now()
+			// Preserve the stored site_name when none is supplied, and repair
+			// any legacy/invalid value so it always satisfies IsValidSiteName.
+			if updated.SiteName == "" {
+				updated.SiteName = apps[i].SiteName
+			}
+			if !IsValidSiteName(updated.SiteName) {
+				updated.SiteName = defaultSiteName(id)
+			}
 			if updated.Server == "" {
 				updated.Server = "https://console.yishield.com/raas"
 			}
