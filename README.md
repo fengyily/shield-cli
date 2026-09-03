@@ -223,6 +223,12 @@ Add to MCP settings:
 
 [![npm](https://img.shields.io/npm/v/shield-cli-mcp?label=shield-cli-mcp&logo=npm)](https://www.npmjs.com/package/shield-cli-mcp)
 
+## Sponsors
+
+Shield CLI is supported by the following sponsor:
+
+[![Powered by OrcaRouter](https://img.shields.io/badge/Powered_by-OrcaRouter-2563eb)](https://www.orcarouter.ai/ref/ref_c8a64407d172fb195136)
+
 ## License
 
 Apache 2.0
